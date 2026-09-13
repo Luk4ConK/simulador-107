@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador 107</title>
+<meta name="description" content="Simulador de llamada al sistema de emergencias para entrenamientos de guardavidas y RCP.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#08191C">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#E7EDEC; --surface:#FFFFFF; --surface-2:#F1F6F5;
+    --ink:#0C1B1E; --ink-2:#4C5E60; --ink-3:#75898A;
+    --line:#CEDAD9; --line-soft:#E0E9E8;
+    --accent:#C8451D; --accent-soft:#FBEAE4;
+    --ok:#1E7A4E; --warn:#A96D0C; --bad:#B0382A;
+    --deep:#08191C; --deep-2:#0F272B; --deep-3:#16363B;
+    --on-deep:#E9F1F0; --on-deep-2:#8FA9A9; --deep-line:#1E4044;
+    --r:14px;
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+      --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+      --line:#20373B; --line-soft:#1A2C2F;
+      --accent:#F2703F; --accent-soft:#2A1912;
+      --ok:#48B37C; --warn:#DDA43E; --bad:#E06A5A;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+    --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+    --line:#20373B; --line-soft:#1A2C2F;
+    --accent:#F2703F; --accent-soft:#2A1912;
+    --ok:#48B37C; --warn:#DDA43E; --bad:#E06A5A;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--ground); color:var(--ink); font-family:var(--body); font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased; padding-bottom:env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:560px; margin:0 auto; padding-inline:16px; padding-block:20px 40px;}
+  h1,h2,h3{font-family:var(--display); font-weight:700; letter-spacing:-.015em; margin:0; text-wrap:balance}
+  p{margin:0}
+  button{font:inherit; color:inherit; cursor:pointer}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+  .lbl{font-family:var(--mono); font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3)}
+  .num{font-variant-numeric:tabular-nums}
+
+  .mast{display:flex; align-items:flex-start; gap:12px; margin-bottom:6px}
+  .sigil{width:40px;height:40px;flex:none;border-radius:10px;background:var(--accent);display:grid;place-items:center;
+         font-family:var(--display);font-weight:700;font-size:15px;color:#fff;letter-spacing:-.03em}
+  .mast h1{font-size:28px; line-height:1.05}
+  .sub{color:var(--ink-2); font-size:14.5px; margin-top:8px; max-width:46ch}
+  .sect{margin-top:30px}
+  .sect > .lbl{display:block; margin-bottom:10px}
+
+  .cards{display:grid; gap:10px}
+  .card{text-align:left; width:100%; background:var(--surface); border:1px solid var(--line);
+        border-radius:var(--r); padding:14px 15px; display:grid; gap:6px; transition:border-color .15s}
+  .card:hover{border-color:var(--accent)}
+  .card[aria-pressed="true"]{border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent)}
+  .card .top{display:flex; align-items:center; gap:8px; justify-content:space-between}
+  .card h3{font-size:16.5px}
+  .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+       padding:3px 7px; border-radius:5px; background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line-soft); flex:none}
+  .card p{font-size:14px; color:var(--ink-2)}
+  .card .where{font-family:var(--mono); font-size:12px; color:var(--ink-3)}
+
+  .card .mine{display:flex; gap:10px; margin-top:2px}
+  .card .mine span{font-family:var(--mono); font-size:11px; color:var(--accent); text-decoration:underline; text-underline-offset:3px}
+  .card.add{border-style:dashed; text-align:center; color:var(--ink-3); font-size:14.5px; padding:16px; display:block}
+  .card.add:hover{color:var(--accent)}
+  .f{display:grid; gap:6px; font-size:13px; color:var(--ink-2)}
+  .f input,.f textarea{width:100%; padding:11px; font:inherit; font-size:15px; color:var(--ink); font-family:var(--body);
+    background:var(--surface-2); border:1px solid var(--line); border-radius:10px; resize:vertical}
+  .opts{display:grid; gap:14px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:15px}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .row .t{font-size:14.5px}
+  .row .d{font-size:12.5px; color:var(--ink-3); margin-top:2px}
+  .seg{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; flex:none}
+  .seg button{background:var(--surface); border:0; padding:7px 11px; font-size:13px; color:var(--ink-2)}
+  .seg button + button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--ink); color:var(--ground); font-weight:600}
+  .sw{position:relative; width:44px; height:26px; border-radius:99px; background:var(--line); border:0; flex:none; transition:background .15s}
+  .sw::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:var(--surface); transition:transform .15s}
+  .sw[aria-pressed="true"]{background:var(--ok)}
+  .sw[aria-pressed="true"]::after{transform:translateX(18px)}
+
+  .go{margin-top:22px; width:100%; border:0; border-radius:var(--r); background:var(--accent); color:#fff;
+      font-family:var(--display); font-weight:700; font-size:17px; padding:16px;
+      display:flex; align-items:center; justify-content:center; gap:10px}
+  .go[disabled]{opacity:.45; cursor:not-allowed}
+  .note{margin-top:12px; font-size:12.5px; color:var(--ink-3); line-height:1.45}
+  .note b{color:var(--ink-2); font-weight:600}
+
+  .gate{max-width:360px; margin:14vh auto 0; display:grid; gap:14px; text-align:center}
+  .gate input{width:100%; padding:14px; font:inherit; font-family:var(--mono); font-size:18px; text-align:center;
+              letter-spacing:.2em; border:1px solid var(--line); border-radius:11px; background:var(--surface); color:var(--ink)}
+  .gate .err{color:var(--bad); font-size:13.5px; min-height:20px}
+
+  .brief{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; display:grid; gap:12px}
+  .brief .scene{font-size:15.5px; line-height:1.55}
+  .brief .addr{font-family:var(--mono); font-size:13px; background:var(--surface-2); border:1px solid var(--line-soft);
+               border-radius:9px; padding:10px 12px; line-height:1.45}
+  .backlink{background:none; border:0; padding:0; color:var(--ink-3); font-size:13.5px; text-decoration:underline; text-underline-offset:3px}
+
+  .call{background:var(--deep); color:var(--on-deep); border-radius:var(--r); border:1px solid var(--deep-line);
+        display:flex; flex-direction:column; min-height:76vh; overflow:hidden}
+  .callbar{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; border-bottom:1px solid var(--deep-line)}
+  .callbar .who{display:flex; align-items:center; gap:9px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#3FBF7F;flex:none}
+  .dot.ring{background:var(--accent); animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .callbar .name{font-family:var(--display); font-weight:700; font-size:15px}
+  .callbar .state{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--on-deep-2)}
+  .clock{font-family:var(--mono); font-size:14px; font-variant-numeric:tabular-nums}
+
+  .feed{flex:1; overflow-y:auto; padding:16px 14px; display:flex; flex-direction:column; gap:12px}
+  .msg{max-width:88%; display:grid; gap:4px}
+  .msg .tm{font-family:var(--mono); font-size:10.5px; color:var(--on-deep-2); letter-spacing:.06em}
+  .msg .bub{padding:10px 13px; border-radius:13px; font-size:15px; line-height:1.5}
+  .msg.op .bub{background:var(--deep-2); border:1px solid var(--deep-line); border-bottom-left-radius:4px}
+  .msg.me{align-self:flex-end; text-align:right}
+  .msg.me .bub{background:var(--accent); color:#fff; border-bottom-right-radius:4px; text-align:left}
+  .msg.sys{align-self:center; max-width:100%; text-align:center}
+  .msg.sys .bub{background:transparent; border:1px dashed var(--deep-line); color:var(--on-deep-2); font-size:12.5px; font-family:var(--mono)}
+  .msg.live .bub{opacity:.65; font-style:italic}
+
+  .guide{border-top:1px solid var(--deep-line); padding:10px 14px; display:flex; flex-wrap:wrap; gap:6px}
+  .chip{font-family:var(--mono); font-size:10.5px; padding:4px 8px; border-radius:6px;
+        background:var(--deep-2); border:1px solid var(--deep-line); color:var(--on-deep-2)}
+
+  .controls{border-top:1px solid var(--deep-line); padding:14px; display:grid; gap:10px; background:var(--deep-2)}
+  .estado{display:flex; align-items:center; justify-content:center; gap:10px; padding:16px; border-radius:12px;
+          background:var(--deep); border:1px solid var(--deep-line); font-family:var(--display); font-weight:700; font-size:15px}
+  .estado .pulso{width:10px; height:10px; border-radius:50%; background:#3FBF7F; animation:pulse 1.1s infinite; flex:none}
+  .estado[data-fase="operador"]{color:var(--on-deep-2)}
+  .estado[data-fase="operador"] .pulso{background:var(--accent)}
+  .estado[data-fase="pensando"]{color:var(--on-deep-2)}
+  .estado[data-fase="pensando"] .pulso{background:#D8A13C}
+  .estado[data-fase="mudo"]{color:var(--on-deep-2)}
+  .estado[data-fase="mudo"] .pulso{background:var(--on-deep-2); animation:none}
+  .ptt{border:0; border-radius:12px; padding:17px; width:100%; font-family:var(--display); font-weight:700; font-size:16px;
+       background:var(--on-deep); color:var(--deep); display:flex; align-items:center; justify-content:center; gap:10px}
+  .ptt[data-on="1"]{background:var(--accent); color:#fff}
+  .ptt[disabled]{opacity:.4}
+  .mic{width:14px;height:14px;border-radius:7px 7px 5px 5px;background:currentColor;flex:none}
+  .ptt[data-on="1"] .mic{animation:pulse .9s infinite}
+  .crow{display:flex; gap:8px}
+  .ghost{flex:1; background:transparent; border:1px solid var(--deep-line); color:var(--on-deep-2); border-radius:11px; padding:11px; font-size:13.5px}
+  .hang{flex:1; background:var(--bad); border:0; color:#fff; border-radius:11px; padding:11px; font-size:13.5px; font-weight:600}
+  .typer{display:flex; gap:8px}
+  .typer input{flex:1; background:var(--deep); border:1px solid var(--deep-line); color:var(--on-deep);
+               border-radius:11px; padding:12px; font:inherit; font-size:16px}
+  .typer input::placeholder{color:var(--on-deep-2)}
+  .typer button{background:var(--on-deep); color:var(--deep); border:0; border-radius:11px; padding:0 16px; font-weight:600}
+  .warn-strip{background:#3A2213; color:#F3C9A8; font-size:12.5px; padding:9px 14px; border-bottom:1px solid var(--deep-line); line-height:1.45}
+
+  .score{display:flex; align-items:center; gap:16px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px}
+  .score .rest{display:grid; gap:3px}
+  .score h2{font-size:19px}
+  .score .meta{font-family:var(--mono); font-size:12px; color:var(--ink-3)}
+  .items{display:grid; gap:1px; background:var(--line-soft); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
+  .item{background:var(--surface); padding:12px 14px; display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start}
+  .pip{width:9px;height:9px;border-radius:50%;margin-top:7px}
+  .pip.logrado{background:var(--ok)} .pip.parcial{background:var(--warn)} .pip.falto{background:var(--bad)}
+  .item .h{font-size:14.5px; font-weight:600; display:flex; gap:8px; align-items:baseline; flex-wrap:wrap}
+  .item .st{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase}
+  .st.logrado{color:var(--ok)} .st.parcial{color:var(--warn)} .st.falto{color:var(--bad)}
+  .item p{font-size:13.5px; color:var(--ink-2); margin-top:3px}
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:15px; display:grid; gap:9px}
+  .panel ul{margin:0; padding-left:18px; display:grid; gap:6px; font-size:14px; color:var(--ink-2)}
+  .tr{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:var(--r); padding:14px;
+      font-family:var(--mono); font-size:12.5px; line-height:1.6; max-height:300px; overflow-y:auto; white-space:pre-wrap}
+  .btns{display:flex; gap:9px; flex-wrap:wrap; margin-top:18px}
+  .btns button{flex:1 1 140px; border-radius:11px; padding:13px; border:1px solid var(--line); background:var(--surface); font-size:14px; font-weight:600}
+  .btns button.primary{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .thinking{display:grid; place-items:center; gap:10px; padding:36px 0; text-align:center; color:var(--ink-2)}
+  .bar{width:120px;height:3px;border-radius:3px;background:var(--line); overflow:hidden}
+  .bar i{display:block;width:40%;height:100%;background:var(--accent); animation:slide 1.1s infinite}
+  @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important}}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ======== código de acceso ======== -->
+  <section id="v-gate" hidden>
+    <div class="gate">
+      <div class="sigil" style="margin:0 auto">107</div>
+      <h1 style="font-size:22px">Simulador 107</h1>
+      <p class="note" style="margin:0">Ingresá el código que te dio el instructor.</p>
+      <input id="gate-in" inputmode="text" autocomplete="off" placeholder="CÓDIGO" aria-label="Código de acceso">
+      <div class="err" id="gate-err"></div>
+      <button class="go" id="gate-go" style="margin:0">Entrar</button>
+    </div>
+  </section>
+
+  <!-- ======== setup ======== -->
+  <section id="v-setup" hidden>
+    <div class="mast">
+      <div class="sigil">107</div>
+      <div><h1>Simulador 107</h1></div>
+    </div>
+    <p class="sub">Practicá la llamada al sistema de emergencias hablando en voz alta con un operador simulado. Al cortar recibís la devolución sobre qué datos pasaste y cuáles faltaron.</p>
+
+    <div class="sect">
+      <span class="lbl">Escenario</span>
+      <div class="cards" id="scenarios"></div>
+      <p class="note" id="export-wrap" hidden style="margin-top:10px">
+        <button class="backlink" id="btn-export">Exportar mis escenarios</button> — para dejarlos fijos en el código.
+      </p>
+    </div>
+
+    <div class="sect">
+      <span class="lbl">Ajustes del ejercicio</span>
+      <div class="opts">
+        <div class="row">
+          <div><div class="t">Operador</div><div class="d" id="diff-d">Atiende como en un día normal.</div></div>
+          <div class="seg" id="diff">
+            <button data-v="guia" aria-pressed="false">Guía</button>
+            <button data-v="real" aria-pressed="true">Real</button>
+            <button data-v="dificil" aria-pressed="false">Exigente</button>
+          </div>
+        </div>
+        <div class="row">
+          <div><div class="t">Voz del operador</div><div class="d">Lee las respuestas en voz alta.</div></div>
+          <button class="sw" id="sw-voice" aria-pressed="true" aria-label="Voz del operador"></button>
+        </div>
+        <div class="row">
+          <div><div class="t">Manos libres</div><div class="d">El micrófono se abre solo. No hay que tocar nada durante la llamada.</div></div>
+          <button class="sw" id="sw-manos" aria-pressed="true" aria-label="Manos libres"></button>
+        </div>
+        <div class="row" id="row-pausa">
+          <div><div class="t">Pausa para enviar</div><div class="d">Cuánto silencio espera antes de mandar lo que dijiste.</div></div>
+          <div class="seg" id="pausa">
+            <button data-v="900" aria-pressed="false">Corta</button>
+            <button data-v="1500" aria-pressed="true">Normal</button>
+            <button data-v="2400" aria-pressed="false">Larga</button>
+          </div>
+        </div>
+        <div class="row">
+          <div><div class="t">Checklist a la vista</div><div class="d">Para la primera práctica del alumno.</div></div>
+          <button class="sw" id="sw-guide" aria-pressed="false" aria-label="Checklist a la vista"></button>
+        </div>
+      </div>
+    </div>
+
+    <button class="go" id="btn-brief" disabled>Elegí un escenario</button>
+    <p class="note" id="setup-note"></p>
+  </section>
+
+  <!-- ======== escenario propio ======== -->
+  <section id="v-nuevo" hidden>
+    <button class="backlink" id="nuevo-back">← Volver</button>
+    <div class="sect" style="margin-top:14px">
+      <span class="lbl" id="nuevo-lbl">Escenario propio</span>
+      <div class="opts">
+        <label class="f"><span>Nombre del escenario</span><input id="f-title" placeholder="Rescate en escollera · víctima con trauma"></label>
+        <label class="f"><span>Familia</span><input id="f-fam" placeholder="Ahogamiento · PCR / RCP · Trauma…"></label>
+        <label class="f"><span>Bajada corta, la que se ve en la tarjeta</span><input id="f-card" placeholder="Golpeado contra las piedras, consciente."></label>
+        <label class="f"><span>Situación que ve el alumno</span><textarea id="f-scene" rows="6" placeholder="Qué está viendo, en qué estado está la víctima, quién más hay, qué recursos tiene a mano…"></textarea></label>
+        <label class="f"><span>Ubicación real donde está parado</span><textarea id="f-addr" rows="2" placeholder="Calle, altura y referencia de acceso"></textarea></label>
+        <label class="f"><span>Localidad que conoce el operador</span><input id="f-zona" placeholder="Santa Fe capital"></label>
+        <div id="f-err" style="min-height:18px; color:var(--bad); font-size:13px"></div>
+      </div>
+    </div>
+    <button class="go" id="f-save">Guardar escenario</button>
+    <div class="btns"><button id="f-del" hidden>Borrar este escenario</button></div>
+  </section>
+
+  <!-- ======== briefing ======== -->
+  <section id="v-brief" hidden>
+    <button class="backlink" id="back-setup">← Cambiar escenario</button>
+    <div class="sect" style="margin-top:14px">
+      <span class="lbl">Lo que estás viendo</span>
+      <div class="brief">
+        <h2 id="b-title"></h2>
+        <p class="scene" id="b-scene"></p>
+        <div class="addr" id="b-addr"></div>
+        <p class="note" style="margin:0">Tenés que llamar vos. El operador no sabe nada de lo que está pasando: solo sabe lo que le digas.</p>
+      </div>
+    </div>
+    <button class="go" id="btn-call">Llamar al 107</button>
+    <p class="note">Al tocar, el navegador te va a pedir el micrófono. Tocá <b>Hablar</b>, decí tu frase, y cuando hacés silencio se envía sola.</p>
+  </section>
+
+  <!-- ======== llamada ======== -->
+  <section id="v-call" hidden>
+    <div class="call">
+      <div class="warn-strip" id="mic-warn" hidden></div>
+      <div class="callbar">
+        <div class="who">
+          <span class="dot ring" id="dot"></span>
+          <div>
+            <div class="name">107 · Emergencias</div>
+            <div class="state" id="cstate">Llamando</div>
+          </div>
+        </div>
+        <div class="clock num" id="clock">00:00</div>
+      </div>
+      <div class="feed" id="feed"></div>
+      <div class="guide" id="guide-strip" hidden></div>
+      <div class="controls">
+        <div class="estado" id="estado" data-fase="escucha" hidden><span class="pulso"></span><span id="estado-t">Te escucho</span></div>
+        <button class="ptt" id="ptt" data-on="0" disabled><span class="mic"></span><span id="ptt-t">Hablar</span></button>
+        <div class="typer" id="typer" hidden>
+          <input id="typed" placeholder="Escribí lo que dirías…" autocomplete="off">
+          <button id="send">Decir</button>
+        </div>
+        <div class="crow">
+          <button class="ghost" id="mute" hidden>Pausar micrófono</button>
+          <button class="ghost" id="toggle-type">Escribir</button>
+          <button class="hang" id="hang">Cortar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== debrief ======== -->
+  <section id="v-debrief" hidden>
+    <div id="deb-loading" class="thinking">
+      <div class="bar"><i></i></div>
+      <div>Revisando la llamada…</div>
+    </div>
+    <div id="deb-body" hidden>
+      <div class="score">
+        <svg width="74" height="74" viewBox="0 0 74 74" aria-hidden="true">
+          <circle cx="37" cy="37" r="31" fill="none" stroke="var(--line)" stroke-width="7"></circle>
+          <circle id="ring" cx="37" cy="37" r="31" fill="none" stroke="var(--accent)" stroke-width="7"
+                  stroke-linecap="round" stroke-dasharray="0 195" transform="rotate(-90 37 37)"></circle>
+          <text id="ring-t" x="37" y="42" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="19" fill="var(--ink)">0</text>
+        </svg>
+        <div class="rest">
+          <h2 id="deb-title">Llamada terminada</h2>
+          <div class="meta num" id="deb-meta"></div>
+        </div>
+      </div>
+      <div class="sect">
+        <span class="lbl">Datos que pide el protocolo</span>
+        <div class="items" id="deb-items"></div>
+      </div>
+      <div class="sect" id="deb-notes-wrap">
+        <span class="lbl">Para trabajar con el alumno</span>
+        <div class="panel">
+          <div><strong style="font-size:14px">Lo que hizo bien</strong><ul id="deb-good"></ul></div>
+          <div><strong style="font-size:14px">Lo que hay que corregir</strong><ul id="deb-bad"></ul></div>
+        </div>
+      </div>
+      <div class="sect">
+        <span class="lbl">Transcripción</span>
+        <div class="tr" id="deb-tr"></div>
+      </div>
+      <div class="btns">
+        <button class="primary" id="again">Repetir el escenario</button>
+        <button id="other">Otro escenario</button>
+        <button id="save">Descargar informe</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- escenarios ---------------- */
+  const SCENARIOS = [
+    { id:"laguna-inconsciente", fam:"Ahogamiento", title:"Rescate en laguna · víctima inconsciente",
+      card:"Lo sacaste del agua, no responde y no respira normalmente.",
+      scene:"Sacaste del agua a un hombre de unos 40 años y lo tenés en la arena. No responde cuando le hablás ni cuando le apretás el hombro. No respira normalmente: hace un ruido raro cada tanto. Tu compañero salió corriendo a buscar el DEA al puesto. Hay unas doscientas personas alrededor y el puesto médico está cerrado.",
+      addr:"Costanera Este, Laguna Setúbal · Puesto 3, a 200 m del acceso del Puente Colgante, bajada del estacionamiento norte.",
+      zona:"Santa Fe capital" },
+    { id:"pileta-nino", fam:"Ahogamiento", title:"Natatorio · nene rescatado consciente",
+      card:"Tose, llora y respira agitado. La madre te grita encima.",
+      scene:"Sacaste del sector profundo a un nene de unos 8 años. Está consciente, tose mucho, llora y respira agitado. Lo tenés sentado al borde del andarivel. La madre está encima tuyo gritando y no te deja hablar. Nadie más del staff está en el natatorio en este momento.",
+      addr:"Club Gimnasia y Esgrima, 4 de Enero 2011 · natatorio cubierto, planta baja, entrada por el portón lateral.",
+      zona:"Santa Fe capital" },
+    { id:"pcr-vereda", fam:"PCR / RCP", title:"PCR en la vereda del club",
+      card:"Un hombre se desplomó en la vereda. No responde, no respira.",
+      scene:"Salías del club y un hombre de unos 60 años se desplomó en la vereda delante tuyo. No responde y no respira. Hay dos personas mirando que pueden darte una mano si les decís qué hacer. Sabés que hay un DEA en la recepción del club, a unos 30 metros.",
+      addr:"4 de Enero al 2000 · vereda impar, frente a la entrada principal del club.",
+      zona:"Santa Fe capital" },
+    { id:"dos-victimas", fam:"Ahogamiento", title:"Dos víctimas fuera de zona de guardavidas",
+      card:"Dos rescatados: uno tose, el otro no responde.",
+      scene:"Rescataste a dos adolescentes de unos 15 y 17 años en una zona sin guardavidas. Uno está sentado, tose y habla. El otro está tirado boca arriba, no responde y no respira. Estás solo, sin equipo, con el celular en la mano y gente que se acerca a mirar.",
+      addr:"Costanera Este, frente al camping · 400 m al norte del Puesto 5, acceso por el camino de tierra del camping.",
+      zona:"Santa Fe capital" }
+  ];
+
+  const CHECKS = [
+    {id:"ubicacion",     label:"Ubicación exacta y cómo llegar"},
+    {id:"motivo",        label:"Qué pasó, en una frase"},
+    {id:"victimas",      label:"Cuántas víctimas y edad aproximada"},
+    {id:"estado",        label:"Si responde y si respira"},
+    {id:"riesgos",       label:"Riesgos y accesos para el móvil"},
+    {id:"identificacion",label:"Quién llama y teléfono de contacto"},
+    {id:"indicaciones",  label:"Siguió las indicaciones del operador"},
+    {id:"cierre",        label:"No cortó antes que el operador"},
+    {id:"comunicacion",  label:"Habló claro y sin divagar"}
+  ];
+
+  const DIFF_TXT = {
+    guia:"Acompaña, repregunta con paciencia y ayuda a ordenar.",
+    real:"Atiende como en un día normal.",
+    dificil:"Apurado, con ruido en la línea y poca paciencia."
+  };
+
+  const APERTURA = "107, emergencias. ¿Cuál es su emergencia?";
+
+  const S = { scn:null, diff:"real", voice:true, guide:false, manos:true, pausa:1500,
+              turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
+              hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"" };
+
+  const $ = s => document.querySelector(s);
+  const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
+  function show(v){ for(const k in views) views[k].hidden = (k!==v); window.scrollTo(0,0); }
+
+  /* ---------------- servidor ---------------- */
+  async function api(payload){
+    const r = await fetch("/api/chat", {
+      method:"POST",
+      headers:{"content-type":"application/json", "x-codigo":S.codigo},
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json().catch(()=>({error:"respuesta_ilegible"}));
+    if(!r.ok){ const e = new Error(data.detalle||data.error||"error"); e.code = data.error; e.status = r.status; throw e; }
+    return data;
+  }
+
+  /* ---------------- puerta de acceso ---------------- */
+  (async function init(){
+    S.codigo = localStorage.getItem("sim107_codigo") || "";
+    let requiere = false;
+    try{ const r = await fetch("/api/chat"); requiere = (await r.json()).requiereCodigo; }catch(e){}
+    if(requiere && !S.codigo){ show("gate"); $("#gate-in").focus(); }
+    else show("setup");
+  })();
+
+  $("#gate-go").addEventListener("click", async ()=>{
+    const v = $("#gate-in").value.trim();
+    if(!v) return;
+    $("#gate-err").textContent = "";
+    try{
+      S.codigo = v;
+      await api({modo:"verificar"});
+      localStorage.setItem("sim107_codigo", v);
+      show("setup");
+    }catch(e){
+      if(e.code === "codigo_invalido"){ S.codigo=""; $("#gate-err").textContent = "Ese código no es el correcto."; }
+      else { localStorage.setItem("sim107_codigo", v); show("setup"); }
+    }
+  });
+  $("#gate-in").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#gate-go").click(); });
+
+  /* ---------------- setup ---------------- */
+  /* --- escenarios propios, guardados en este navegador --- */
+  function cargarMios(){ try{ const v = JSON.parse(localStorage.getItem("sim107_mios")||"[]"); return Array.isArray(v)?v:[]; }catch(e){ return []; } }
+  function guardarMios(){ try{ localStorage.setItem("sim107_mios", JSON.stringify(MIOS)); }catch(e){} }
+  let MIOS = cargarMios();
+  let editandoId = null;
+
+  const cardsEl = $("#scenarios");
+  function renderCards(){
+    cardsEl.innerHTML = "";
+    SCENARIOS.concat(MIOS).forEach(sc=>{
+      const b = document.createElement("button");
+      b.className="card"; b.type="button"; b.setAttribute("aria-pressed", String(!!(S.scn && S.scn.id===sc.id))); b.dataset.id=sc.id;
+      b.innerHTML = '<div class="top"><h3></h3><span class="tag"></span></div><p></p><div class="where"></div>';
+      b.querySelector("h3").textContent = sc.title;
+      b.querySelector(".tag").textContent = sc.fam;
+      b.querySelector("p").textContent = sc.card;
+      b.querySelector(".where").textContent = String(sc.addr||"").split("·")[0].trim();
+      if(sc.mio){
+        const m = document.createElement("div"); m.className="mine";
+        const ed = document.createElement("span"); ed.textContent="Editar"; ed.setAttribute("role","button"); ed.tabIndex=0;
+        ed.addEventListener("click", ev=>{ ev.stopPropagation(); abrirForm(sc.id); });
+        m.appendChild(ed); b.appendChild(m);
+      }
+      b.addEventListener("click", ()=>{
+        S.scn = sc;
+        [...cardsEl.children].forEach(c=>c.setAttribute("aria-pressed", String(c.dataset.id===sc.id)));
+        const go = $("#btn-brief"); go.disabled=false; go.textContent="Ver la situación";
+      });
+      cardsEl.appendChild(b);
+    });
+    const add = document.createElement("button");
+    add.className="card add"; add.type="button"; add.textContent="+ Cargar un escenario propio";
+    add.addEventListener("click", ()=>abrirForm(null));
+    cardsEl.appendChild(add);
+    $("#export-wrap").hidden = MIOS.length === 0;
+  }
+
+  function abrirForm(id){
+    editandoId = id;
+    const sc = id ? MIOS.find(m=>m.id===id) : null;
+    $("#nuevo-lbl").textContent = sc ? "Editar escenario" : "Escenario propio";
+    $("#f-title").value = sc ? sc.title : "";
+    $("#f-fam").value   = sc ? sc.fam   : "";
+    $("#f-card").value  = sc ? sc.card  : "";
+    $("#f-scene").value = sc ? sc.scene : "";
+    $("#f-addr").value  = sc ? sc.addr  : "";
+    $("#f-zona").value  = sc ? sc.zona  : "Santa Fe capital";
+    $("#f-err").textContent = "";
+    $("#f-del").hidden = !sc;
+    show("nuevo");
+  }
+
+  $("#nuevo-back").addEventListener("click", ()=>show("setup"));
+
+  $("#f-save").addEventListener("click", ()=>{
+    const v = k => $("#f-"+k).value.trim();
+    if(!v("title") || !v("scene") || !v("addr")){
+      $("#f-err").textContent = "Faltan el nombre, la situación o la ubicación.";
+      return;
+    }
+    const datos = {
+      id: editandoId || ("mio-"+Date.now()), mio:true,
+      title: v("title"), fam: v("fam") || "Propio",
+      card: v("card") || v("scene").slice(0,90),
+      scene: v("scene"), addr: v("addr"), zona: v("zona") || "Santa Fe capital"
+    };
+    const i = MIOS.findIndex(m=>m.id===datos.id);
+    if(i>=0) MIOS[i]=datos; else MIOS.push(datos);
+    guardarMios();
+    S.scn = datos;
+    renderCards();
+    $("#btn-brief").disabled=false; $("#btn-brief").textContent="Ver la situación";
+    show("setup");
+  });
+
+  $("#f-del").addEventListener("click", ()=>{
+    MIOS = MIOS.filter(m=>m.id!==editandoId);
+    guardarMios();
+    if(S.scn && S.scn.id===editandoId){ S.scn=null; $("#btn-brief").disabled=true; $("#btn-brief").textContent="Elegí un escenario"; }
+    renderCards();
+    show("setup");
+  });
+
+  $("#btn-export").addEventListener("click", ()=>{
+    const txt = JSON.stringify(MIOS.map(({mio, ...r})=>r), null, 2);
+    const blob = new Blob([txt], {type:"application/json;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "escenarios-107.json";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+
+  renderCards();
+
+  $("#diff").addEventListener("click", e=>{
+    const b = e.target.closest("button[data-v]"); if(!b) return;
+    S.diff = b.dataset.v;
+    [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+    $("#diff-d").textContent = DIFF_TXT[S.diff];
+  });
+  $("#pausa").addEventListener("click", e=>{
+    const b = e.target.closest("button[data-v]"); if(!b) return;
+    S.pausa = Number(b.dataset.v);
+    [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+  });
+  function toggle(el,key,despues){
+    el.addEventListener("click", ()=>{ S[key]=!S[key]; el.setAttribute("aria-pressed", String(S[key])); if(despues) despues(); });
+  }
+  toggle($("#sw-voice"),"voice"); toggle($("#sw-guide"),"guide");
+  toggle($("#sw-manos"),"manos", ()=>{ $("#row-pausa").hidden = !S.manos; });
+
+  $("#btn-brief").addEventListener("click", ()=>{
+    if(!S.scn) return;
+    $("#b-title").textContent = S.scn.title;
+    $("#b-scene").textContent = S.scn.scene;
+    $("#b-addr").textContent = S.scn.addr;
+    show("brief");
+  });
+  $("#back-setup").addEventListener("click", ()=>show("setup"));
+
+  /* ---------------- voz ---------------- */
+  let voices = [];
+  function loadVoices(){ try{ voices = window.speechSynthesis ? speechSynthesis.getVoices() : []; }catch(e){ voices=[]; } }
+  if(window.speechSynthesis){ loadVoices(); speechSynthesis.addEventListener("voiceschanged", loadVoices); }
+  function pickVoice(){
+    const pref=["es-ar","es-419","es-mx","es-us","es-cl","es-es","es"];
+    for(const p of pref){ const v=voices.find(v=>(v.lang||"").toLowerCase().replace("_","-").startsWith(p)); if(v) return v; }
+    return null;
+  }
+  function speak(text){
+    return new Promise(res=>{
+      if(!S.voice || !window.speechSynthesis || !text) return res();
+      try{
+        const u = new SpeechSynthesisUtterance(text);
+        const v = pickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang="es-AR";
+        u.rate = S.diff==="dificil" ? 1.14 : 1.04;
+        let done=false; const fin=()=>{ if(!done){done=true; res();} };
+        u.onend=fin; u.onerror=fin; setTimeout(fin, Math.min(22000, 1200+text.length*95));
+        speechSynthesis.cancel(); speechSynthesis.speak(u);
+      }catch(e){ res(); }
+    });
+  }
+
+  function ringback(){
+    return new Promise(res=>{
+      let ctx;
+      try{ ctx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return setTimeout(res,1500); }
+      if(ctx.state === "suspended"){ ctx.resume().catch(()=>{}); }
+      const beep = at=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type="sine"; o.frequency.value=425; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(.05, at+.04);
+        g.gain.setValueAtTime(.05, at+.95); g.gain.linearRampToValueAtTime(0, at+1);
+        o.start(at); o.stop(at+1.05);
+      };
+      const t = ctx.currentTime + .05; beep(t); beep(t+1.9);
+      setTimeout(()=>{ try{ctx.close();}catch(e){} res(); }, 3050);
+    });
+  }
+
+  /* ---------------- llamada ---------------- */
+  const feed = $("#feed");
+  function stamp(ms){ const s=Math.max(0,Math.floor(ms/1000)); return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }
+  function addMsg(kind, text, cls){
+    const el = document.createElement("div");
+    el.className = "msg "+kind+(cls?" "+cls:"");
+    const t = Date.now()-S.t0;
+    el.innerHTML = kind==="sys" ? '<div class="bub"></div>' : '<div class="tm"></div><div class="bub"></div>';
+    if(kind!=="sys") el.querySelector(".tm").textContent = (kind==="op"?"Operador · ":"Vos · ")+stamp(t);
+    el.querySelector(".bub").textContent = text;
+    feed.appendChild(el); feed.scrollTop = feed.scrollHeight;
+    return el;
+  }
+  function logIt(who,text){ S.log.push({who, text, t: Date.now()-S.t0}); }
+
+  function instrucciones(){
+    const tone = {
+      guia:"Sos paciente: si el que llama se traba, lo guiás con preguntas simples y le decís qué dato te falta.",
+      real:"Trabajás rápido pero con calma profesional. Una pregunta por vez.",
+      dificil:"Estás desbordado: hablás rápido, pedís que repitan por ruido en la línea, cortás las divagaciones con un 'necesito la dirección primero'."
+    }[S.diff];
+    return [
+      "Sos operador/a del sistema de emergencias 107 en "+S.scn.zona+", Argentina, atendiendo una llamada real.",
+      "IMPORTANTE: no sabés nada de la escena. Solo sabés lo que la persona que llama te dice. Nunca menciones un dato que no te hayan dado.",
+      "Hablás español rioplatense, de vos. Respuestas MUY cortas: una o dos oraciones, una sola pregunta por vez. Nada de listas ni markdown.",
+      "Nunca salís del personaje, nunca decís que sos una IA, nunca evaluás ni felicitás a quien llama, nunca explicás el ejercicio.",
+      "Ya abriste la llamada con '107, emergencias. ¿Cuál es su emergencia?'. Seguí desde ahí.",
+      "Orden del interrogatorio, adaptándote a lo que te vayan diciendo: ubicación exacta con calle, altura y referencia de acceso; qué pasó; cuántas víctimas y edad aproximada; si responde y si respira normalmente; riesgos en el lugar y por dónde entra el móvil; nombre y teléfono de quien llama.",
+      "Si un dato viene vago ('en la playa', 'acá'), lo repreguntás hasta tener algo que sirva para despachar. Si ya te dieron un dato, no lo volvés a pedir.",
+      "Si la víctima no responde y no respira, das indicaciones de RCP paso a paso y marcás el ritmo; si respira, das indicaciones de posición y vigilancia.",
+      "Al final confirmás el despacho, decís qué recurso mandás y pedís que alguien espere al móvil en la entrada y que no corten hasta que vos lo digas.",
+      tone,
+      "Cuando ya despachaste y diste la última indicación, terminá tu mensaje con la marca [[CERRAR]] en una línea aparte."
+    ].join("\n");
+  }
+
+  async function ask(){
+    S.busy = true; updateControls();
+    const live = addMsg("op","…","live");
+    try{
+      const { texto } = await api({ modo:"operador", instrucciones: instrucciones(), turnos: S.turns });
+      let txt = String(texto||"").trim();
+      const cerrar = txt.includes("[[CERRAR]]");
+      txt = txt.replace("[[CERRAR]]","").trim();
+      live.classList.remove("live");
+      live.querySelector(".bub").textContent = txt;
+      S.turns.push({role:"assistant", content:txt});
+      logIt("op", txt);
+      $("#cstate").textContent = "En línea"; $("#dot").classList.remove("ring");
+      S.busy = false; S.hablando = true; updateControls();
+      await speak(txt);
+      S.hablando = false; updateControls();
+      if(cerrar && !S.ended){
+        addMsg("sys","El operador cortó la llamada.");
+        setTimeout(()=>endCall("operador"), 900);
+      } else {
+        escuchar();
+      }
+    }catch(e){
+      live.remove();
+      const map = {
+        codigo_invalido:"El código de acceso ya no es válido. Pedíselo al instructor.",
+        sin_clave:"Falta cargar la clave de API en el servidor.",
+        api:"El servicio no respondió. Tocá Hablar para reintentar."
+      };
+      addMsg("sys", (e.status===429 ? "Demasiadas llamadas seguidas. Esperá unos segundos y volvé a hablar." : (map[e.code] || "Se cortó la comunicación con el operador. Volvé a hablar para reintentar.")));
+      S.busy = false; S.hablando = false; updateControls();
+      escuchar();
+    }
+  }
+
+  function updateControls(){
+    const manos = S.manos && !S.textMode;
+    const ptt = $("#ptt"), est = $("#estado");
+
+    est.hidden = !manos;
+    ptt.hidden = manos || S.textMode;
+    $("#mute").hidden = !manos;
+
+    let fase = "escucha", txt = "Te escucho";
+    if(S.ended){ fase="mudo"; txt="Llamada terminada"; }
+    else if(S.busy){ fase="pensando"; txt="…"; }
+    else if(S.hablando){ fase="operador"; txt="El operador está hablando"; }
+    else if(S.mudo){ fase="mudo"; txt="Micrófono en pausa"; }
+    est.dataset.fase = fase;
+    $("#estado-t").textContent = txt;
+    $("#mute").textContent = S.mudo ? "Reanudar micrófono" : "Pausar micrófono";
+
+    ptt.disabled = S.busy || S.ended || S.textMode;
+    $("#send").disabled = S.busy || S.ended;
+    $("#ptt-t").textContent = S.listening ? "Enviar" : (S.busy ? "Operador hablando" : "Hablar");
+    ptt.dataset.on = S.listening ? "1" : "0";
+    $("#toggle-type").textContent = S.textMode ? "Volver a hablar" : "Escribir";
+  }
+
+  /* ---------------- reconocimiento de voz ----------------
+     Manos libres: el micrófono se abre solo cuando el operador termina de hablar,
+     junta lo que decís, y lo manda cuando detecta silencio. Se cierra mientras el
+     operador habla, si no el reconocedor se escucharía a sí mismo.               */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec=null, recVivo=false, quiereEscuchar=false;
+  let bufFinal="", bufProv="", tSilencio=null, burbuja=null, reinicios=[];
+
+  function pintarVivo(txt){
+    if(!burbuja) burbuja = addMsg("me","…","live");
+    burbuja.querySelector(".bub").textContent = txt || "…";
+    feed.scrollTop = feed.scrollHeight;
+  }
+  function quitarVivo(){ if(burbuja){ burbuja.remove(); burbuja=null; } }
+
+  function setTextMode(on, why){
+    S.textMode = on;
+    if(on) detenerEscucha();
+    $("#typer").hidden = !on;
+    if(why){ const w=$("#mic-warn"); w.hidden=false; w.textContent = why; }
+    updateControls();
+    if(!on && S.manos) escuchar();
+  }
+
+  function escuchar(){
+    if(S.textMode || S.ended || S.mudo || S.busy || S.hablando) return;
+    if(!S.manos) return;
+    quiereEscuchar = true; bufFinal = ""; bufProv = "";
+    arrancarRec();
+  }
+
+  function detenerEscucha(){
+    quiereEscuchar = false;
+    clearTimeout(tSilencio);
+    S.listening = false;
+    try{ rec && rec.stop(); }catch(e){}
+    quitarVivo();
+  }
+
+  function programarEnvio(){
+    clearTimeout(tSilencio);
+    tSilencio = setTimeout(()=>{
+      const t = (bufFinal + " " + bufProv).trim();
+      bufFinal = ""; bufProv = "";
+      if(t.length < 2){ quitarVivo(); return; }   // un ruido no es una frase
+      quitarVivo();
+      detenerEscucha();
+      sendTurn(t);
+    }, S.pausa);
+  }
+
+  function errorRec(code){
+    if(code==="not-allowed" || code==="service-not-allowed" || code==="audio-capture"){
+      setTextMode(true, "El navegador bloqueó el micrófono ("+code+(S.micDiag?" / "+S.micDiag:"")+"). Revisá el permiso del sitio o seguí escribiendo.");
+    } else if(code==="network"){
+      setTextMode(true, "El reconocimiento de voz no pudo conectarse. Seguí escribiendo por ahora.");
+    }
+    // no-speech y aborted son normales en manos libres: se reinicia solo
+  }
+
+  function arrancarRec(){
+    if(!SR){ setTextMode(true, "Este navegador no reconoce voz. Usá Chrome en Android o Safari en iPhone; mientras tanto podés escribir."); return; }
+    if(recVivo || S.textMode || S.ended) return;
+
+    const ahora = Date.now();
+    reinicios = reinicios.filter(t => ahora - t < 10000);
+    reinicios.push(ahora);
+    if(reinicios.length > 12){
+      reinicios = [];
+      S.manos = false;
+      $("#sw-manos").setAttribute("aria-pressed","false");
+      const w = $("#mic-warn"); w.hidden=false;
+      w.textContent = "El micrófono se cortaba solo, así que pasé a modo botón: tocá Hablar para cada frase.";
+      updateControls();
+      return;
+    }
+
+    try{
+      rec = new SR();
+      rec.lang = "es-AR"; rec.interimResults = true; rec.maxAlternatives = 1;
+      rec.continuous = S.manos;
+
+      rec.onresult = ev=>{
+        let fin = "", prov = "";
+        for(let i = ev.resultIndex; i < ev.results.length; i++){
+          const r = ev.results[i];
+          if(r.isFinal) fin += r[0].transcript; else prov += r[0].transcript;
+        }
+        if(fin.trim()) bufFinal = (bufFinal ? bufFinal + " " : "") + fin.trim();
+        bufProv = prov.trim();
+        pintarVivo((bufFinal + " " + bufProv).trim());
+        if(S.manos) programarEnvio();
+      };
+
+      rec.onerror = ev => errorRec(ev.error);
+
+      rec.onend = ()=>{
+        recVivo = false;
+        if(S.manos){
+          if(quiereEscuchar && !S.ended && !S.textMode) setTimeout(arrancarRec, 180);
+        }else{
+          S.listening = false; quitarVivo();
+          const t = (bufFinal + " " + bufProv).trim();
+          bufFinal = ""; bufProv = "";
+          updateControls();
+          if(t) sendTurn(t);
+        }
+      };
+
+      rec.start();
+      recVivo = true;
+      if(!S.manos) S.listening = true;
+      updateControls();
+    }catch(e){
+      recVivo = false;
+      if(!S.manos) setTextMode(true, "No se pudo abrir el micrófono ("+((e&&e.name)||"error")+"). Seguí por texto.");
+    }
+  }
+
+  function sendTurn(text){
+    text=(text||"").trim(); if(!text || S.ended) return;
+    addMsg("me", text);
+    S.turns.push({role:"user", content:text});
+    logIt("yo", text);
+    ask();
+  }
+
+  $("#ptt").addEventListener("click", ()=>{
+    if(S.busy || S.ended || S.manos) return;
+    if(S.listening){ try{ rec && rec.stop(); }catch(e){} }
+    else { try{ speechSynthesis.cancel(); }catch(e){} bufFinal=""; bufProv=""; arrancarRec(); }
+  });
+  $("#mute").addEventListener("click", ()=>{
+    S.mudo = !S.mudo;
+    if(S.mudo) detenerEscucha(); else escuchar();
+    updateControls();
+  });
+  $("#toggle-type").addEventListener("click", ()=> setTextMode(!S.textMode));
+  $("#send").addEventListener("click", ()=>{ const i=$("#typed"); sendTurn(i.value); i.value=""; });
+  $("#typed").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#send").click(); } });
+
+  /* ---------------- iniciar / cortar ---------------- */
+  $("#btn-call").addEventListener("click", async ()=>{
+    // busy arranca en true: el micrófono no se abre hasta que el operador atendió.
+    S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
+    S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
+    feed.innerHTML=""; $("#mic-warn").hidden=true; setTextMode(false);
+    S.t0 = Date.now();
+    $("#cstate").textContent="Llamando"; $("#dot").classList.add("ring"); $("#clock").textContent="00:00";
+    const gs = $("#guide-strip"); gs.hidden = !S.guide; gs.innerHTML="";
+    if(S.guide) CHECKS.slice(0,6).forEach(c=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=c.label; gs.appendChild(s); });
+    show("call");
+    clearInterval(S.tick);
+    S.tick = setInterval(()=>{ if(!S.ended) $("#clock").textContent = stamp(Date.now()-S.t0); }, 500);
+
+    try{
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("sin-api");
+      const st = await navigator.mediaDevices.getUserMedia({audio:true});
+      st.getTracks().forEach(t=>t.stop());
+    }catch(e){
+      S.micDiag = (e && (e.name||e.message)) || "desconocido";
+      const w = $("#mic-warn"); w.hidden=false;
+      w.textContent = "El permiso de micrófono no salió ("+S.micDiag+"). Probá igual con Hablar; si no anda, revisá el candado de la barra de direcciones.";
+    }
+
+    S.busy = true; updateControls();
+    await ringback();
+    // El operador atiende con la apertura fija: sale al instante y no gasta una llamada al modelo.
+    addMsg("op", APERTURA);
+    S.turns.push({role:"assistant", content:APERTURA});
+    logIt("op", APERTURA);
+    $("#cstate").textContent="En línea"; $("#dot").classList.remove("ring");
+    S.busy=false; S.hablando=true; updateControls();
+    await speak(APERTURA);
+    S.hablando=false; updateControls();
+    escuchar();
+  });
+
+  $("#hang").addEventListener("click", ()=>endCall("alumno"));
+
+  function endCall(quien){
+    if(S.ended) return;
+    S.ended=true; clearInterval(S.tick);
+    detenerEscucha();
+    try{ rec && rec.abort(); }catch(e){}
+    try{ speechSynthesis.cancel(); }catch(e){}
+    S.dur = Date.now()-S.t0; S.hungBy = quien;
+    show("debrief");
+    $("#deb-loading").hidden=false; $("#deb-body").hidden=true;
+    evaluate();
+  }
+
+  /* ---------------- debrief ---------------- */
+  function transcriptText(){
+    return S.log.map((l,i)=>"["+stamp(l.t)+"] "+(l.who==="op"?"OPERADOR":"ALUMNO ")+" (turno "+(i+1)+"): "+l.text).join("\n");
+  }
+
+  let ultimaEval = null;
+
+  async function evaluate(){
+    const tr = transcriptText();
+    $("#deb-tr").textContent = tr || "(no hubo diálogo)";
+    const mins = stamp(S.dur);
+    $("#deb-meta").textContent = S.scn.title+" · duración "+mins+" · cortó "+(S.hungBy==="alumno"?"el alumno":"el operador");
+
+    if(S.log.filter(l=>l.who==="yo").length===0){
+      $("#deb-loading").hidden=true; $("#deb-body").hidden=false;
+      $("#deb-title").textContent="Sin llamada para evaluar";
+      $("#ring-t").textContent="–"; $("#deb-items").innerHTML=""; $("#deb-notes-wrap").hidden=true;
+      return;
+    }
+
+    const prompt = [
+      "Evaluá cómo un alumno de guardavidas pidió ayuda al sistema de emergencias 107. Evaluá SOLO lo que dijo el alumno.",
+      "",
+      "ESCENARIO: "+S.scn.title,
+      "SITUACIÓN QUE VEÍA EL ALUMNO: "+S.scn.scene,
+      "UBICACIÓN REAL DONDE ESTABA: "+S.scn.addr,
+      "LA LLAMADA LA CORTÓ: "+(S.hungBy==="alumno"?"el alumno":"el operador"),
+      "DURACIÓN: "+mins,
+      "",
+      "TRANSCRIPCIÓN:",
+      tr,
+      "",
+      "Criterios (usá exactamente estos id):",
+      CHECKS.map(c=>"- "+c.id+": "+c.label).join("\n"),
+      "",
+      "Respondé SOLO con un objeto JSON con esta forma exacta:",
+      '{"puntaje": 0-100, "titular": "una frase corta de resumen", "turno_ubicacion": número de turno del alumno en que dio la ubicación útil o null, "items": [{"id":"ubicacion","estado":"logrado|parcial|falto","comentario":"una oración concreta citando lo que dijo o lo que faltó"}], "bien": ["2 a 3 frases cortas"], "corregir": ["2 a 4 frases cortas, en imperativo, dirigidas al alumno"]}',
+      "Incluí un item por cada id de la lista, en ese orden. Escribí en español rioplatense, directo, sin elogios vacíos. Si la llamada fue corta o incompleta, el puntaje debe ser bajo."
+    ].join("\n");
+
+    try{
+      const { datos } = await api({ modo:"evaluar", prompt });
+      ultimaEval = datos;
+      render(datos);
+    }catch(e){
+      $("#deb-loading").hidden=true; $("#deb-body").hidden=false;
+      $("#deb-title").textContent="No se pudo evaluar la llamada";
+      $("#ring-t").textContent="–"; $("#deb-items").innerHTML=""; $("#deb-notes-wrap").hidden=true;
+    }
+  }
+
+  function render(d){
+    $("#deb-loading").hidden=true; $("#deb-body").hidden=false;
+    const p = Math.max(0, Math.min(100, Number(d.puntaje)||0));
+    const C = 2*Math.PI*31;
+    $("#ring").setAttribute("stroke-dasharray", (p/100*C).toFixed(1)+" "+C.toFixed(1));
+    $("#ring-t").textContent = String(p);
+    $("#deb-title").textContent = d.titular ? String(d.titular) : "Llamada terminada";
+
+    let meta = $("#deb-meta").textContent;
+    const tu = Number(d.turno_ubicacion);
+    if(tu){
+      const mine = S.log.filter(l=>l.who==="yo");
+      if(mine[tu-1]) meta += " · ubicación a los "+stamp(mine[tu-1].t);
+    } else if(d.turno_ubicacion === null){
+      meta += " · nunca dio la ubicación";
+    }
+    $("#deb-meta").textContent = meta;
+
+    const box = $("#deb-items"); box.innerHTML="";
+    const byId = {}; (Array.isArray(d.items)?d.items:[]).forEach(i=>{ if(i&&i.id) byId[String(i.id)]=i; });
+    CHECKS.forEach(c=>{
+      const it = byId[c.id] || {estado:"falto", comentario:"Sin datos en la llamada."};
+      let st = String(it.estado||"falto").toLowerCase().replace("ó","o");
+      if(["logrado","parcial","falto"].indexOf(st)===-1) st="falto";
+      const row = document.createElement("div"); row.className="item";
+      row.innerHTML = '<span class="pip"></span><div><div class="h"><span class="lb"></span><span class="st"></span></div><p></p></div>';
+      row.querySelector(".pip").classList.add(st);
+      row.querySelector(".lb").textContent = c.label;
+      const stEl = row.querySelector(".st"); stEl.classList.add(st);
+      stEl.textContent = st==="logrado" ? "Logrado" : st==="parcial" ? "A medias" : "Faltó";
+      row.querySelector("p").textContent = String(it.comentario||"");
+      box.appendChild(row);
+    });
+
+    const fill = (sel, arr)=>{
+      const ul = $(sel); ul.innerHTML="";
+      (Array.isArray(arr)?arr:[]).forEach(t=>{ const li=document.createElement("li"); li.textContent=String(t); ul.appendChild(li); });
+      if(!ul.children.length){ const li=document.createElement("li"); li.textContent="—"; ul.appendChild(li); }
+    };
+    fill("#deb-good", d.bien); fill("#deb-bad", d.corregir);
+  }
+
+  $("#save").addEventListener("click", ()=>{
+    const d = ultimaEval || {};
+    const byId = {}; (Array.isArray(d.items)?d.items:[]).forEach(i=>{ if(i&&i.id) byId[String(i.id)]=i; });
+    const txt = [
+      "SIMULADOR 107 — informe de práctica","",
+      "Escenario: "+S.scn.title,
+      "Ubicación del escenario: "+S.scn.addr,
+      "Duración: "+stamp(S.dur),
+      "Puntaje: "+(d.puntaje!=null?d.puntaje:"–")+"/100",
+      "Resumen: "+(d.titular||""),"",
+      "CRITERIOS",
+      CHECKS.map(c=>{ const i=byId[c.id]||{}; return "- "+c.label+": "+String(i.estado||"faltó").toUpperCase()+" — "+(i.comentario||""); }).join("\n"),"",
+      "LO QUE HIZO BIEN", (d.bien||[]).map(x=>"- "+x).join("\n"),"",
+      "LO QUE HAY QUE CORREGIR", (d.corregir||[]).map(x=>"- "+x).join("\n"),"",
+      "TRANSCRIPCIÓN", transcriptText()
+    ].join("\n");
+    const blob = new Blob([txt], {type:"text/plain;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "107-"+S.scn.id+"-"+new Date().toISOString().slice(0,10)+".txt";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+
+  $("#again").addEventListener("click", ()=>show("brief"));
+  $("#other").addEventListener("click", ()=>show("setup"));
+
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
+  }
+})();
+</script>
+</body>
+</html>
