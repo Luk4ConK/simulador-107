@@ -45,15 +45,40 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
 - `SCENARIOS` — los escenarios fijos. Campos: `id`, `fam`, `title`, `card` (bajada de la
   tarjeta), `scene` (lo que ve el alumno), `addr` (la ubicación real donde está parado,
   que es justamente lo que tiene que saber transmitir), `zona` (la localidad que conoce
-  el operador).
-- `CHECKS` — los nueve criterios de la rúbrica. Si agregás o sacás uno, la pantalla de
-  devolución y el informe descargable se actualizan solos.
+  el operador), `guia` (cuál de las `GUIAS` usa) y `evolucion` (los cambios de la escena
+  que se le muestran al alumno mientras espera el móvil: `[{min, texto}]`).
+- `GUIAS` — lo que cambia de un tipo de escenario a otro. Hoy existe `ahogamiento`, con:
+  `escala` (los grados de Szpilman), `clasificar` (el Bloque 2 del interrogatorio),
+  `circunstancial` (el Bloque 3), `saber` (lo que el operador sabe del cuadro y le cambia
+  lo que indica), `cambia` (ajustes a criterios globales de la rúbrica) y `checks`
+  (criterios propios). Un escenario sin `guia` funciona igual, sólo con el Bloque 1.
+- `CADENCIA` y `ARRIBOS` — cada cuánto el operador vuelve a controlar a la víctima, y
+  los rangos de cuánto tarda el móvil en llegar.
+- `CHECKS` — los nueve criterios de la rúbrica. Cada uno tiene `peso` (cuánto suma sobre
+  100), `critico` (si sin ese dato no sale el móvil) y la vara de corrección escrita:
+  qué cuenta como `logrado` y qué como `parcial`. Si agregás o sacás uno, la pantalla de
+  devolución y el informe descargable se actualizan solos, pero **los pesos tienen que
+  seguir sumando 100**.
+- `TOPE_CRITICO` — el puntaje máximo cuando falta un criterio crítico (hoy 40).
 - `DIFF_TXT` y el bloque `tone` dentro de `instrucciones()` — los tres niveles de
   operador: Guía, Real, Exigente.
 - `instrucciones()` — el prompt de sistema del operador. Es el archivo donde se afina el
   realismo: orden del interrogatorio, cuándo repregunta, cuándo da RCP guiada, cuándo
   cierra.
 - `APERTURA` — la frase con la que atiende.
+- `GLOSARIO` — vocabulario del ámbito prehospitalario y de guardavidas, para que el
+  operador entienda al alumno cuando habla técnico en vez de hacerlo repetir. **No le
+  dice nada de la escena**: es comprensión, no información.
+- `CONTEXTO` — quién es el operador y cómo trabaja. Lo más importante que vive acá: si
+  el alumno se identifica como guardavidas, el operador cambia de registro y le pide lo
+  que sólo un entrenado puede dar (tiempo de sumersión, si ya está comprimiendo, si
+  colocó el DEA). Los recursos y nombres del sistema local están pendientes de confirmar
+  con el instructor.
+
+Fase de seguimiento: `estadoLlamada()` arma, en cada turno, el bloque que le dice al
+modelo en qué minuto va y si el móvil llegó. `sondear()` hace que el operador vuelva a
+preguntar solo cuando pasó la cadencia sin que nadie hable. `novedad()` le muestra al
+alumno los cambios de la escena. El operador marca su clasificación con `[[GRADO:n]]`.
 
 Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario propio) →
 `v-brief` → `v-call` → `v-debrief`. Se muestran con `show(nombre)`.
@@ -78,6 +103,24 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   usa sólo dentro de `api/chat.js`. No la escribas en ningún archivo del repo.
 - **`api/chat.js` prueba varios modelos en orden** hasta dar con uno que la cuenta acepte,
   y recuerda cuál anduvo. Un 404 de modelo no es un error: es "probá el siguiente".
+- **El puntaje lo calcula la app, no el modelo.** El evaluador sólo decide, criterio por
+  criterio, si está logrado / a medias / faltó; `puntuar()` suma los pesos. Se hizo así
+  porque un modelo al que se le pide un 0-100 es blando: una llamada mala sacaba un
+  número aprobatorio. No vuelvas a pedirle el puntaje al modelo.
+- **El operador no puede cortar hasta que llega el móvil.** El tiempo de arribo se sortea
+  al inicio dentro del rango elegido y no se le dice al alumno. Si el modelo manda
+  `[[CERRAR]]` antes, la app le ignora la marca y la llamada sigue. Está probado: con un
+  operador que intenta cortar en todos los turnos, la app bloqueó los 3 intentos previos
+  al arribo y aceptó el primero posterior.
+- **El modelo no tiene noción del tiempo.** Hay que decírselo en cada turno; eso hace
+  `estadoLlamada()`. No se puede confiar en que lo deduzca de la transcripción.
+- **La escena cambia sola, el operador no se entera.** Las novedades de `evolucion` se le
+  muestran SÓLO al alumno. Si el operador las supiera, se rompe lo de que es ciego y el
+  alumno aprueba sin transmitir nada.
+- **La base de conocimiento está destilada, no copiada.** Los manuales no entran en un
+  prompt que se manda en cada turno, y además son material publicado de terceros. Lo que
+  hay en `GUIAS.ahogamiento.saber` son los hechos reescritos que le cambian al operador
+  lo que dice. No pegues capítulos de los manuales acá.
 - **Sin frameworks, sin build, sin dependencias.** Se despliega tal cual. Mantenerlo así.
 
 ## Variables de entorno (en Vercel, no en el repo)
@@ -99,6 +142,17 @@ mirar cuando algo no responde.
 No hay suite de tests. Lo que funcionó hasta ahora:
 
 - **Sintaxis**: extraer el `<script>` de `index.html` a un archivo y `node --check`.
+- **Rúbrica**: extraer `CHECKS`, `rubrica()` y `puntuar()` con un `new Function` y correr
+  los casos borde sin navegador: todo faltó → 0; todo logrado → 100; sin ubicación y el
+  resto perfecto → topeado en 40. Los pesos ya NO tienen que sumar 100: `puntuar()`
+  normaliza, porque cada guía agrega los suyos.
+- **Fase de seguimiento**: generar una copia de `index.html` con `CADENCIA` y `ARRIBOS` en
+  segundos en vez de minutos y un operador falso que devuelve `[[GRADO:6]]` y `[[CERRAR]]`
+  en todos los turnos. Servirla y manejarla desde el navegador. Así se ve la llamada
+  entera en 30 segundos y se comprueba lo que importa: que los cierres previos al arribo
+  queden bloqueados, que los sondeos salgan solos, que las novedades aparezcan a tiempo y
+  que ninguna marca `[[...]]` se filtre a la pantalla. El `speechSynthesis` falso necesita
+  `addEventListener`, si no el script aborta y no se engancha ningún botón.
 - **Lógica del servidor**: importar `api/chat.js` con un `global.fetch` falso y un objeto
   `res` de mentira. Así se verificó el recorrido de modelos y el mapeo de roles a Gemini
   (`assistant` → `model`) sin tocar la red.
@@ -112,17 +166,29 @@ No hay suite de tests. Lo que funcionó hasta ahora:
 
 ## Pendiente
 
-1. Afinar el prompt del operador y la rúbrica con las primeras prácticas reales. Prueba
-   clave: una llamada deliberadamente mala (sin dar dirección, cortando enseguida) tiene
-   que dar puntaje bajo. Si da alto, la rúbrica es demasiado blanda.
+1. Probar en la cancha el operador y la rúbrica nuevos. La aritmética ya está resuelta
+   (una llamada sin dirección no pasa de 40 por más que todo lo demás esté bien), pero
+   falta ver si el evaluador **aplica bien la vara** en llamadas reales, que es harina de
+   otro costal. Prueba clave: una llamada deliberadamente mala tiene que dar bajo, y una
+   buena de verdad tiene que llegar a 85+. Si una buena queda en 60, la vara está dura.
 2. Escenarios nuevos. El usuario los está escribiendo; los carga desde la app con
    "+ Cargar un escenario propio" (quedan en `localStorage`, se exportan con el botón
-   Exportar) y después se pegan en `SCENARIOS`.
-3. Poder interrumpir al operador mientras habla.
-4. Panel de instructor: escenarios compartidos entre todos los alumnos, no por navegador.
+   Exportar) y después se pegan en `SCENARIOS`. Los tres escenarios viejos de ahogamiento
+   ya usan la guía, pero les falta escribir la `evolucion`: hasta que la tengan, no se les
+   evalúa el criterio de reportar cambios.
+3. Una guía para PCR sin ahogamiento. El Bloque 1 se reutiliza tal cual; el Bloque 2
+   cambia entero (dolor previo, medicación, si hay DEA cerca).
+4. Modo lego, que es el otro público previsto. No alcanza con ablandar al operador: un
+   lego no conoce el protocolo ni sabe nombrar lo que ve, así que necesita su propia guía
+   y su propia rúbrica. El criterio de identificación, por ejemplo, vuelve a necesitar
+   teléfono de contacto, que en el de guardavidas se sacó.
+5. Poder interrumpir al operador mientras habla. Ahora importa más que antes: las
+   llamadas duran varios minutos y el alumno tiene que poder avisar un cambio en el
+   momento en que lo ve, no esperar a que el operador termine de hablar.
+6. Panel de instructor: escenarios compartidos entre todos los alumnos, no por navegador.
    Requiere base de datos.
-5. Registro de prácticas por alumno: quién practicó, cuántas veces, cómo evolucionó.
-6. Voz de mejor calidad vía API de voz (multiplica el costo, cambia mucho la experiencia).
+7. Registro de prácticas por alumno: quién practicó, cuántas veces, cómo evolucionó.
+8. Voz de mejor calidad vía API de voz (multiplica el costo, cambia mucho la experiencia).
 
 ## Convenciones
 

@@ -253,6 +253,14 @@
           </div>
         </div>
         <div class="row">
+          <div><div class="t">Tiempo de arribo del móvil</div><div class="d">Cuánto tarda la ambulancia. El operador no cierra la llamada hasta que llega.</div></div>
+          <div class="seg" id="arribo">
+            <button data-v="corto" aria-pressed="false">Corto</button>
+            <button data-v="normal" aria-pressed="true">Normal</button>
+            <button data-v="largo" aria-pressed="false">Largo</button>
+          </div>
+        </div>
+        <div class="row">
           <div><div class="t">Checklist a la vista</div><div class="d">Para la primera práctica del alumno.</div></div>
           <button class="sw" id="sw-guide" aria-pressed="false" aria-label="Checklist a la vista"></button>
         </div>
@@ -379,12 +387,12 @@
 
   /* ---------------- escenarios ---------------- */
   const SCENARIOS = [
-    { id:"laguna-inconsciente", fam:"Ahogamiento", title:"Rescate en laguna · víctima inconsciente",
+    { id:"laguna-inconsciente", fam:"Ahogamiento", guia:"ahogamiento", title:"Rescate en laguna · víctima inconsciente",
       card:"Lo sacaste del agua, no responde y no respira normalmente.",
       scene:"Sacaste del agua a un hombre de unos 40 años y lo tenés en la arena. No responde cuando le hablás ni cuando le apretás el hombro. No respira normalmente: hace un ruido raro cada tanto. Tu compañero salió corriendo a buscar el DEA al puesto. Hay unas doscientas personas alrededor y el puesto médico está cerrado.",
       addr:"Costanera Este, Laguna Setúbal · Puesto 3, a 200 m del acceso del Puente Colgante, bajada del estacionamiento norte.",
       zona:"Santa Fe capital" },
-    { id:"pileta-nino", fam:"Ahogamiento", title:"Natatorio · nene rescatado consciente",
+    { id:"pileta-nino", fam:"Ahogamiento", guia:"ahogamiento", title:"Natatorio · nene rescatado consciente",
       card:"Tose, llora y respira agitado. La madre te grita encima.",
       scene:"Sacaste del sector profundo a un nene de unos 8 años. Está consciente, tose mucho, llora y respira agitado. Lo tenés sentado al borde del andarivel. La madre está encima tuyo gritando y no te deja hablar. Nadie más del staff está en el natatorio en este momento.",
       addr:"Club Gimnasia y Esgrima, 4 de Enero 2011 · natatorio cubierto, planta baja, entrada por el portón lateral.",
@@ -394,24 +402,76 @@
       scene:"Salías del club y un hombre de unos 60 años se desplomó en la vereda delante tuyo. No responde y no respira. Hay dos personas mirando que pueden darte una mano si les decís qué hacer. Sabés que hay un DEA en la recepción del club, a unos 30 metros.",
       addr:"4 de Enero al 2000 · vereda impar, frente a la entrada principal del club.",
       zona:"Santa Fe capital" },
-    { id:"dos-victimas", fam:"Ahogamiento", title:"Dos víctimas fuera de zona de guardavidas",
+    { id:"dos-victimas", fam:"Ahogamiento", guia:"ahogamiento", title:"Dos víctimas fuera de zona de guardavidas",
       card:"Dos rescatados: uno tose, el otro no responde.",
       scene:"Rescataste a dos adolescentes de unos 15 y 17 años en una zona sin guardavidas. Uno está sentado, tose y habla. El otro está tirado boca arriba, no responde y no respira. Estás solo, sin equipo, con el celular en la mano y gente que se acerca a mirar.",
       addr:"Costanera Este, frente al camping · 400 m al norte del Puesto 5, acceso por el camino de tierra del camping.",
-      zona:"Santa Fe capital" }
+      zona:"Santa Fe capital" },
+
+    /* Primer escenario armado con guía completa y evolución. El arco es grado 6 que
+       recupera a grado 4 con buena RCP: obliga a clasificar, a reportar maniobras y a
+       avisar los cambios mientras se espera el móvil. */
+    { id:"ahogamiento-puro", fam:"Ahogamiento", guia:"ahogamiento",
+      title:"Balneario · ahogamiento puro, víctima en paro",
+      card:"Lo sacaste del agua en paro. Ahora hay que sostenerlo hasta que llegue el móvil.",
+      scene:"Sacaste del agua a un hombre de unos 35 años del sector de boyas. Lo tenés en la arena, sobre una superficie plana. No responde y no respira. No tose ni tiene espuma. No hubo zambullida ni golpe: se cansó nadando y se hundió a la vista de todos. Estuvo abajo alrededor de un minuto y medio. Tu compañero viene con el bolso y el DEA desde el puesto. El agua está templada.",
+      addr:"Balneario municipal, Costanera Este · Puesto 2, acceso por la bajada vehicular frente al camping, 150 m al sur del quincho.",
+      zona:"Santa Fe capital",
+      evolucion:[
+        {min:1.5, texto:"Diste las 5 ventilaciones de rescate y un ciclo de compresiones. Sigue sin responder y sin signos de circulación. Llega tu compañero con el DEA."},
+        {min:3,   texto:"El DEA analiza y no indica descarga. Seguís con RCP."},
+        {min:4.5, texto:"Al terminar el ciclo la víctima boquea, expulsa agua y arranca a respirar sola, con mucha espuma en boca y nariz. Le buscás el pulso radial y no se lo encontrás. Sigue sin responderte."}
+      ] }
   ];
 
+  /* ---------------- rúbrica ----------------
+     `peso` es cuánto suma cada criterio sobre 100. El puntaje lo calcula la app,
+     NO lo decide el modelo: así una llamada mala no puede zafar con un número
+     generoso. `critico:true` = sin ese dato no sale el móvil; si falta, el puntaje
+     queda topeado en TOPE_CRITICO por más que todo lo demás esté bien.
+     `logrado` y `parcial` son la vara con la que corrige el evaluador, para que no
+     improvise distinto en cada práctica. Los pesos tienen que sumar 100. */
   const CHECKS = [
-    {id:"ubicacion",     label:"Ubicación exacta y cómo llegar"},
-    {id:"motivo",        label:"Qué pasó, en una frase"},
-    {id:"victimas",      label:"Cuántas víctimas y edad aproximada"},
-    {id:"estado",        label:"Si responde y si respira"},
-    {id:"riesgos",       label:"Riesgos y accesos para el móvil"},
-    {id:"identificacion",label:"Quién llama y teléfono de contacto"},
-    {id:"indicaciones",  label:"Siguió las indicaciones del operador"},
-    {id:"cierre",        label:"No cortó antes que el operador"},
-    {id:"comunicacion",  label:"Habló claro y sin divagar"}
+    {id:"ubicacion", label:"Ubicación exacta y cómo llegar", peso:20, critico:true,
+     logrado:"Dio calle y altura, o una referencia que un móvil puede buscar sin volver a preguntar, MÁS por dónde se entra: portón, bajada, número de puesto, piso.",
+     parcial:"Dio una referencia aproximada que todavía obliga al operador a repreguntar, o dijo el lugar pero no cómo se entra."},
+
+    {id:"motivo", label:"Qué pasó, en una frase", peso:10, critico:false,
+     logrado:"En las primeras frases se entiende el tipo de emergencia: lo sacó del agua, se desplomó, se golpeó.",
+     parcial:"Se entiende recién después de que el operador repregunta, o quedó en una etiqueta vaga como 'se descompensó'."},
+
+    {id:"victimas", label:"Cuántas víctimas y edad aproximada", peso:8, critico:false,
+     logrado:"Dijo cuántas personas son y una edad aproximada de cada una.",
+     parcial:"Dijo una cosa y no la otra, o tardó en aclarar que había más de una víctima."},
+
+    {id:"estado", label:"Si responde y si respira", peso:15, critico:true,
+     logrado:"Dijo si responde y si respira normalmente, en términos observables. Si hay boqueo o respiración agónica, lo transmitió como que NO respira.",
+     parcial:"Dio sólo una de las dos cosas, o se escudó en una etiqueta ('está en paro', 'está mal') sin el dato observable detrás."},
+
+    {id:"riesgos", label:"Riesgos y accesos para el móvil", peso:8, critico:false,
+     logrado:"Avisó con qué se va a encontrar el móvil: gente alrededor, agua, tránsito, portón cerrado, escaleras, y quién lo va a estar esperando.",
+     parcial:"Mencionó algo al pasar, sin que sirva para preparar la llegada."},
+
+    {id:"identificacion", label:"Quién llama y teléfono de contacto", peso:7, critico:false,
+     logrado:"Dio su nombre, aclaró que es guardavidas y dejó un teléfono de retorno.",
+     parcial:"Dio el nombre pero no el rol, o no dejó teléfono."},
+
+    {id:"indicaciones", label:"Siguió las indicaciones del operador", peso:14, critico:false,
+     logrado:"Hizo o confirmó lo que el operador le pidió, y le avisó cuando algo cambió.",
+     parcial:"Contestó a medias, o siguió hablando sin confirmar lo que le pedían."},
+
+    {id:"cierre", label:"No cortó antes que el operador", peso:8, critico:false,
+     logrado:"Se mantuvo en línea hasta que el operador cerró, y quedó claro quién espera al móvil.",
+     parcial:"Cortó una vez despachado, pero sin que el operador cerrara la llamada."},
+
+    {id:"comunicacion", label:"Habló claro y sin divagar", peso:10, critico:false,
+     logrado:"Frases cortas, una idea por vez, sin gritar y sin perderse en detalles que no cambian el despacho.",
+     parcial:"Se entendió, pero con vueltas, repeticiones o datos irrelevantes que demoraron el despacho."}
   ];
+
+  /* Sin ubicación no llega el móvil; sin estado de la víctima no se decide el
+     recurso ni se arranca la RCP guiada. Si falta alguno, el puntaje no pasa de acá. */
+  const TOPE_CRITICO = 40;
 
   const DIFF_TXT = {
     guia:"Acompaña, repregunta con paciencia y ayuda a ordenar.",
@@ -421,9 +481,149 @@
 
   const APERTURA = "107, emergencias. ¿Cuál es su emergencia?";
 
+  /* ---------------- base de conocimiento del operador ----------------
+     Vocabulario del ámbito, para que el operador ENTIENDA al alumno cuando habla
+     técnico y no lo haga repetir como si fuera un lego.
+     OJO: esto no le dice NADA de la escena. El operador sigue siendo ciego a todo
+     lo que el alumno no le transmita; el glosario es comprensión, no información. */
+  const GLOSARIO = [
+    "PCR, paro, paro cardiorrespiratorio = no responde y no respira normalmente.",
+    "Gasping, boqueo, respiración agónica = NO es respirar. Es paro. Nunca lo tomes como que respira.",
+    "RCP 30:2, compresiones, ventilaciones de rescate, BVM o ambú = maniobras de reanimación.",
+    "DEA, DESA, desfibrilador = el aparato que analiza el ritmo y da la descarga.",
+    "Decúbito supino = boca arriba. Decúbito prono = boca abajo. PLS, posición lateral de seguridad o de recuperación = de costado.",
+    "AVDI (alerta, verbal, dolor, inconsciente) y Glasgow = escalas de conciencia.",
+    "OVACE = obstrucción de la vía aérea por cuerpo extraño. Heimlich = la maniobra para desobstruir.",
+    "Tabla espinal o rígida, collar o collarín cervical, inmovilización = manejo de sospecha de lesión de columna, típica de zambullida en agua baja.",
+    "Sumersión = el tiempo que estuvo bajo el agua. Es un dato que cambia el pronóstico: si quien llama es guardavidas, preguntáselo siempre.",
+    "Cianosis = azulado, falta de oxígeno. Espuma por boca y nariz = signo típico del ahogamiento.",
+    "Síncope, lipotimia, desmayo = perdió el conocimiento. Hidrocución o síncope por inmersión = el que se produce al entrar al agua.",
+    "Extracción o rescate = sacarlo del agua. Andarivel, zona profunda, cabecera, torre o puesto, espigón, correntada = partes del lugar donde trabaja el guardavidas.",
+    "Móvil = la ambulancia. SEM = servicio de emergencias médicas, o sea vos. Triage o triaje = ordenar por gravedad cuando hay varias víctimas.",
+    "FV (fibrilación ventricular) y TV = los ritmos que el DEA manda descargar. Asistolia = sin actividad, no se descarga.",
+    "PLSD = posición lateral de seguridad del lado derecho. Pocket mask o mascarilla de bolsillo, BVM o ambú y cánula orofaríngea = dispositivos para ventilar. Maniobra de Sellick = comprimir el esófago para evitar el vómito.",
+    "Manta térmica o de supervivencia = para que la víctima no siga perdiendo calor. Broncoaspiración = que el vómito se vaya a los pulmones.",
+    "El término correcto es ahogamiento, con o sin lesión. 'Casi ahogamiento' y 'ahogamiento seco' están en desuso: si el alumno los usa, entendelo igual pero pedile el dato observable.",
+    "Ahogamiento primario (lo que la escuela llama 'puro'): no lo precipitó otra cosa. Secundario: lo precipitó alcohol, drogas, una convulsión, un traumatismo o un cuadro cardíaco. Si sospechás secundario, preguntá qué pasó antes de entrar al agua."
+  ];
+
+  /* ---------------- contexto operativo ----------------
+     Quién es el operador y qué hace con lo que le dicen.
+     A REVISAR con el instructor: nombres y recursos reales del sistema local. */
+  const CONTEXTO = [
+    "Sos personal de salud entrenado en despacho, no alguien que sólo toma el mensaje: entendés el vocabulario técnico y lo usás si quien llama lo usa.",
+    "Todo lo que preguntás tiene un solo fin: despachar un móvil y sostener a quien llama hasta que llegue. No preguntes nada que no sirva para eso.",
+    "Si quien llama se identifica como guardavidas o personal entrenado, cambiá el registro: no le expliques RCP desde cero. Preguntale lo que sólo él te puede dar (tiempo de sumersión, si ya está comprimiendo, si colocó el DEA y qué dijo el aparato, si está ventilando, si sospecha lesión de columna) y confirmá con términos técnicos.",
+    "Si NO se identifica, no lo asumas: tratalo como a cualquier persona hasta que te diga quién es. Que sepa vocabulario técnico no te alcanza para darlo por hecho.",
+    "No te conformes con una etiqueta. Si te dicen 'está en paro' o 'se ahogó', confirmá el dato observable: '¿no responde y no respira?'.",
+    "Un dato que no sirve para despachar no es un dato: 'en la playa', 'acá en el club', 'a la vuelta' se repreguntan hasta tener algo que un chofer pueda buscar solo."
+  ];
+
+
+  /* ---------------- guías de interrogatorio por tipo de escenario ----------------
+     El Bloque 1 (ubicación, qué pasó, cuántas víctimas, responde y respira) es igual en
+     todos los escenarios y vive en instrucciones(): con eso solo ya se despacha el móvil.
+     Lo que cambia de un escenario a otro es cómo se clasifica a la víctima y qué se
+     pregunta después. Eso es una guía, y el escenario elige la suya con el campo `guia`.
+     Un escenario sin `guia` sigue funcionando igual, sólo que con el Bloque 1.
+
+     FUENTES de lo que sabe el operador, todo material de la escuela:
+     - "Recuperación de ahogados — Protocolo Brasil" (clasificación de Szpilman): la tabla de grados.
+     - "SVB Guardavidas — Soporte Vital Básico en Ahogados", 1a ed. 2023, infoguardavidas.com.ar:
+       la RCP del ahogado, el manejo del vómito y la espuma, hipotermia, DEA y cuándo no reanimar.
+     PENDIENTE de minar, están en la carpeta de bibliografía pero todavía no se usaron:
+     AHA/ECC 2025, Actualización PSE 2025, Primeros Socorros 2026, Guía del Alumno de RCP
+     para profesionales, MANUAL_SAq_GV y PHTLS 10a (el PDF de PHTLS en francés está
+     escaneado, sin capa de texto: de ese no se puede extraer nada).
+     Está DESTILADO en castellano llano, no copiado: son los hechos que le cambian al operador
+     lo que dice, no los manuales. Si algo contradice lo que se enseña en el aula, gana el aula.
+     Si esos materiales se actualizan, hay que actualizar esto a mano. */
+  const GUIAS = {
+    ahogamiento:{
+      escala:[
+        "RESCATE: salió vivo del agua, no tose ni tiene espuma. No es ahogamiento.",
+        "GRADO 1: tose, sin espuma. Reposo, abrigo, tranquilizar. Mortalidad 0%.",
+        "GRADO 2: poca espuma en boca o nariz. O2 5 l/min por cánula nasal y posición lateral de seguridad. Mortalidad 0,6%.",
+        "GRADO 3: mucha espuma, CON pulso radial. O2 15 l/min con máscara y PLS. Mortalidad 5,2%.",
+        "GRADO 4: mucha espuma, SIN pulso radial. O2 15 l/min con máscara y vigilancia estrecha: puede caer en paro. Mortalidad 19,4%.",
+        "GRADO 5: paro respiratorio. Vía aérea permeable, 5 ventilaciones de rescate y después ventilación artificial; controlar el pulso carotídeo seguido, porque puede pasar a grado 6.",
+        "GRADO 6: paro cardiorrespiratorio. 5 ventilaciones de rescate, controlar signos de circulación y si no hay, RCP 30:2 a 100-120 por minuto, con DEA si hay. Reevaluar pulso y respiración cada 2 minutos. Si recupera, se maneja como grado 4 o 5 y se vigila, porque puede volver a parar. Mortalidad 93%.",
+        "Ahogamiento primario (o 'puro'): no lo precipitó otra cosa. Secundario: lo precipitó alcohol, drogas, una convulsión, un traumatismo o un cuadro cardíaco."
+      ],
+      /* Lo que el operador sabe de este cuadro y que le cambia lo que indica. Destilado
+         de la bibliografía de la escuela (ver FUENTES arriba), escrito en castellano
+         llano y en nuestras palabras: acá no se copian los manuales. Si algo de esto
+         contradice lo que se enseña en el aula, gana el aula: corregilo acá. */
+      saber:[
+        "La RCP del ahogado NO es igual a la del paro común: 30:2 si el guardavidas está solo, y 15:2 en TODAS las edades si son dos socorristas. 100 a 120 compresiones por minuto, 5 a 6 cm de profundidad. En chicos de 1 a 9 años se comprime con una sola mano.",
+        "Se arranca siempre con 5 ventilaciones de rescate: el ahogamiento es un paro por asfixia, así que el oxígeno va primero, antes que las compresiones.",
+        "Después de los primeros 5 ciclos se evalúan ventilación y signos de circulación, y de ahí en más cada 2 minutos o 5 ciclos. El DEA pausa solo cada 2 minutos, así que los tiempos coinciden.",
+        "Vomitar durante la reanimación es lo habitual, no la excepción: pasa en la mitad de las víctimas conscientes y en el 86% de las que reciben RCP completa. Si vomita: lateralizar, limpiar la boca, volver a ponerlo boca arriba y seguir. NO es signo de mejora y no se frena la RCP por eso.",
+        "La espuma NO es vómito. No se lateraliza ni se detiene la reanimación por espuma: se limpia, o se ventila por encima y se limpia en la pausa de las compresiones. Si el alumno frena por la espuma, corregilo.",
+        "Ventilar de más infla el estómago, provoca vómito y broncoaspiración, y encima perjudica el retorno venoso al corazón. Insuflar suave, en un segundo, sólo hasta que el tórax se eleve.",
+        "Si el boca a boca no entra: revisar la hiperextensión del cuello y reintentar. Si sigue sin entrar, pensar en obstrucción de la vía aérea por cuerpo extraño.",
+        "Casi todo ahogado está hipotérmico, incluso en verano: el agua recién es térmicamente neutra cerca de los 33 grados. Y en hipotermia el pulso y la respiración pueden ser tan lentos que casi no se detectan, así que se evalúa 30 a 45 segundos antes de decidir que no hay.",
+        "A la víctima hipotérmica se la maneja con suavidad: una maniobra brusca puede desencadenar una fibrilación. Se la saca del agua en posición horizontal si se puede, se le quita la ropa mojada y se la abriga.",
+        "En hipotermia la desfibrilación puede no funcionar hasta que el cuerpo se recalienta. Por eso, en ahogamiento, no se da a nadie por muerto hasta que esté caliente.",
+        "Sólo NO se inicia RCP si la escena es insegura, si hubo más de una hora de sumersión, o si hay rigidez cadavérica, livideces o descomposición. Ante cualquier duda, se reanima.",
+        "Si recupera y vuelve a respirar solo, se maneja como grado 4 y se vigila de cerca: puede volver a caer en paro dentro de la media hora siguiente. Posición lateral de seguridad y, si hay DEA, los parches quedan puestos.",
+        "Agua dulce y agua salada se tratan igual y tienen el mismo pronóstico. Si el alumno hace esa distinción, no cambia nada de lo que le indicás.",
+        "Hidrocución o síndrome de inmersión: entrada brusca a agua fría que dispara una arritmia y puede terminar en síncope o paro. Es un mecanismo distinto del ahogamiento por cansancio, y se pregunta cómo entró al agua.",
+        "En chicos, el ritmo desfibrilable es todavía más raro que en adultos, pero igual se usa el DEA apenas esté disponible, con parches pediátricos si los hay."
+      ],
+      clasificar:[
+        "Clasificá apenas el guardavidas terminó de evaluar en la orilla. Te lo puede reportar de dos maneras y tenés que reconocer las dos:",
+        "- Te da el grado directo ('grado 5', 'está en paro respiratorio'). Ya sabés qué implica: NO repreguntes tos, espuma y pulso uno por uno. Pasá directo a lo que ese grado necesita.",
+        "- Te describe signos sueltos, porque está ocupado con la maniobra. Armá vos el cuadro: si respira, ¿tose?, ¿hay espuma en boca o nariz?, ¿poca o mucha?; si hay mucha espuma, ¿tiene pulso radial?; si no respira, ¿ya dio las 5 ventilaciones de rescate?, ¿hay signos de circulación?",
+        "En los dos casos preguntá además: tiempo aproximado de sumersión; si ya inició RCP y hace cuánto; y si es grado 6, si tiene DEA en el lugar o necesita que el móvil lleve uno."
+      ],
+      circunstancial:[
+        "Esto lo preguntás después, con el móvil ya despachado, sin apurar ni interrumpir la atención:",
+        "- Profundidad y tipo de espejo de agua (pileta, río, mar): también te dice si hay riesgo para los rescatistas.",
+        "- Temperatura del agua o sospecha de hipotermia: corre el umbral de hasta cuándo se reanima.",
+        "- Si hubo zambullida en agua poco profunda o golpe, para descartar lesión cervical. Preguntalo una vez aunque esperes que la respuesta sea que no.",
+        "- Cuántos rescatistas hay y si pueden rotar las compresiones.",
+        "- Estado de testigos y familiares, por si hace falta que alguien se ocupe de ellos."
+      ],
+      /* Acá quien llama es siempre el guardavidas en servicio, identificado por su puesto:
+         no se le pide teléfono de contacto como a un testigo anónimo. */
+      cambia:{
+        identificacion:{ label:"Se identificó como guardavidas y dijo su puesto", peso:5,
+          logrado:"Dijo su nombre, que es el guardavidas en servicio y desde qué puesto o sector llama.",
+          parcial:"Se identificó por arriba, sin dejar claro que es el guardavidas del lugar ni desde dónde."}
+      },
+      checks:[
+        {id:"sumersion", label:"Tiempo de sumersión", peso:8, critico:false,
+         logrado:"Dio el tiempo aproximado que la víctima estuvo bajo el agua, aunque fuera estimado.",
+         parcial:"Lo mencionó muy vago ('un rato', 'poco') sin un número aproximado."},
+        {id:"clasificacion", label:"Clasificó la víctima o dio los signos para clasificarla", peso:12, critico:false,
+         logrado:"Dio el grado directamente, o describió tos, espuma (poca o mucha) y pulso radial de manera que el operador pudo clasificar.",
+         parcial:"Dio algún signo suelto, insuficiente para ubicar el grado."},
+        {id:"maniobras", label:"Informó qué maniobras estaba haciendo", peso:10, critico:false,
+         logrado:"Dijo qué venía haciendo y desde cuándo: ventilaciones de rescate, RCP, DEA colocado y qué indicó el aparato.",
+         parcial:"Dijo que estaba atendiendo sin precisar qué maniobra ni desde cuándo."},
+        {id:"evolucion", label:"Reportó los cambios mientras esperaba el móvil", peso:10, critico:false,
+         logrado:"Cuando la víctima cambió de estado se lo transmitió al operador, por iniciativa propia o con el dato concreto cuando se lo preguntaron.",
+         parcial:"Contestó los controles del operador sin precisar qué había cambiado."}
+      ]
+    }
+  };
+
+  /* Cada cuánto el operador vuelve a preguntar cómo sigue la víctima mientras espera el
+     móvil. Los 2 minutos del caso crítico no son un número inventado: es el intervalo
+     real de reevaluación durante una RCP, así que practicarlo entrena el ritmo correcto. */
+  const CADENCIA = { critico:120000, estable:150000 };
+
+  /* Rangos de arribo del móvil, en minutos. La app elige un valor al azar dentro del
+     rango y NO se lo dice al alumno: es el reloj que decide cuándo el operador puede
+     cerrar. Al azar para que no se memorice el ritmo. */
+  const ARRIBOS = { corto:[3,5], normal:[5,8], largo:[8,12] };
+
   const S = { scn:null, diff:"real", voice:true, guide:false, manos:true, pausa:1500,
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
-              hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"" };
+              hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
+              arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0, evoIdx:0,
+              ultimaOp:0, rub:null };
 
   const $ = s => document.querySelector(s);
   const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
@@ -572,6 +772,11 @@
     S.pausa = Number(b.dataset.v);
     [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
   });
+  $("#arribo").addEventListener("click", e=>{
+    const b = e.target.closest("button[data-v]"); if(!b) return;
+    S.arriboKey = b.dataset.v;
+    [...e.currentTarget.children].forEach(c=>c.setAttribute("aria-pressed", String(c===b)));
+  });
   function toggle(el,key,despues){
     el.addEventListener("click", ()=>{ S[key]=!S[key]; el.setAttribute("aria-pressed", String(S[key])); if(despues) despues(); });
   }
@@ -642,35 +847,114 @@
   }
   function logIt(who,text){ S.log.push({who, text, t: Date.now()-S.t0}); }
 
-  function instrucciones(){
+  function llegoMovil(){ return (Date.now()-S.t0) >= S.arribo; }
+
+  /* El modelo no tiene noción del paso del tiempo: hay que contárselo en cada turno.
+     Este bloque es lo único que cambia de un turno al siguiente, y es lo que sostiene la
+     fase de seguimiento: mientras el móvil no llegó, el operador no puede cerrar. */
+  function estadoLlamada(sondeo){
+    const t = Date.now()-S.t0;
+    const falta = Math.max(1, Math.ceil((S.arribo-t)/60000));
+    const L = ["ESTADO DE LA LLAMADA. Esto lo sabés vos, no se lo cuentes al alumno."];
+    L.push("- Van "+Math.floor(t/60000)+" minuto(s) de llamada.");
+    if(S.grado!=null) L.push("- La última vez clasificaste a la víctima como grado "+S.grado+".");
+    if(llegoMovil()){
+      L.push("- EL MÓVIL YA LLEGÓ. Decile que está llegando y preguntale si lo ve.");
+      L.push("- Cuando te lo confirme, pedile que le pase a los paramédicos el último grado y el estado actual, y recién ahí cerrá con [[CERRAR]].");
+    } else {
+      L.push("- El móvil NO llegó todavía: faltan unos "+falta+" minuto(s), y eso no se lo decís.");
+      L.push("- NO cierres la llamada, NO uses [[CERRAR]] y NO le sugieras que corte. Te quedás en línea sosteniéndolo.");
+    }
+    if(sondeo) L.push("- AHORA: pasó un rato sin novedades y el alumno no dijo nada. Preguntá en UNA sola frase corta cómo sigue la víctima. No repitas el cuestionario.");
+    return L.join("\n");
+  }
+
+  function instrucciones(sondeo){
     const tone = {
       guia:"Sos paciente: si el que llama se traba, lo guiás con preguntas simples y le decís qué dato te falta.",
       real:"Trabajás rápido pero con calma profesional. Una pregunta por vez.",
-      dificil:"Estás desbordado: hablás rápido, pedís que repitan por ruido en la línea, cortás las divagaciones con un 'necesito la dirección primero'."
+      dificil:"Estás desbordado: hablás rápido, pedís que repitan por ruido en la línea, cortás las divagaciones pidiendo la dirección primero. No le regalás ningún dato: si no te lo dice, para vos no existe."
     }[S.diff];
-    return [
+    const g = GUIAS[S.scn.guia] || null;
+    const L = [
       "Sos operador/a del sistema de emergencias 107 en "+S.scn.zona+", Argentina, atendiendo una llamada real.",
-      "IMPORTANTE: no sabés nada de la escena. Solo sabés lo que la persona que llama te dice. Nunca menciones un dato que no te hayan dado.",
-      "Hablás español rioplatense, de vos. Respuestas MUY cortas: una o dos oraciones, una sola pregunta por vez. Nada de listas ni markdown.",
-      "Nunca salís del personaje, nunca decís que sos una IA, nunca evaluás ni felicitás a quien llama, nunca explicás el ejercicio.",
-      "Ya abriste la llamada con '107, emergencias. ¿Cuál es su emergencia?'. Seguí desde ahí.",
-      "Orden del interrogatorio, adaptándote a lo que te vayan diciendo: ubicación exacta con calle, altura y referencia de acceso; qué pasó; cuántas víctimas y edad aproximada; si responde y si respira normalmente; riesgos en el lugar y por dónde entra el móvil; nombre y teléfono de quien llama.",
-      "Si un dato viene vago ('en la playa', 'acá'), lo repreguntás hasta tener algo que sirva para despachar. Si ya te dieron un dato, no lo volvés a pedir.",
-      "Si la víctima no responde y no respira, das indicaciones de RCP paso a paso y marcás el ritmo; si respira, das indicaciones de posición y vigilancia.",
-      "Al final confirmás el despacho, decís qué recurso mandás y pedís que alguien espere al móvil en la entrada y que no corten hasta que vos lo digas.",
+      "IMPORTANTE: no sabés nada de la escena. Sólo sabés lo que la persona que llama te dice. Nunca menciones un dato que no te hayan dado, ni lo des por supuesto por más obvio que parezca.",
+      "",
+      "CÓMO TRABAJÁS:",
+      CONTEXTO.map(x=>"- "+x).join("\n"),
+      "",
+      "VOCABULARIO QUE ENTENDÉS. No te dice nada de esta escena: sólo te sirve para entender a quien llama.",
+      GLOSARIO.map(x=>"- "+x).join("\n"),
+      "",
+      "CÓMO HABLÁS:",
+      "- Español rioplatense, de vos. Respuestas MUY cortas: una o dos oraciones, una sola pregunta por vez. Nada de listas ni markdown.",
+      "- Nunca salís del personaje, nunca decís que sos una IA, nunca evaluás ni felicitás a quien llama, nunca explicás el ejercicio.",
+      "- Ya abriste la llamada con la frase de apertura. Seguí desde ahí.",
+      "",
+      "BLOQUE 1 — lo esencial, primeros segundos. Con esto solo ya podés despachar:",
+      "1. Ubicación exacta: calle, altura o referencia, y por dónde entra el móvil.",
+      "2. Qué pasó.",
+      "3. Cuántas víctimas y edad aproximada.",
+      "4. Si responde y si respira normalmente.",
+      "Si ya te dieron un dato, no lo volvés a pedir. Si viene vago, lo repreguntás hasta que sirva para despachar.",
+      "Apenas tenés esto, despachás y avisás que el móvil sale. El resto de las preguntas siguen con el móvil ya en camino."
+    ];
+    if(g){
+      L.push("", "BLOQUE 2 — clasificar y decidir instrucciones:", g.clasificar.join("\n"));
+      L.push("", "ESCALA QUE MANEJÁS:", g.escala.map(x=>"- "+x).join("\n"));
+      if(g.saber) L.push("", "LO QUE SABÉS DE ESTE CUADRO. Usalo para corregir al alumno cuando haga falta, sin dar cátedra:", g.saber.map(x=>"- "+x).join("\n"));
+      L.push("", "BLOQUE 3 — circunstancial:", g.circunstancial.join("\n"));
+    } else {
+      L.push("", "Después del Bloque 1 preguntá riesgos en el lugar, quién espera al móvil, y nombre, rol y teléfono de quien llama.");
+    }
+    L.push("",
+      "SEGUIMIENTO, mientras esperan el móvil:",
+      "- No cortás ni dejás cortar hasta que el móvil llega. La espera es parte de la práctica.",
+      "- Cada tanto volvés a preguntar cómo sigue la víctima, con UNA pregunta corta y abierta. No repitas todo el cuestionario en cada control: sería irreal y rompe el ritmo.",
+      "- Re-clasificás según lo que te contesten; no fuerces el grado que ya tenías.",
+      "- Si mejora, pasás al manejo del grado nuevo y espaciás un poco el próximo control.",
+      "- Si empeora, volvés a controlar más seguido, y si quedó en grado 6 y todavía no lo preguntaste, pedí DEA.",
+      "- Si no cambió nada, confirmás corto y seguís esperando, sin agregar preguntas nuevas.",
+      "",
+      "CIERRE, recién cuando el móvil llegó: confirmás que está llegando, pedís que le pasen a los paramédicos el último grado y estado, y cerrás. El traspaso no se da por hecho: lo pedís.",
+      "",
+      estadoLlamada(sondeo),
+      "",
       tone,
-      "Cuando ya despachaste y diste la última indicación, terminá tu mensaje con la marca [[CERRAR]] en una línea aparte."
-    ].join("\n");
+      "",
+      "MARCAS PARA EL SISTEMA, que el alumno no ve. Van en una línea aparte al final de tu mensaje:",
+      "- [[GRADO:n]] SIEMPRE, con el grado en el que clasificaste a la víctima ahora. Poné 0 si todavía no podés clasificar.",
+      "- [[CERRAR]] sólo cuando ya despachaste, el móvil llegó y hiciste el traspaso."
+    );
+    return L.join("\n");
   }
 
-  async function ask(){
+  async function ask(sondeo){
     S.busy = true; updateControls();
+    // Un sondeo es el operador hablando sin que el alumno haya dicho nada: se lo
+    // contamos como tal para que la conversación siga teniendo sentido.
+    if(sondeo) S.turns.push({role:"user", content:"[silencio: el guardavidas no dice nada]"});
     const live = addMsg("op","…","live");
     try{
-      const { texto } = await api({ modo:"operador", instrucciones: instrucciones(), turnos: S.turns });
+      const { texto } = await api({ modo:"operador", instrucciones: instrucciones(sondeo), turnos: S.turns });
       let txt = String(texto||"").trim();
-      const cerrar = txt.includes("[[CERRAR]]");
+
+      // El grado en el que clasificó. La app lo usa para la cadencia de los controles y
+      // para el informe; la marca se saca antes de mostrar o decir nada.
+      const mg = txt.match(/\[\[\s*GRADO\s*:\s*(\d)\s*\]\]/i);
+      if(mg){
+        const n = Number(mg[1]);
+        if(n>0 && n!==S.grado){ S.grado = n; S.grados.push({t:Date.now()-S.t0, g:n}); }
+      }
+      txt = txt.replace(/\[\[\s*GRADO[^\]]*\]\]/gi,"").trim();
+
+      // Sólo puede cerrar si el móvil ya llegó. Si se apura, se le ignora la marca y la
+      // llamada sigue: es justamente lo que sostiene la fase de seguimiento.
+      let cerrar = txt.includes("[[CERRAR]]");
       txt = txt.replace("[[CERRAR]]","").trim();
+      if(cerrar && !llegoMovil()) cerrar = false;
+      if(!txt) txt = "¿Cómo sigue?";
+
       live.classList.remove("live");
       live.querySelector(".bub").textContent = txt;
       S.turns.push({role:"assistant", content:txt});
@@ -678,7 +962,7 @@
       $("#cstate").textContent = "En línea"; $("#dot").classList.remove("ring");
       S.busy = false; S.hablando = true; updateControls();
       await speak(txt);
-      S.hablando = false; updateControls();
+      S.hablando = false; S.ultimaOp = Date.now(); updateControls();
       if(cerrar && !S.ended){
         addMsg("sys","El operador cortó la llamada.");
         setTimeout(()=>endCall("operador"), 900);
@@ -693,9 +977,33 @@
         api:"El servicio no respondió. Tocá Hablar para reintentar."
       };
       addMsg("sys", (e.status===429 ? "Demasiadas llamadas seguidas. Esperá unos segundos y volvé a hablar." : (map[e.code] || "Se cortó la comunicación con el operador. Volvé a hablar para reintentar.")));
-      S.busy = false; S.hablando = false; updateControls();
+      S.busy = false; S.hablando = false; S.ultimaOp = Date.now(); updateControls();
       escuchar();
     }
+  }
+
+  /* Novedades de la escena: lo que el alumno VE cambiar mientras espera el móvil. No se
+     las dice el operador, que sigue siendo ciego. Aparecen en pantalla y el alumno decide
+     si las transmite o no: ahí se juega el criterio "evolucion" de la rúbrica. */
+  function novedad(t){
+    const ev = (S.scn && S.scn.evolucion) || [];
+    while(S.evoIdx < ev.length && t >= ev[S.evoIdx].min*60000){
+      addMsg("sys","La escena cambia: "+ev[S.evoIdx].texto);
+      S.evoIdx++;
+    }
+  }
+
+  function cadencia(){ return (S.grado!=null && S.grado>=5) ? CADENCIA.critico : CADENCIA.estable; }
+
+  /* Si pasó la cadencia sin que nadie diga nada, el operador vuelve a preguntar por su
+     cuenta. Es lo que convierte la espera del móvil en práctica en vez de silencio. */
+  function sondear(){
+    if(S.ended || S.busy || S.hablando || !S.ultimaOp) return;
+    if(Date.now()-S.ultimaOp < cadencia()) return;
+    if((bufFinal+bufProv).trim()) return;   // el alumno está hablando: no lo pisamos
+    S.sondeos++;
+    detenerEscucha();
+    ask(true);
   }
 
   function updateControls(){
@@ -868,14 +1176,25 @@
     // busy arranca en true: el micrófono no se abre hasta que el operador atendió.
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
+    S.grado=null; S.grados=[]; S.sondeos=0; S.evoIdx=0; S.ultimaOp=0;
+    S.rub = rubrica(S.scn);
+    // Tiempo de arribo al azar dentro del rango: el alumno no lo sabe y no puede memorizarlo.
+    const rgo = ARRIBOS[S.arriboKey] || ARRIBOS.normal;
+    S.arribo = Math.round((rgo[0] + Math.random()*(rgo[1]-rgo[0]))*60000);
     feed.innerHTML=""; $("#mic-warn").hidden=true; setTextMode(false);
     S.t0 = Date.now();
     $("#cstate").textContent="Llamando"; $("#dot").classList.add("ring"); $("#clock").textContent="00:00";
     const gs = $("#guide-strip"); gs.hidden = !S.guide; gs.innerHTML="";
-    if(S.guide) CHECKS.slice(0,6).forEach(c=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=c.label; gs.appendChild(s); });
+    if(S.guide) S.rub.slice(0,6).forEach(c=>{ const s=document.createElement("span"); s.className="chip"; s.textContent=c.label; gs.appendChild(s); });
     show("call");
     clearInterval(S.tick);
-    S.tick = setInterval(()=>{ if(!S.ended) $("#clock").textContent = stamp(Date.now()-S.t0); }, 500);
+    S.tick = setInterval(()=>{
+      if(S.ended) return;
+      const t = Date.now()-S.t0;
+      $("#clock").textContent = stamp(t);
+      novedad(t);   // le muestra al alumno los cambios de la escena
+      sondear();    // el operador vuelve a preguntar si pasó la cadencia
+    }, 500);
 
     try{
       if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("sin-api");
@@ -896,7 +1215,7 @@
     $("#cstate").textContent="En línea"; $("#dot").classList.remove("ring");
     S.busy=false; S.hablando=true; updateControls();
     await speak(APERTURA);
-    S.hablando=false; updateControls();
+    S.hablando=false; S.ultimaOp = Date.now(); updateControls();
     escuchar();
   });
 
@@ -915,6 +1234,15 @@
   }
 
   /* ---------------- debrief ---------------- */
+  /* Sólo se le puede exigir al alumno que haya reportado los cambios que alcanzó a ver.
+     Si la llamada terminó antes, esos cambios no existieron para él. */
+  function cambiosVistos(){
+    const ev = (S.scn.evolucion||[]).slice(0, S.evoIdx);
+    if(!ev.length) return "";
+    return "CAMBIOS DE LA ESCENA QUE VIO EL ALUMNO Y TENÍA QUE TRANSMITIR:\n"
+         + ev.map(e=>"- a los "+e.min+" min: "+e.texto).join("\n") + "\n";
+  }
+
   function transcriptText(){
     return S.log.map((l,i)=>"["+stamp(l.t)+"] "+(l.who==="op"?"OPERADOR":"ALUMNO ")+" (turno "+(i+1)+"): "+l.text).join("\n");
   }
@@ -925,7 +1253,9 @@
     const tr = transcriptText();
     $("#deb-tr").textContent = tr || "(no hubo diálogo)";
     const mins = stamp(S.dur);
-    $("#deb-meta").textContent = S.scn.title+" · duración "+mins+" · cortó "+(S.hungBy==="alumno"?"el alumno":"el operador");
+    $("#deb-meta").textContent = S.scn.title+" · duración "+mins+" · cortó "+(S.hungBy==="alumno"?"el alumno":"el operador")
+      + (S.grado!=null ? " · último grado: "+S.grado : "")
+      + (S.sondeos ? " · el operador controló "+S.sondeos+" vez/veces" : "");
 
     if(S.log.filter(l=>l.who==="yo").length===0){
       $("#deb-loading").hidden=true; $("#deb-body").hidden=false;
@@ -935,7 +1265,11 @@
     }
 
     const prompt = [
-      "Evaluá cómo un alumno de guardavidas pidió ayuda al sistema de emergencias 107. Evaluá SOLO lo que dijo el alumno.",
+      "Evaluá cómo un alumno de guardavidas pidió ayuda al sistema de emergencias 107.",
+      "Evaluá SOLO lo que dijo el alumno. Lo que dijo el operador no cuenta como mérito del alumno,",
+      "y un dato que el alumno sólo confirmó después de que el operador se lo preguntó vale menos",
+      "que uno que transmitió por iniciativa propia.",
+      "No completes con lo que el alumno se supone que sabía o veía: si no lo dijo, no lo dijo.",
       "",
       "ESCENARIO: "+S.scn.title,
       "SITUACIÓN QUE VEÍA EL ALUMNO: "+S.scn.scene,
@@ -943,19 +1277,30 @@
       "LA LLAMADA LA CORTÓ: "+(S.hungBy==="alumno"?"el alumno":"el operador"),
       "DURACIÓN: "+mins,
       "",
+      cambiosVistos(),
       "TRANSCRIPCIÓN:",
       tr,
       "",
-      "Criterios (usá exactamente estos id):",
-      CHECKS.map(c=>"- "+c.id+": "+c.label).join("\n"),
+      "CRITERIOS. Para cada uno decidí si está logrado, parcial o falto, usando exactamente esta vara:",
+      S.rub.map(c=>[
+        "- "+c.id+" ("+c.label+")",
+        "    logrado: "+c.logrado,
+        "    parcial: "+c.parcial,
+        "    falto: todo lo que no llegue a parcial, incluido no haberlo mencionado nunca."
+      ].join("\n")).join("\n"),
+      "",
+      "No regales criterios: si dudás entre dos estados, elegí el más bajo.",
+      "Que el alumno haya usado vocabulario técnico correcto no alcanza por sí solo para dar un criterio por logrado.",
       "",
       "Respondé SOLO con un objeto JSON con esta forma exacta:",
-      '{"puntaje": 0-100, "titular": "una frase corta de resumen", "turno_ubicacion": número de turno del alumno en que dio la ubicación útil o null, "items": [{"id":"ubicacion","estado":"logrado|parcial|falto","comentario":"una oración concreta citando lo que dijo o lo que faltó"}], "bien": ["2 a 3 frases cortas"], "corregir": ["2 a 4 frases cortas, en imperativo, dirigidas al alumno"]}',
-      "Incluí un item por cada id de la lista, en ese orden. Escribí en español rioplatense, directo, sin elogios vacíos. Si la llamada fue corta o incompleta, el puntaje debe ser bajo."
+      '{"titular": "una frase corta de resumen", "turno_ubicacion": número de turno del alumno en que dio la ubicación útil o null, "items": [{"id":"ubicacion","estado":"logrado|parcial|falto","comentario":"una oración concreta citando lo que dijo o lo que faltó"}], "bien": ["2 a 3 frases cortas"], "corregir": ["2 a 4 frases cortas, en imperativo, dirigidas al alumno"]}',
+      "Incluí un item por cada id de la lista, en ese orden. No pongas puntaje: el puntaje lo calcula la app a partir de los estados.",
+      "Escribí en español rioplatense, directo, sin elogios vacíos."
     ].join("\n");
 
     try{
       const { datos } = await api({ modo:"evaluar", prompt });
+      datos.puntaje = puntuar(datos);
       ultimaEval = datos;
       render(datos);
     }catch(e){
@@ -963,6 +1308,42 @@
       $("#deb-title").textContent="No se pudo evaluar la llamada";
       $("#ring-t").textContent="–"; $("#deb-items").innerHTML=""; $("#deb-notes-wrap").hidden=true;
     }
+  }
+
+  /* El puntaje lo calcula la app a partir de la rúbrica, no el modelo: el modelo
+     sólo dice, criterio por criterio, si está logrado, a medias o si faltó. Así una
+     llamada mala no puede zafar con un número generoso. Parcial vale la mitad del
+     peso, y si falta un criterio crítico el total queda topeado. */
+  /* La rúbrica efectiva de una práctica: los criterios globales, con los ajustes que pida
+     la guía del escenario, más los criterios propios de esa guía. El criterio "evolucion"
+     sólo entra si el escenario tiene cambios escritos; si no, no se puede exigir.
+     Los pesos NO tienen que sumar 100: puntuar() normaliza sobre el total que haya. */
+  function rubrica(scn){
+    const g = (scn && scn.guia && GUIAS[scn.guia]) || null;
+    const cambia = (g && g.cambia) || {};
+    const extra = ((g && g.checks) || []).filter(c => c.id!=="evolucion" || ((scn.evolucion||[]).length > 0));
+    return CHECKS.map(c=>Object.assign({}, c, cambia[c.id]||{})).concat(extra);
+  }
+
+  function normEstado(v){
+    const st = String(v||"falto").toLowerCase().replace(/ó/g,"o").trim();
+    return ["logrado","parcial","falto"].indexOf(st)===-1 ? "falto" : st;
+  }
+
+  function puntuar(d){
+    const R = S.rub || CHECKS;
+    const byId = {};
+    (Array.isArray(d.items)?d.items:[]).forEach(i=>{ if(i&&i.id) byId[String(i.id)]=i; });
+    let suma = 0, tope = 0, faltoCritico = false;
+    R.forEach(c=>{
+      const st = normEstado((byId[c.id]||{}).estado);
+      suma += c.peso * (st==="logrado" ? 1 : st==="parcial" ? 0.5 : 0);
+      tope += c.peso;
+      if(c.critico && st==="falto") faltoCritico = true;
+    });
+    const total = tope ? Math.round(suma/tope*100) : 0;
+    d.topeado = faltoCritico && total > TOPE_CRITICO;
+    return faltoCritico ? Math.min(total, TOPE_CRITICO) : total;
   }
 
   function render(d){
@@ -981,14 +1362,14 @@
     } else if(d.turno_ubicacion === null){
       meta += " · nunca dio la ubicación";
     }
+    if(d.topeado) meta += " · puntaje topeado: faltó un dato crítico";
     $("#deb-meta").textContent = meta;
 
     const box = $("#deb-items"); box.innerHTML="";
     const byId = {}; (Array.isArray(d.items)?d.items:[]).forEach(i=>{ if(i&&i.id) byId[String(i.id)]=i; });
-    CHECKS.forEach(c=>{
+    S.rub.forEach(c=>{
       const it = byId[c.id] || {estado:"falto", comentario:"Sin datos en la llamada."};
-      let st = String(it.estado||"falto").toLowerCase().replace("ó","o");
-      if(["logrado","parcial","falto"].indexOf(st)===-1) st="falto";
+      const st = normEstado(it.estado);
       const row = document.createElement("div"); row.className="item";
       row.innerHTML = '<span class="pip"></span><div><div class="h"><span class="lb"></span><span class="st"></span></div><p></p></div>';
       row.querySelector(".pip").classList.add(st);
@@ -1018,7 +1399,7 @@
       "Puntaje: "+(d.puntaje!=null?d.puntaje:"–")+"/100",
       "Resumen: "+(d.titular||""),"",
       "CRITERIOS",
-      CHECKS.map(c=>{ const i=byId[c.id]||{}; return "- "+c.label+": "+String(i.estado||"faltó").toUpperCase()+" — "+(i.comentario||""); }).join("\n"),"",
+      S.rub.map(c=>{ const i=byId[c.id]||{}; return "- "+c.label+": "+String(i.estado||"faltó").toUpperCase()+" — "+(i.comentario||""); }).join("\n"),"",
       "LO QUE HIZO BIEN", (d.bien||[]).map(x=>"- "+x).join("\n"),"",
       "LO QUE HAY QUE CORREGIR", (d.corregir||[]).map(x=>"- "+x).join("\n"),"",
       "TRANSCRIPCIÓN", transcriptText()
