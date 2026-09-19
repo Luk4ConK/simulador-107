@@ -45,8 +45,9 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
 - `SCENARIOS` — los escenarios fijos. Campos: `id`, `fam`, `title`, `card` (bajada de la
   tarjeta), `scene` (lo que ve el alumno), `addr` (la ubicación real donde está parado,
   que es justamente lo que tiene que saber transmitir), `zona` (la localidad que conoce
-  el operador), `guia` (cuál de las `GUIAS` usa) y `evolucion` (los cambios de la escena
-  que se le muestran al alumno mientras espera el móvil: `[{min, texto}]`).
+  el operador), `guia` (cuál de las `GUIAS` usa) y `notasInstructor` (el guion de cómo
+  evoluciona la víctima, **para que lo cante el instructor presente**: la app no lo usa
+  ni lo evalúa).
 - `GUIAS` — lo que cambia de un tipo de escenario a otro. Hoy existe `ahogamiento`, con:
   `escala` (los grados de Szpilman), `clasificar` (el Bloque 2 del interrogatorio),
   `circunstancial` (el Bloque 3), `saber` (lo que el operador sabe del cuadro y le cambia
@@ -167,11 +168,14 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   ignora y la llamada sigue.
 - **Esto reemplazó a un diseño donde el operador se quedaba en línea hasta que llegaba el
   móvil.** Aquel venía del documento de seguimiento y cierre del instructor; quedó sin
-  efecto al probarlo en la cancha. Consecuencia a tener en cuenta: como las llamadas ahora
-  terminan cerca de los 2 minutos, los cambios de escena de `evolucion` (escritos a los
-  1,5 / 3 / 4,5 min) casi nunca llegan a dispararse, y los controles periódicos tampoco.
-  Si se quiere recuperar esa parte de la práctica hay que adelantar los tiempos de
-  `evolucion` o inventar un mecanismo de segunda llamada.
+  efecto al probarlo en la cancha.
+- **La escena no cambia dentro de la app.** Hubo una versión que le mostraba al alumno
+  cómo evolucionaba la víctima, cronometrado, para que él lo transmitiera. Se sacó: durante
+  la llamada el guardavidas tiene las manos en la víctima y no está mirando el teléfono,
+  así que era pedirle algo que no iba a hacer. Ahora eso lo canta en voz alta el instructor
+  presente, y el guion quedó en `notasInstructor` dentro del escenario, que la app no usa.
+  De paso se ahorran unos 11.000 tokens por práctica, porque cada cambio en pantalla
+  provocaba un turno más del operador.
 - **El tiempo de arribo se sortea** dentro del rango elegido y se le dice al alumno como
   estimación de llegada; lo que no se dice es que salió de un sorteo.
 - **La rúbrica efectiva se recalcula al terminar la llamada**, no al empezarla. El

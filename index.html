@@ -413,14 +413,18 @@
        avisar los cambios mientras se espera el móvil. */
     { id:"ahogamiento-puro", fam:"Ahogamiento", guia:"ahogamiento",
       title:"Balneario · ahogamiento puro, víctima en paro",
-      card:"Lo sacaste del agua en paro. Ahora hay que sostenerlo hasta que llegue el móvil.",
+      card:"Lo sacaste del agua en paro. Tenés que pedir ayuda sin soltar la reanimación.",
       scene:"Sacaste del agua a un hombre de unos 35 años del sector de boyas. Lo tenés en la arena, sobre una superficie plana. No responde y no respira. No tose ni tiene espuma. No hubo zambullida ni golpe: se cansó nadando y se hundió a la vista de todos. Estuvo abajo alrededor de un minuto y medio. Tu compañero viene con el bolso y el DEA desde el puesto. El agua está templada.",
       addr:"Balneario municipal, Costanera Este · Puesto 2, acceso por la bajada vehicular frente al camping, 150 m al sur del quincho.",
       zona:"Santa Fe capital",
-      evolucion:[
-        {min:1.5, texto:"Diste las 5 ventilaciones de rescate y un ciclo de compresiones. Sigue sin responder y sin signos de circulación. Llega tu compañero con el DEA."},
-        {min:3,   texto:"El DEA analiza y no indica descarga. Seguís con RCP."},
-        {min:4.5, texto:"Al terminar el ciclo la víctima boquea, expulsa agua y arranca a respirar sola, con mucha espuma en boca y nariz. Le buscás el pulso radial y no se lo encontrás. Sigue sin responderte."}
+      /* Guion para el INSTRUCTOR presente, no para la app: es él quien va cantando en
+         voz alta cómo evoluciona la víctima mientras el alumno atiende. La app no lo
+         muestra ni lo evalúa. Está acá para que quede junto al escenario y para el día
+         que exista el panel de instructor. */
+      notasInstructor:[
+        "Al minuto y medio: después de las 5 ventilaciones de rescate y un ciclo de compresiones, sigue sin responder y sin signos de circulación. Llega el compañero con el DEA.",
+        "A los 3 minutos: el DEA analiza y no indica descarga. Siguen con RCP.",
+        "A los 4 minutos y medio: la víctima boquea, expulsa agua y arranca a respirar sola, con mucha espuma en boca y nariz. No se le encuentra pulso radial. Sigue sin responder. Pasó a grado 4."
       ] }
   ];
 
@@ -613,9 +617,6 @@
         {id:"maniobras", label:"Informó qué maniobras estaba haciendo", peso:10, critico:false,
          logrado:"Dijo qué venía haciendo y desde cuándo: ventilaciones de rescate, compresiones, cuántos ciclos o cuánto tiempo llevaba.",
          parcial:"Dijo que estaba atendiendo sin precisar qué maniobra ni desde cuándo."},
-        {id:"evolucion", label:"Reportó los cambios mientras esperaba el móvil", peso:10, critico:false,
-         logrado:"Cuando la víctima cambió de estado se lo transmitió al operador, por iniciativa propia o con el dato concreto cuando se lo preguntaron.",
-         parcial:"Contestó los controles del operador sin precisar qué había cambiado."}
       ]
     }
   };
@@ -670,7 +671,7 @@
   const S = { scn:null, diff:"real", voice:true, guide:false, manos:true, pausa:1500,
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
-              arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0, evoIdx:0,
+              arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
               ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false };
 
   const $ = s => document.querySelector(s);
@@ -1124,17 +1125,6 @@
     }
   }
 
-  /* Novedades de la escena: lo que el alumno VE cambiar mientras espera el móvil. No se
-     las dice el operador, que sigue siendo ciego. Aparecen en pantalla y el alumno decide
-     si las transmite o no: ahí se juega el criterio "evolucion" de la rúbrica. */
-  function novedad(t){
-    const ev = (S.scn && S.scn.evolucion) || [];
-    while(S.evoIdx < ev.length && t >= ev[S.evoIdx].min*60000){
-      addMsg("sys","La escena cambia: "+ev[S.evoIdx].texto);
-      S.evoIdx++;
-    }
-  }
-
   function cadencia(){ return (S.grado!=null && S.grado>=5) ? CADENCIA.critico : CADENCIA.estable; }
 
   /* Si pasó la cadencia sin que nadie diga nada, el operador vuelve a preguntar por su
@@ -1318,7 +1308,7 @@
     // busy arranca en true: el micrófono no se abre hasta que el operador atendió.
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
-    S.grado=null; S.grados=[]; S.sondeos=0; S.evoIdx=0; S.ultimaOp=0;
+    S.grado=null; S.grados=[]; S.sondeos=0; S.ultimaOp=0;
     S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={}; S.despachado=false;
     S.rub = rubrica(S.scn);
     // Tiempo de arribo al azar dentro del rango: el alumno no lo sabe y no puede memorizarlo.
@@ -1335,7 +1325,6 @@
       if(S.ended) return;
       const t = Date.now()-S.t0;
       $("#clock").textContent = stamp(t);
-      novedad(t);   // le muestra al alumno los cambios de la escena
       sondear();    // el operador vuelve a preguntar si pasó la cadencia
     }, 500);
 
@@ -1377,15 +1366,6 @@
   }
 
   /* ---------------- debrief ---------------- */
-  /* Sólo se le puede exigir al alumno que haya reportado los cambios que alcanzó a ver.
-     Si la llamada terminó antes, esos cambios no existieron para él. */
-  function cambiosVistos(){
-    const ev = (S.scn.evolucion||[]).slice(0, S.evoIdx);
-    if(!ev.length) return "";
-    return "CAMBIOS DE LA ESCENA QUE VIO EL ALUMNO Y TENÍA QUE TRANSMITIR:\n"
-         + ev.map(e=>"- a los "+e.min+" min: "+e.texto).join("\n") + "\n";
-  }
-
   function transcriptText(){
     return S.log.map((l,i)=>"["+stamp(l.t)+"] "+(l.who==="op"?"OPERADOR":"ALUMNO ")+" (turno "+(i+1)+"): "+l.text).join("\n");
   }
@@ -1393,10 +1373,6 @@
   let ultimaEval = null;
 
   async function evaluate(){
-    // La rúbrica se recalcula acá, con la llamada terminada. Al arrancar todavía no se
-    // sabe si la escena iba a alcanzar a cambiar, y de eso depende si se le puede exigir
-    // al alumno que haya reportado los cambios.
-    S.rub = rubrica(S.scn);
     const tr = transcriptText();
     $("#deb-tr").textContent = tr || "(no hubo diálogo)";
     const mins = stamp(S.dur);
@@ -1426,7 +1402,6 @@
       "LA LLAMADA LA CORTÓ: "+(S.hungBy==="alumno"?"el alumno":"el operador"),
       "DURACIÓN: "+mins,
       "",
-      cambiosVistos(),
       "TRANSCRIPCIÓN:",
       tr,
       "",
@@ -1464,16 +1439,12 @@
      llamada mala no puede zafar con un número generoso. Parcial vale la mitad del
      peso, y si falta un criterio crítico el total queda topeado. */
   /* La rúbrica efectiva de una práctica: los criterios globales, con los ajustes que pida
-     la guía del escenario, más los criterios propios de esa guía. El criterio "evolucion"
-     sólo entra si el escenario tiene cambios escritos; si no, no se puede exigir.
+     la guía del escenario, más los criterios propios de esa guía.
      Los pesos NO tienen que sumar 100: puntuar() normaliza sobre el total que haya. */
   function rubrica(scn){
     const g = (scn && scn.guia && GUIAS[scn.guia]) || null;
     const cambia = (g && g.cambia) || {};
-    // El criterio de reportar cambios sólo se evalúa si la escena alcanzó a cambiar. Con
-    // el cierre temprano muchas llamadas terminan antes del primer cambio, y exigirlo
-    // sería reprobar al alumno por algo que nunca pasó.
-    const extra = ((g && g.checks) || []).filter(c => c.id!=="evolucion" || S.evoIdx > 0);
+    const extra = (g && g.checks) || [];
     return CHECKS.map(c=>Object.assign({}, c, cambia[c.id]||{})).concat(extra);
   }
 
