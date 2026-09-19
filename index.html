@@ -253,7 +253,7 @@
           </div>
         </div>
         <div class="row">
-          <div><div class="t">Tiempo de arribo del móvil</div><div class="d">Cuánto tarda la ambulancia. El operador no cierra la llamada hasta que llega.</div></div>
+          <div><div class="t">Tiempo de arribo del móvil</div><div class="d">Cuánto tarda la ambulancia. Es el tiempo que el operador te va a dar por teléfono.</div></div>
           <div class="seg" id="arribo">
             <button data-v="corto" aria-pressed="false">Corto</button>
             <button data-v="normal" aria-pressed="true">Normal</button>
@@ -943,12 +943,19 @@
     if(tiene.length) L.push("- Datos que YA tenés y NO volvés a pedir: "+tiene.map(x=>x.id).join(", ")+".");
 
     if(enEspera()){
-      L.push("- ESTÁS EN ESPERA. El interrogatorio TERMINÓ: ya tenés lo que necesitabas.");
-      L.push("- NO hagas preguntas nuevas. Contestá en UNA frase corta lo que te digan, dejale claro que seguís en línea, y nada más.");
-      L.push("- TU MENSAJE NO PUEDE TERMINAR EN PREGUNTA. Acusás recibo, le decís que seguís en línea y que te avise cualquier cambio, y listo. La única excepción es cuando la app te dice abajo que preguntes por cambios.");
-      L.push("- Nada de espuma, temperatura, profundidad, ritmo de compresiones, vía aérea, posición ni oxígeno: eso ya no se pregunta.");
-      L.push("- Si te dicen que la víctima cambió de estado o de grado, lo aceptás y lo anotás. NO lo verifiques repreguntando signos.");
-      if(fEs.length) L.push("- Lo único que sí podés pedir, porque todavía te falta para despachar: "+fEs.map(x=>x.pide).join("; ")+".");
+      L.push("- EL INTERROGATORIO TERMINÓ y te toca CERRAR LA LLAMADA. Ya despachaste el móvil y completaste la planilla: un operador real no se queda en línea acompañando.");
+      L.push("- NO hagas preguntas nuevas. Nada de espuma, temperatura, ritmo de compresiones, vía aérea, posición ni oxígeno.");
+      L.push("- NO le digas que te mantenga al tanto de cualquier cambio ni que seguís en línea: eso ya no va.");
+      L.push("- Cerrá así, en dos o tres frases: confirmás que el móvil va en camino, le decís que cortás la comunicación, "
+            + (S.grado === 6
+               ? "y le pedís que vuelva a llamar al 107 si cambia la situación o si necesita algo más. OJO: está en paro cardiorrespiratorio, que es lo peor posible, así que NO le pidas que avise si empeora, porque no hay empeoramiento posible."
+               : "y le pedís que vuelva a llamar al 107 si la víctima empeora.")
+            + " Terminás con la marca [[CERRAR]].");
+      L.push("- Si te dicen que la víctima cambió de estado, lo aceptás, lo acusás y cerrás igual. NO lo verifiques repreguntando signos.");
+      // Sólo si además no llegó a despachar: si ya despachó, por definición tenía lo
+      // que necesitaba, y pedirle datos mientras se le dice que cierre lo deja con dos
+      // instrucciones contradictorias.
+      if(fEs.length && !S.despachado) L.push("- Lo único que sí podés pedir antes de cortar, porque te falta para despachar: "+fEs.map(x=>x.pide).join("; ")+".");
     } else if(fEs.length){
       L.push("- TODAVÍA TE FALTA LO ESENCIAL. No sabés: "+fEs.map(x=>x.pide).join("; ")+".");
       L.push("- Preguntá por eso y sólo por eso, de a una cosa por vez, siguiendo ese orden.");
@@ -970,7 +977,7 @@
     } else {
       L.push("- El móvil está en camino y le faltan unos "+falta+" minuto(s).");
       L.push("- Si ya lo anunciaste, no repitas el tiempo salvo que te lo pregunten.");
-      L.push("- NO cierres la llamada, NO uses [[CERRAR]] y NO le sugieras que corte. Te quedás en línea.");
+      if(!enEspera()) L.push("- Todavía NO cierres: primero terminá de juntar lo que te falta.");
     }
 
     if(sondeo){
@@ -1021,14 +1028,11 @@
       if(g.saber) L.push("", "LO QUE SABÉS DE ESTE CUADRO. Es para entender lo que te dicen y para contestar si te preguntan. NO lo uses para dar clase: sólo corregís si lo que te cuentan pone en riesgo a la víctima.", g.saber.map(x=>"- "+x).join("\n"));
     }
     L.push("",
-      "POR ÚLTIMO, LA ESPERA. Es la parte más larga de la llamada y la más fácil de arruinar.",
-      "- Cuando la app te avisa que estás en espera, el interrogatorio TERMINÓ. No abrís ni una pregunta más.",
-      "- Si te dicen algo, acusás recibo en una frase y le recordás que seguís en línea. No aprovechás para preguntar otra cosa.",
-      "- Si te preguntan algo, se lo contestás: para eso seguís en la línea.",
-      "- Cada tanto, y sólo cuando la app te lo indique, preguntás si hubo algún cambio en la víctima. Nada más que eso.",
-      "- Si quedó pendiente qué indicó el DEA, lo preguntás UNA vez cuando ya lo hayan usado. Es la única pregunta nueva que te queda.",
-      "- Re-clasificás según lo que te cuenten; no fuerces el estado que ya tenías.",
-      "- No cortás ni dejás cortar hasta que el móvil llega. La espera es parte de la práctica.",
+      "POR ÚLTIMO, EL CIERRE. Apenas terminaste de juntar lo que necesitabas, cortás.",
+      "- No te quedás en línea acompañando: despachaste el móvil y completaste la planilla, y tu trabajo con esta llamada terminó. Hay otras llamadas esperando.",
+      "- Antes de cortar le decís que cortás, y en qué caso tiene que volver a llamar al 107. Eso depende del estado en que quedó la víctima, y la app te lo indica.",
+      "- Si te preguntan algo antes de que cortes, se lo contestás.",
+      "- Lo que NO hacés es dejar la llamada abierta pidiéndole que te mantenga al tanto.",
       "",
       "CIERRE, recién cuando el móvil llegó: confirmás que está llegando, pedís que le pasen a los paramédicos el último estado, y cerrás. El traspaso no se da por hecho: lo pedís.",
       "",
@@ -1040,7 +1044,7 @@
       "- [[GRADO:n]] SIEMPRE, con el grado en el que clasificaste a la víctima ahora. Poné 0 si todavía no podés clasificar.",
       "- [[DATOS:...]] SIEMPRE, con la lista separada por comas de los datos que YA tenés. Identificadores válidos: "+ESENCIALES.concat(extrasDe()).map(x=>x.id).join(", ")+". Poné [[DATOS:]] vacío si todavía no tenés ninguno. Es lo que le dice a la app qué te falta preguntar: si no la mandás, te va a hacer repetir preguntas.",
       "- [[ESPERA]] cuando ya tenés todo lo que necesitabas y pasás a sostener la llamada. De ahí en más no preguntás más nada por tu cuenta.",
-      "- [[CERRAR]] sólo cuando ya despachaste, el móvil llegó y hiciste el traspaso."
+      "- [[CERRAR]] cuando ya despachaste, terminaste de juntar lo que necesitabas y le avisaste que cortás. No antes."
     );
     return L.join("\n");
   }
@@ -1084,11 +1088,13 @@
       txt = txt.replace(/\[\[\s*ESPERA\s*\]\]/gi,"").trim();
       S.turnosOp++;
 
-      // Sólo puede cerrar si el móvil ya llegó. Si se apura, se le ignora la marca y la
-      // llamada sigue: es justamente lo que sostiene la fase de seguimiento.
+      // Puede cerrar una vez que despachó y terminó el interrogatorio: los instructores
+      // decidieron que el operador corta ahí, como en la realidad, en vez de quedarse en
+      // línea hasta que llega el móvil. Lo que se sigue bloqueando es el cierre apurado:
+      // si manda la marca antes de despachar, se le ignora y la llamada sigue.
       let cerrar = txt.includes("[[CERRAR]]");
       txt = txt.replace("[[CERRAR]]","").trim();
-      if(cerrar && !llegoMovil()) cerrar = false;
+      if(cerrar && !(S.despachado && enEspera())) cerrar = false;
       if(!txt) txt = "¿Cómo sigue?";
 
       live.classList.remove("live");
@@ -1387,6 +1393,10 @@
   let ultimaEval = null;
 
   async function evaluate(){
+    // La rúbrica se recalcula acá, con la llamada terminada. Al arrancar todavía no se
+    // sabe si la escena iba a alcanzar a cambiar, y de eso depende si se le puede exigir
+    // al alumno que haya reportado los cambios.
+    S.rub = rubrica(S.scn);
     const tr = transcriptText();
     $("#deb-tr").textContent = tr || "(no hubo diálogo)";
     const mins = stamp(S.dur);
@@ -1460,7 +1470,10 @@
   function rubrica(scn){
     const g = (scn && scn.guia && GUIAS[scn.guia]) || null;
     const cambia = (g && g.cambia) || {};
-    const extra = ((g && g.checks) || []).filter(c => c.id!=="evolucion" || ((scn.evolucion||[]).length > 0));
+    // El criterio de reportar cambios sólo se evalúa si la escena alcanzó a cambiar. Con
+    // el cierre temprano muchas llamadas terminan antes del primer cambio, y exigirlo
+    // sería reprobar al alumno por algo que nunca pasó.
+    const extra = ((g && g.checks) || []).filter(c => c.id!=="evolucion" || S.evoIdx > 0);
     return CHECKS.map(c=>Object.assign({}, c, cambia[c.id]||{})).concat(extra);
   }
 

@@ -157,13 +157,26 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   lo piden o si le cuentan una maniobra peligrosa, y ahí en una frase. El interrogatorio
   está escrito en cinco fases dentro de `instrucciones()`: esencial → acciones y material
   → aviso de despacho → el resto → espera.
-- **El operador no puede cortar hasta que llega el móvil.** El tiempo de arribo se sortea
-  al inicio dentro del rango elegido. El tiempo que FALTA sí se le dice al alumno, una vez
-  al despachar y cada vez que lo pregunte, porque un operador real da una estimación de
-  llegada; lo que no se dice es que salió de un sorteo. Si el modelo manda
-  `[[CERRAR]]` antes del arribo, la app le ignora la marca y la llamada sigue. Está probado: con un
-  operador que intenta cortar en todos los turnos, la app bloqueó los 3 intentos previos
-  al arribo y aceptó el primero posterior.
+- **El operador corta apenas despachó, no espera al móvil.** Decisión de dos instructores
+  después de probarlo: despachada la ambulancia y llena la planilla, un operador real
+  corta, porque tiene otras llamadas. Antes de cortar avisa que corta y dice en qué caso
+  hay que volver a llamar al 107; eso depende del estado en que quedó la víctima, y la app
+  se lo indica según `S.grado`. **En grado 6 no se pide avisar si empeora**: ya está en
+  paro, no hay empeoramiento posible, y pedirlo delata que el operador no entendió.
+  El cierre sigue bloqueado mientras no haya despachado: `[[CERRAR]]` antes de eso se
+  ignora y la llamada sigue.
+- **Esto reemplazó a un diseño donde el operador se quedaba en línea hasta que llegaba el
+  móvil.** Aquel venía del documento de seguimiento y cierre del instructor; quedó sin
+  efecto al probarlo en la cancha. Consecuencia a tener en cuenta: como las llamadas ahora
+  terminan cerca de los 2 minutos, los cambios de escena de `evolucion` (escritos a los
+  1,5 / 3 / 4,5 min) casi nunca llegan a dispararse, y los controles periódicos tampoco.
+  Si se quiere recuperar esa parte de la práctica hay que adelantar los tiempos de
+  `evolucion` o inventar un mecanismo de segunda llamada.
+- **El tiempo de arribo se sortea** dentro del rango elegido y se le dice al alumno como
+  estimación de llegada; lo que no se dice es que salió de un sorteo.
+- **La rúbrica efectiva se recalcula al terminar la llamada**, no al empezarla. El
+  criterio de reportar los cambios de escena sólo se puede exigir si la escena alcanzó a
+  cambiar, y eso recién se sabe al final. Calcularlo al arrancar lo excluía siempre.
 - **El modelo no tiene noción del tiempo.** Hay que decírselo en cada turno; eso hace
   `estadoLlamada()`. No se puede confiar en que lo deduzca de la transcripción.
 - **La escena cambia sola, el operador no se entera.** Las novedades de `evolucion` se le
