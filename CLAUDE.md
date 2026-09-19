@@ -158,6 +158,15 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   lo piden o si le cuentan una maniobra peligrosa, y ahí en una frase. El interrogatorio
   está escrito en cinco fases dentro de `instrucciones()`: esencial → acciones y material
   → aviso de despacho → el resto → espera.
+- **Si le toca cerrar y no cierra, corta la app.** El modelo se resiste a colgarle el
+  teléfono a alguien que está reanimando: en una práctica real, llegado el turno de
+  cerrar contestó "Recibido. Seguimos en línea" y siguió preguntando cinco turnos más.
+  Ahora, si `enEspera()` y ya despachó, se le cuenta el turno y al segundo se cierra la
+  llamada igual, con lo último que haya dicho. Probado con un operador falso que nunca
+  manda la marca.
+- **Avisar que corta y cortar van en el MISMO mensaje.** La instrucción decía "cuando ya
+  despachaste... y le avisaste que cortás", y eso se leía como avisar en un turno y
+  cortar en otro. De ahí salía el "seguimos en línea".
 - **El operador corta apenas despachó, no espera al móvil.** Decisión de dos instructores
   después de probarlo: despachada la ambulancia y llena la planilla, un operador real
   corta, porque tiene otras llamadas. Antes de cortar avisa que corta y dice en qué caso

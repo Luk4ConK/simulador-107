@@ -659,7 +659,7 @@
   /* Además del recorte, un tope duro: pasado el aviso de despacho el operador tiene
      estos turnos para terminar, y después la llamada entra en espera aunque queden
      extras sin preguntar. */
-  const TOPE_EXTRAS = 2;
+  const TOPE_EXTRAS = 1;
 
   const CADENCIA = { critico:90000, estable:120000 };
 
@@ -672,7 +672,7 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
-              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false };
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, turnosCierre:0, datos:{}, despachado:false };
 
   const $ = s => document.querySelector(s);
   const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
@@ -947,6 +947,7 @@
       L.push("- EL INTERROGATORIO TERMINÓ y te toca CERRAR LA LLAMADA. Ya despachaste el móvil y completaste la planilla: un operador real no se queda en línea acompañando.");
       L.push("- NO hagas preguntas nuevas. Nada de espuma, temperatura, ritmo de compresiones, vía aérea, posición ni oxígeno.");
       L.push("- NO le digas que te mantenga al tanto de cualquier cambio ni que seguís en línea: eso ya no va.");
+      L.push("- Este mensaje tuyo es el ÚLTIMO de la llamada. Escribilo entero y terminalo con [[CERRAR]]. No dejes el cierre para el turno que viene.");
       L.push("- Cerrá así, en dos o tres frases: confirmás que el móvil va en camino, le decís que cortás la comunicación, "
             + (S.grado === 6
                ? "y le pedís que vuelva a llamar al 107 si cambia la situación o si necesita algo más. OJO: está en paro cardiorrespiratorio, que es lo peor posible, así que NO le pidas que avise si empeora, porque no hay empeoramiento posible."
@@ -976,6 +977,7 @@
       L.push("- EL MÓVIL YA LLEGÓ. Decile que está llegando y preguntale si lo ve.");
       L.push("- Cuando te lo confirme, pedile que le pase a los paramédicos el último estado, y recién ahí cerrá con [[CERRAR]].");
     } else {
+      if(S.despachado) L.push("- Ya despachaste, así que los signos clínicos ya no te cambian nada: NO preguntes por espuma, tos, pulso, pupilas ni color. Eso lo valora el equipo cuando llegue.");
       L.push("- El móvil está en camino y le faltan unos "+falta+" minuto(s).");
       L.push("- Si ya lo anunciaste, no repitas el tiempo salvo que te lo pregunten.");
       if(!enEspera()) L.push("- Todavía NO cierres: primero terminá de juntar lo que te falta.");
@@ -1045,7 +1047,7 @@
       "- [[GRADO:n]] SIEMPRE, con el grado en el que clasificaste a la víctima ahora. Poné 0 si todavía no podés clasificar.",
       "- [[DATOS:...]] SIEMPRE, con la lista separada por comas de los datos que YA tenés. Identificadores válidos: "+ESENCIALES.concat(extrasDe()).map(x=>x.id).join(", ")+". Poné [[DATOS:]] vacío si todavía no tenés ninguno. Es lo que le dice a la app qué te falta preguntar: si no la mandás, te va a hacer repetir preguntas.",
       "- [[ESPERA]] cuando ya tenés todo lo que necesitabas y pasás a sostener la llamada. De ahí en más no preguntás más nada por tu cuenta.",
-      "- [[CERRAR]] cuando ya despachaste, terminaste de juntar lo que necesitabas y le avisaste que cortás. No antes."
+      "- [[CERRAR]] en el MISMO mensaje en el que te despedís. No uses un turno para avisar que vas a cortar y otro para cortar: avisás y cortás juntos, o no cortás nunca."
     );
     return L.join("\n");
   }
@@ -1096,6 +1098,15 @@
       let cerrar = txt.includes("[[CERRAR]]");
       txt = txt.replace("[[CERRAR]]","").trim();
       if(cerrar && !(S.despachado && enEspera())) cerrar = false;
+
+      // Y al revés: si le toca cerrar y no lo hace, corta la app. El modelo se resiste a
+      // colgarle el teléfono a alguien que está reanimando: en la práctica contestaba
+      // "seguimos en línea" y seguía preguntando. Se le da un turno de gracia y al
+      // siguiente se cierra igual, con lo último que haya dicho.
+      if(enEspera() && S.despachado){
+        S.turnosCierre++;
+        if(!cerrar && S.turnosCierre >= 2) cerrar = true;
+      }
       if(!txt) txt = "¿Cómo sigue?";
 
       live.classList.remove("live");
@@ -1309,7 +1320,7 @@
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
     S.grado=null; S.grados=[]; S.sondeos=0; S.ultimaOp=0;
-    S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={}; S.despachado=false;
+    S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.turnosCierre=0; S.datos={}; S.despachado=false;
     S.rub = rubrica(S.scn);
     // Tiempo de arribo al azar dentro del rango: el alumno no lo sabe y no puede memorizarlo.
     const rgo = ARRIBOS[S.arriboKey] || ARRIBOS.normal;
