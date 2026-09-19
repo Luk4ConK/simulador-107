@@ -81,6 +81,9 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
   realismo: orden del interrogatorio, cuándo repregunta, cuándo da RCP guiada, cuándo
   cierra.
 - `APERTURA` — la frase con la que atiende.
+- `NUMEROS` — el teclado del teléfono. `107` arranca la llamada; el resto no, y cada uno
+  explica por qué. El mensaje del 911 dice cuál es el número que corresponde, no que esté
+  mal llamar: en muchas jurisdicciones el 911 atiende y deriva.
 - `GLOSARIO` — vocabulario del ámbito prehospitalario y de guardavidas, para que el
   operador entienda al alumno cuando habla técnico en vez de hacerlo repetir. **No le
   dice nada de la escena**: es comprensión, no información.
@@ -103,7 +106,13 @@ cortaba la voz del operador en la última frase. Por eso ahora `speechSynthesis.
 sólo se llama si el que cortó fue el alumno.
 
 Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario propio) →
-`v-brief` → `v-call` → `v-debrief`. Se muestran con `show(nombre)`.
+`v-brief` → `v-dial` (el teclado del teléfono) → `v-call` → `v-debrief`. Se muestran con
+`show(nombre)`.
+
+El paso por el teclado es parte del ejercicio: el alumno tiene que saber a qué número
+llamar. Marcar cualquier otro no arranca la llamada, le explica cuál corresponde y lo
+deja volver a marcar. `iniciarLlamada()` dejó de estar pegada al botón del escenario
+justamente para que la dispare el teclado.
 
 ## Decisiones de diseño que conviene no romper
 

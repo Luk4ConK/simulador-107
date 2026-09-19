@@ -101,6 +101,25 @@
       font-family:var(--display); font-weight:700; font-size:17px; padding:16px;
       display:flex; align-items:center; justify-content:center; gap:10px}
   .go[disabled]{opacity:.45; cursor:not-allowed}
+
+  /* ---- teclado del teléfono ---- */
+  .fono{max-width:320px; margin:16px auto 0}
+  .visor{min-height:56px; display:flex; align-items:center; justify-content:center;
+         font-family:var(--mono); font-size:32px; letter-spacing:.16em; color:var(--ink);
+         border-bottom:1px solid var(--line); padding-bottom:10px}
+  .visor .ph{color:var(--ink-3); font-size:16px; letter-spacing:.03em}
+  .dial-aviso{margin-top:14px; background:var(--accent-soft); border:1px solid var(--accent);
+              border-radius:var(--r); padding:12px 14px; font-size:14.5px; line-height:1.45}
+  .teclas{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:18px}
+  .teclas button{aspect-ratio:1; border-radius:50%; border:1px solid var(--line);
+                 background:var(--surface-2); color:var(--ink); font-family:var(--display);
+                 font-size:25px; font-weight:600; display:grid; place-items:center; line-height:1}
+  .teclas button:active{background:var(--accent-soft); border-color:var(--accent)}
+  .teclas button small{display:block; font-family:var(--mono); font-size:9px;
+                       letter-spacing:.14em; color:var(--ink-3); font-weight:400; margin-top:3px}
+  .dial-fila{display:flex; align-items:center; gap:10px; margin-top:18px}
+  .dial-fila .go{margin-top:0; flex:1}
+  .borrar{border:0; background:none; color:var(--ink-2); font-size:20px; padding:12px 14px; flex:none}
   .note{margin-top:12px; font-size:12.5px; color:var(--ink-3); line-height:1.45}
   .note b{color:var(--ink-2); font-weight:600}
 
@@ -302,8 +321,38 @@
         <p class="note" style="margin:0">Tenés que llamar vos. El operador no sabe nada de lo que está pasando: solo sabe lo que le digas.</p>
       </div>
     </div>
-    <button class="go" id="btn-call">Llamar al 107</button>
-    <p class="note">Al tocar, el navegador te va a pedir el micrófono. Tocá <b>Hablar</b>, decí tu frase, y cuando hacés silencio se envía sola.</p>
+    <button class="go" id="btn-call">Agarrar el teléfono</button>
+    <p class="note">Vas a tener que marcar el número vos. Cuando la llamada empiece, el navegador te va a pedir el micrófono: decí tu frase y cuando hacés silencio se envía sola.</p>
+  </section>
+
+  <!-- ======== teclado ======== -->
+  <section id="v-dial" hidden>
+    <button class="backlink" id="back-brief">← Volver al escenario</button>
+    <div class="sect" style="margin-top:14px">
+      <span class="lbl">Agarrás el teléfono</span>
+      <div class="fono">
+        <div class="visor" id="visor"><span class="ph">Marcá el número</span></div>
+        <div class="dial-aviso" id="dial-aviso" hidden></div>
+        <div class="teclas" id="teclas">
+          <button data-k="1">1</button>
+          <button data-k="2">2<small>ABC</small></button>
+          <button data-k="3">3<small>DEF</small></button>
+          <button data-k="4">4<small>GHI</small></button>
+          <button data-k="5">5<small>JKL</small></button>
+          <button data-k="6">6<small>MNO</small></button>
+          <button data-k="7">7<small>PQRS</small></button>
+          <button data-k="8">8<small>TUV</small></button>
+          <button data-k="9">9<small>WXYZ</small></button>
+          <button data-k="*">*</button>
+          <button data-k="0">0<small>+</small></button>
+          <button data-k="#">#</button>
+        </div>
+        <div class="dial-fila">
+          <button class="go" id="llamar" disabled>Llamar</button>
+          <button class="borrar" id="borrar" hidden aria-label="Borrar">⌫</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ======== llamada ======== -->
@@ -672,11 +721,11 @@
   const S = { scn:null, diff:"real", voice:true, guide:false, manos:true, pausa:1500,
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
-              arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
+              marcado:"", arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
               ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false };
 
   const $ = s => document.querySelector(s);
-  const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
+  const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), dial:$("#v-dial"), call:$("#v-call"), debrief:$("#v-debrief")};
   function show(v){ for(const k in views) views[k].hidden = (k!==v); window.scrollTo(0,0); }
 
   /* ---------------- servidor ---------------- */
@@ -1342,7 +1391,72 @@
   $("#typed").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#send").click(); } });
 
   /* ---------------- iniciar / cortar ---------------- */
-  $("#btn-call").addEventListener("click", async ()=>{
+  $("#btn-call").addEventListener("click", abrirTeclado);
+
+  /* ---------------- teclado ----------------
+     Marcar el número es parte del protocolo: en la práctica el alumno agarra el teléfono
+     y tiene que saber a quién llamar. Los números que no corresponden no arrancan la
+     llamada: le explican por qué y lo dejan volver a marcar.
+     Ojo con el 911: en muchas jurisdicciones atiende y deriva. El mensaje no dice que
+     esté mal llamar, dice cuál es el número que corresponde, que es lo que se enseña. */
+  const NUMEROS = {
+    "107": null,
+    "911": "El 911 es la línea de emergencias general. Para una emergencia médica el número que corresponde es el 107.",
+    "100": "El 100 es Bomberos. Para una emergencia médica el número es el 107.",
+    "101": "El 101 es Policía. Para una emergencia médica el número es el 107.",
+    "103": "El 103 es Defensa Civil. Para una emergencia médica el número es el 107."
+  };
+
+  function pintarVisor(){
+    const v = $("#visor");
+    v.textContent = "";
+    if(S.marcado) v.textContent = S.marcado;
+    else { const p = document.createElement("span"); p.className = "ph"; p.textContent = "Marcá el número"; v.appendChild(p); }
+    $("#borrar").hidden = !S.marcado;
+    $("#llamar").disabled = !S.marcado;
+  }
+
+  function abrirTeclado(){
+    if(!S.scn) return;
+    S.marcado = "";
+    $("#dial-aviso").hidden = true;
+    pintarVisor();
+    show("dial");
+  }
+
+  function tecla(k){
+    if(S.marcado.length >= 12) return;
+    S.marcado += k;
+    $("#dial-aviso").hidden = true;
+    pintarVisor();
+  }
+
+  $("#teclas").addEventListener("click", e=>{
+    const b = e.target.closest("button[data-k]"); if(!b) return;
+    tecla(b.dataset.k);
+  });
+  $("#borrar").addEventListener("click", ()=>{ S.marcado = S.marcado.slice(0,-1); pintarVisor(); });
+  $("#back-brief").addEventListener("click", ()=>show("brief"));
+
+  // Teclado físico, para cuando se prueba desde una computadora.
+  document.addEventListener("keydown", e=>{
+    if(views.dial.hidden) return;
+    if(/^[0-9*#]$/.test(e.key)) tecla(e.key);
+    else if(e.key === "Backspace"){ S.marcado = S.marcado.slice(0,-1); pintarVisor(); }
+    else if(e.key === "Enter") $("#llamar").click();
+  });
+
+  $("#llamar").addEventListener("click", ()=>{
+    if(!S.marcado) return;
+    if(S.marcado === "107"){ iniciarLlamada(); return; }
+    const a = $("#dial-aviso");
+    a.textContent = NUMEROS[S.marcado] || "Ese número no corresponde a una emergencia médica. En Argentina se llama al 107.";
+    a.hidden = false;
+    S.marcado = "";
+    pintarVisor();
+  });
+
+  async function iniciarLlamada(){
     // busy arranca en true: el micrófono no se abre hasta que el operador atendió.
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
@@ -1387,7 +1501,7 @@
     await speak(APERTURA);
     S.hablando=false; S.ultimaOp = Date.now(); updateControls();
     escuchar();
-  });
+  }
 
   $("#hang").addEventListener("click", ()=>endCall("alumno"));
 
