@@ -329,11 +329,12 @@
           <input id="typed" placeholder="Escribí lo que dirías…" autocomplete="off">
           <button id="send">Decir</button>
         </div>
-        <div class="crow">
+        <div class="crow" id="crow">
           <button class="ghost" id="mute" hidden>Pausar micrófono</button>
           <button class="ghost" id="toggle-type">Escribir</button>
           <button class="hang" id="hang">Cortar</button>
         </div>
+        <button class="go" id="ver-informe" hidden>Ver la devolución</button>
       </div>
     </div>
   </section>
@@ -1150,6 +1151,14 @@
   }
 
   function updateControls(){
+    if(S.ended){
+      // Terminada la llamada no hay nada que controlar: queda la conversación a la
+      // vista y el botón para pasar a la devolución.
+      $("#estado").hidden = true; $("#ptt").hidden = true; $("#typer").hidden = true;
+      $("#crow").hidden = true; $("#ver-informe").hidden = false;
+      return;
+    }
+    $("#crow").hidden = false; $("#ver-informe").hidden = true;
     const manos = S.manos && !S.textMode;
     const ptt = $("#ptt"), est = $("#estado");
 
@@ -1364,17 +1373,28 @@
 
   $("#hang").addEventListener("click", ()=>endCall("alumno"));
 
+  /* Terminar la llamada y llevar a la devolución son dos cosas distintas. Antes iba
+     derecho al informe y quedaba brusco: cortaba la voz del operador en la última frase
+     y sacaba al alumno de la pantalla de golpe. Ahora la llamada queda terminada, con la
+     conversación a la vista, y el alumno pasa al informe cuando quiere.
+     La evaluación arranca igual en segundo plano, así el informe ya está listo. */
   function endCall(quien){
     if(S.ended) return;
     S.ended=true; clearInterval(S.tick);
     detenerEscucha();
     try{ rec && rec.abort(); }catch(e){}
-    try{ speechSynthesis.cancel(); }catch(e){}
+    // Sólo se corta la voz si el que cortó fue el alumno. Si cortó el operador, su
+    // última frase tiene que poder terminar de escucharse.
+    if(quien === "alumno"){ try{ speechSynthesis.cancel(); }catch(e){} }
     S.dur = Date.now()-S.t0; S.hungBy = quien;
-    show("debrief");
+    $("#cstate").textContent = "Llamada terminada";
+    $("#dot").classList.remove("ring");
+    updateControls();
     $("#deb-loading").hidden=false; $("#deb-body").hidden=true;
     evaluate();
   }
+
+  $("#ver-informe").addEventListener("click", ()=>show("debrief"));
 
   /* ---------------- debrief ---------------- */
   function transcriptText(){

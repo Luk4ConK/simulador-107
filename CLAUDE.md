@@ -95,6 +95,13 @@ modelo en qué minuto va y si el móvil llegó. `sondear()` hace que el operador
 preguntar solo cuando pasó la cadencia sin que nadie hable. `novedad()` le muestra al
 alumno los cambios de la escena. El operador marca su clasificación con `[[GRADO:n]]`.
 
+Terminar la llamada y pasar a la devolución son dos pasos distintos. `endCall()` deja la
+llamada terminada en `v-call`, con la conversación a la vista y el botón **Ver la
+devolución**; la evaluación arranca ahí mismo en segundo plano, así el informe ya está
+listo cuando el alumno toca el botón. Antes saltaba derecho al informe y quedaba brusco:
+cortaba la voz del operador en la última frase. Por eso ahora `speechSynthesis.cancel()`
+sólo se llama si el que cortó fue el alumno.
+
 Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario propio) →
 `v-brief` → `v-call` → `v-debrief`. Se muestran con `show(nombre)`.
 
