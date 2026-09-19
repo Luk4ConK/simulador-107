@@ -54,6 +54,11 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
   (criterios propios). Un escenario sin `guia` funciona igual, sólo con el Bloque 1.
 - `CADENCIA` y `ARRIBOS` — cada cuánto el operador vuelve a controlar a la víctima, y
   los rangos de cuánto tarda el móvil en llegar.
+- `ESENCIALES` — lo que el operador tiene que saber ANTES de anunciar que el SEM sale.
+  Mientras falte algo, la app se lo dice en cada turno y no lo deja despachar.
+- `EXTRAS` — lo que pregunta después del anuncio, de a uno por turno y sólo si no se lo
+  contaron ya. La guía del escenario suma los suyos con `extras`. Agotados los dos, la
+  llamada pasa a espera sola.
 - `CHECKS` — los nueve criterios de la rúbrica. Cada uno tiene `peso` (cuánto suma sobre
   100), `critico` (si sin ese dato no sale el móvil) y la vara de corrección escrita:
   qué cuenta como `logrado` y qué como `parcial`. Si agregás o sacás uno, la pantalla de
@@ -114,10 +119,16 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
 - **La app decide cuándo termina el interrogatorio, no el modelo.** Se probó pedírselo en
   el prompt ("cuando ya no te falte nada, callate") y no lo cumple: sigue abriendo
   preguntas nuevas en cada turno (espuma, temperatura, ritmo de compresiones) hasta que la
-  práctica se vuelve un examen. `enEspera()` lo fuerza después de `TOPE_INTERROGATORIO`
-  turnos propios (5) o `TOPE_MINUTOS` (3,5); el operador puede entrar antes con
-  `[[ESPERA]]`, nunca después. En espera tiene prohibido preguntar, salvo que le falte un
-  dato esencial para despachar o quede pendiente qué indicó el DEA.
+  práctica se vuelve un examen. Lo decide `enEspera()` a partir de dos grillas,
+  `ESENCIALES` y `EXTRAS`: mientras falte algo de la primera, el operador pregunta por eso
+  y NO puede anunciar el despacho; completada la primera, anuncia y va por los extras de a
+  uno; agotados los dos, entra en espera y tiene prohibido preguntar. El operador declara
+  lo que ya averiguó con `[[DATOS:id,id]]` y la app **acumula**, así que si un turno se
+  olvida de listar algo, no se pierde.
+- **La primera versión de esto cortaba por cantidad de turnos y estaba mal.** No miraba si
+  el operador tenía la información: con un alumno escueto lo callaba sin haber averiguado
+  nada, y con uno locuaz lo dejaba interrogando de más. `TOPE_MINUTOS` (5) quedó sólo como
+  red de seguridad por si el modelo nunca manda `[[DATOS:...]]`, no como el mecanismo.
 - **Las prohibiciones al modelo van con la frase textual.** "No le dictes maniobras" no
   alcanzó: seguía cerrando con "seguí con el ciclo 15:2" o "continúen con las
   compresiones". Hubo que listar esas frases y prohibirlas una por una. Si aparece una
@@ -186,6 +197,17 @@ No hay suite de tests. Lo que funcionó hasta ahora:
   micrófono no se abra durante el tono de llamada.
 - Lo que no se puede probar así: voz real, ruido ambiente y latencia percibida. Eso lo
   prueba el usuario en el celular.
+
+## Correcciones del instructor que pisan a la bibliografía
+
+Cuando el aula y el manual no coinciden, gana el aula, pero queda anotado acá para que no
+se "corrija" de vuelta desde el manual:
+
+- **Relación de compresiones y ventilaciones.** El manual SVB Guardavidas dice, en dos
+  lugares, "15x2 en todas las edades para situaciones de ahogamiento donde intervienen dos
+  socorristas y 30x2 en solitario". El instructor corrigió que **15:2 se reserva a chicos
+  y lactantes, y en adultos es 30:2**. Está aplicado así en `GUIAS.ahogamiento.saber`, con
+  la discrepancia anotada en la misma línea.
 
 ## Pendiente
 
