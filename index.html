@@ -520,6 +520,9 @@
     "Sos personal de salud entrenado en despacho. Entendés el vocabulario técnico y lo usás si quien llama lo usa.",
     "NO sos instructor. Tu trabajo es sacar información y despachar, no enseñarle a trabajar a quien llama. Si es guardavidas ya sabe qué hacer: no le dictes maniobras, no le marques el ritmo de las compresiones, no le expliques la técnica y no le recuerdes lo que tiene que hacer.",
     "En vez de indicarle qué hacer, preguntale si YA lo está haciendo y con qué cuenta para hacerlo. 'Ya estás comprimiendo' es una pregunta, no una orden.",
+    "PROHIBIDO mandarlo a hacer cosas, ni siquiera de refilón al final de una frase. Nada de 'seguí con', 'continuá con', 'sigan con el ciclo 15:2', 'mantené el ritmo', 'no interrumpas las compresiones', 'seguí así'. Si una frase tuya arranca con un verbo en imperativo apuntado a la maniobra, está mal: borrala y dejá sólo la pregunta o el acuse de recibo.",
+    "Tampoco le tomes examen. No preguntes a qué ritmo comprimen, con qué profundidad, ni qué relación de ciclos usan: eso ya lo sabe, y no te cambia el despacho.",
+    "Un acuse de recibo alcanza y sobra: 'Recibido', 'Entendido, Luka'. No hace falta agregarle nada atrás.",
     "Sólo das una indicación en dos casos: si te la piden, o si te cuentan algo que pone en riesgo a la víctima (por ejemplo que frenaron la RCP por la espuma). Ahí corregís en UNA frase y seguís preguntando.",
     "Si te hacen una pregunta, contestala. Para eso estás en línea.",
     "Si NO se identifica como personal entrenado, no lo asumas: tratalo como a cualquier persona hasta que te diga quién es. Que sepa vocabulario técnico no alcanza.",
@@ -619,7 +622,7 @@
   /* Cada cuánto el operador vuelve a preguntar cómo sigue la víctima mientras espera el
      móvil. Los 2 minutos del caso crítico no son un número inventado: es el intervalo
      real de reevaluación durante una RCP, así que practicarlo entrena el ritmo correcto. */
-  const CADENCIA = { critico:120000, estable:150000 };
+  const CADENCIA = { critico:90000, estable:120000 };
 
   /* Rangos de arribo del móvil, en minutos. La app elige un valor al azar dentro del
      rango y NO se lo dice al alumno: es el reloj que decide cuándo el operador puede
@@ -630,7 +633,7 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0, evoIdx:0,
-              ultimaOp:0, rub:null };
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0 };
 
   const $ = s => document.querySelector(s);
   const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
@@ -856,18 +859,41 @@
 
   function llegoMovil(){ return (Date.now()-S.t0) >= S.arribo; }
 
+  /* La app decide en qué fase está la llamada, no el modelo. Se probó pedírselo en el
+     prompt ("cuando ya no te falte nada, callate") y no lo cumple: sigue abriendo
+     preguntas nuevas en cada turno hasta que la práctica se vuelve un interrogatorio.
+     Así que se fuerza: después de TOPE_INTERROGATORIO turnos propios, o de
+     TOPE_MINUTOS minutos, pasa a espera aunque no quiera. También puede entrar antes
+     por su cuenta con la marca [[ESPERA]]. */
+  const TOPE_INTERROGATORIO = 5;
+  const TOPE_MINUTOS = 3.5;
+
+  function enEspera(){
+    return S.fase === "espera"
+        || S.turnosOp >= TOPE_INTERROGATORIO
+        || (Date.now()-S.t0) >= TOPE_MINUTOS*60000;
+  }
+
   /* El modelo no tiene noción del paso del tiempo: hay que contárselo en cada turno.
-     Este bloque es lo único que cambia de un turno al siguiente, y es lo que sostiene la
-     fase de espera: mientras el móvil no llegó, el operador no puede cerrar.
-     El tiempo que falta SÍ se le dice al alumno (una vez, al despachar, y cada vez que
-     lo pregunte): un operador real da una estimación de llegada. Lo que no se dice es
-     que ese número salió de un sorteo. */
+     Este bloque es lo único que cambia de un turno al siguiente, y es lo que sostiene
+     tanto la espera como el cierre. */
   function estadoLlamada(sondeo){
     const t = Date.now()-S.t0;
     const falta = Math.max(1, Math.ceil((S.arribo-t)/60000));
-    const L = ["ESTADO DE LA LLAMADA, para que sepas en qué minuto estás."];
+    const L = ["ESTADO DE LA LLAMADA, para que sepas dónde estás parado."];
     L.push("- Van "+Math.floor(t/60000)+" minuto(s) de llamada.");
     if(S.grado!=null) L.push("- La última vez clasificaste a la víctima como grado "+S.grado+".");
+
+    if(enEspera()){
+      L.push("- ESTÁS EN ESPERA. El interrogatorio TERMINÓ. Ya tenés lo que necesitabas.");
+      L.push("- NO hagas preguntas nuevas. Contestá en UNA frase corta lo que te digan, dejale claro que seguís en línea, y nada más.");
+      L.push("- Única excepción: si todavía te falta un dato esencial para despachar (dónde es, qué pasó, si responde y si respira), pedilo. Eso sí se pregunta.");
+      L.push("- Si quedó pendiente saber qué indicó el DEA, podés preguntarlo UNA sola vez, cuando ya lo hayan usado.");
+      L.push("- Nada de espuma, temperatura, profundidad, ritmo de compresiones ni ningún otro detalle: eso ya no se pregunta.");
+    } else {
+      L.push("- Seguís en el interrogatorio. Te quedan pocos turnos: preguntá primero lo que falte de las fases 1 y 2.");
+    }
+
     if(llegoMovil()){
       L.push("- EL MÓVIL YA LLEGÓ. Decile que está llegando y preguntale si lo ve.");
       L.push("- Cuando te lo confirme, pedile que le pase a los paramédicos el último estado, y recién ahí cerrá con [[CERRAR]].");
@@ -876,7 +902,10 @@
       L.push("- Si todavía no le diste un tiempo de llegada, dáselo ahora, redondeado y como estimación: 'unos "+falta+" minutos'. Si te lo vuelve a preguntar, se lo repetís.");
       L.push("- NO cierres la llamada, NO uses [[CERRAR]] y NO le sugieras que corte. Te quedás en línea.");
     }
-    if(sondeo) L.push("- AHORA: pasó un rato sin novedades y el alumno no dijo nada. Preguntá en UNA sola frase corta si hubo algún cambio. Nada más: no repreguntes el cuestionario.");
+
+    if(sondeo){
+      L.push("- AHORA te toca hablar a vos sin que te hayan dicho nada. Preguntá SÓLO si hubo algún cambio en la víctima, en una frase. Nada más que eso.");
+    }
     return L.join("\n");
   }
 
@@ -924,17 +953,18 @@
       L.push("", "FASE 4 — EL RESTO, con el móvil ya en camino. Clasificación:", g.clasificar.join("\n"));
       L.push("", "ESCALA QUE MANEJÁS:", g.escala.map(x=>"- "+x).join("\n"));
       if(g.saber) L.push("", "LO QUE SABÉS DE ESTE CUADRO. Es para entender lo que te dicen y para contestar si te preguntan. NO lo uses para dar clase: sólo corregís si lo que te cuentan pone en riesgo a la víctima.", g.saber.map(x=>"- "+x).join("\n"));
-      L.push("", "Y lo circunstancial, sin apurar ni interrumpir la atención:", g.circunstancial.join("\n"));
+      L.push("", "Estas otras SÓLO si te sobra lugar antes de la espera, y como mucho UNA. Si dudás, no la preguntes:", g.circunstancial.join("\n"));
     } else {
       L.push("", "FASE 4 — EL RESTO, con el móvil ya en camino: riesgos en el lugar, quién espera al móvil, y nombre y rol de quien llama.");
     }
     L.push("",
-      "FASE 5 — ESPERA. Cuando ya no te falta nada importante:",
-      "- Te callás y te quedás en línea. No sigas preguntando por preguntar ni repitas lo que ya te contestaron.",
-      "- Cada tanto, UNA pregunta corta: si hubo algún cambio. Nada más.",
+      "FASE 5 — ESPERA. Es la fase más larga de la llamada y la más fácil de arruinar.",
+      "- Cuando la app te avisa que estás en espera, el interrogatorio TERMINÓ. No abrís ni una pregunta más.",
+      "- Si te dicen algo, acusás recibo en una frase y le recordás que seguís en línea. No aprovechás para preguntar otra cosa.",
       "- Si te preguntan algo, se lo contestás: para eso seguís en la línea.",
+      "- Cada tanto, y sólo cuando la app te lo indique, preguntás si hubo algún cambio en la víctima. Nada más que eso.",
+      "- Si quedó pendiente qué indicó el DEA, lo preguntás UNA vez cuando ya lo hayan usado. Es la única pregunta nueva que te queda.",
       "- Re-clasificás según lo que te cuenten; no fuerces el estado que ya tenías.",
-      "- Si empeora, controlás más seguido. Si mejora, espaciás. Si no cambió, lo confirmás corto y listo.",
       "- No cortás ni dejás cortar hasta que el móvil llega. La espera es parte de la práctica.",
       "",
       "CIERRE, recién cuando el móvil llegó: confirmás que está llegando, pedís que le pasen a los paramédicos el último estado, y cerrás. El traspaso no se da por hecho: lo pedís.",
@@ -945,6 +975,7 @@
       "",
       "MARCAS PARA EL SISTEMA, que el alumno no ve. Van en una línea aparte al final de tu mensaje:",
       "- [[GRADO:n]] SIEMPRE, con el grado en el que clasificaste a la víctima ahora. Poné 0 si todavía no podés clasificar.",
+      "- [[ESPERA]] cuando ya tenés todo lo que necesitabas y pasás a sostener la llamada. De ahí en más no preguntás más nada por tu cuenta.",
       "- [[CERRAR]] sólo cuando ya despachaste, el móvil llegó y hiciste el traspaso."
     );
     return L.join("\n");
@@ -968,6 +999,12 @@
         if(n>0 && n!==S.grado){ S.grado = n; S.grados.push({t:Date.now()-S.t0, g:n}); }
       }
       txt = txt.replace(/\[\[\s*GRADO[^\]]*\]\]/gi,"").trim();
+
+      // El operador puede declarar que terminó de interrogar. Si no lo hace, enEspera()
+      // lo fuerza igual por turnos o por tiempo.
+      if(/\[\[\s*ESPERA\s*\]\]/i.test(txt)) S.fase = "espera";
+      txt = txt.replace(/\[\[\s*ESPERA\s*\]\]/gi,"").trim();
+      S.turnosOp++;
 
       // Sólo puede cerrar si el móvil ya llegó. Si se apura, se le ignora la marca y la
       // llamada sigue: es justamente lo que sostiene la fase de seguimiento.
@@ -1198,6 +1235,7 @@
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
     S.grado=null; S.grados=[]; S.sondeos=0; S.evoIdx=0; S.ultimaOp=0;
+    S.fase="interrogatorio"; S.turnosOp=0;
     S.rub = rubrica(S.scn);
     // Tiempo de arribo al azar dentro del rango: el alumno no lo sabe y no puede memorizarlo.
     const rgo = ARRIBOS[S.arriboKey] || ARRIBOS.normal;
@@ -1276,7 +1314,8 @@
     const mins = stamp(S.dur);
     $("#deb-meta").textContent = S.scn.title+" · duración "+mins+" · cortó "+(S.hungBy==="alumno"?"el alumno":"el operador")
       + (S.grado!=null ? " · último grado: "+S.grado : "")
-      + (S.sondeos ? " · el operador controló "+S.sondeos+" vez/veces" : "");
+      + (S.sondeos ? " · el operador controló "+S.sondeos+" vez/veces" : "")
+      + " · el operador habló "+S.turnosOp+" vez/veces";
 
     if(S.log.filter(l=>l.who==="yo").length===0){
       $("#deb-loading").hidden=true; $("#deb-body").hidden=false;

@@ -111,6 +111,17 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   criterio, si está logrado / a medias / faltó; `puntuar()` suma los pesos. Se hizo así
   porque un modelo al que se le pide un 0-100 es blando: una llamada mala sacaba un
   número aprobatorio. No vuelvas a pedirle el puntaje al modelo.
+- **La app decide cuándo termina el interrogatorio, no el modelo.** Se probó pedírselo en
+  el prompt ("cuando ya no te falte nada, callate") y no lo cumple: sigue abriendo
+  preguntas nuevas en cada turno (espuma, temperatura, ritmo de compresiones) hasta que la
+  práctica se vuelve un examen. `enEspera()` lo fuerza después de `TOPE_INTERROGATORIO`
+  turnos propios (5) o `TOPE_MINUTOS` (3,5); el operador puede entrar antes con
+  `[[ESPERA]]`, nunca después. En espera tiene prohibido preguntar, salvo que le falte un
+  dato esencial para despachar o quede pendiente qué indicó el DEA.
+- **Las prohibiciones al modelo van con la frase textual.** "No le dictes maniobras" no
+  alcanzó: seguía cerrando con "seguí con el ciclo 15:2" o "continúen con las
+  compresiones". Hubo que listar esas frases y prohibirlas una por una. Si aparece una
+  muletilla nueva, se agrega a la lista de `CONTEXTO`, no se reescribe la regla general.
 - **El operador es despachador, no instructor.** No le dicta maniobras ni le marca el
   ritmo al guardavidas: se supone que ya sabe. Pregunta si las acciones YA se están
   haciendo y con qué material cuentan, con el DEA como prioridad. Sólo indica algo si se
