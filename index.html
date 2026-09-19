@@ -436,31 +436,12 @@
   "use strict";
 
   /* ---------------- escenarios ---------------- */
+  /* Por ahora un solo escenario, para mostrar el prototipo. Los otros cuatro
+     (laguna-inconsciente, pileta-nino, pcr-vereda, dos-victimas) salieron acá y están
+     en el historial de git: se recuperan del commit anterior a este. */
   const SCENARIOS = [
-    { id:"laguna-inconsciente", fam:"Ahogamiento", guia:"ahogamiento", title:"Rescate en laguna · víctima inconsciente",
-      card:"Lo sacaste del agua, no responde y no respira normalmente.",
-      scene:"Sacaste del agua a un hombre de unos 40 años y lo tenés en la arena. No responde cuando le hablás ni cuando le apretás el hombro. No respira normalmente: hace un ruido raro cada tanto. Tu compañero salió corriendo a buscar el DEA al puesto. Hay unas doscientas personas alrededor y el puesto médico está cerrado.",
-      addr:"Costanera Este, Laguna Setúbal · Puesto 3, a 200 m del acceso del Puente Colgante, bajada del estacionamiento norte.",
-      zona:"Santa Fe capital" },
-    { id:"pileta-nino", fam:"Ahogamiento", guia:"ahogamiento", title:"Natatorio · nene rescatado consciente",
-      card:"Tose, llora y respira agitado. La madre te grita encima.",
-      scene:"Sacaste del sector profundo a un nene de unos 8 años. Está consciente, tose mucho, llora y respira agitado. Lo tenés sentado al borde del andarivel. La madre está encima tuyo gritando y no te deja hablar. Nadie más del staff está en el natatorio en este momento.",
-      addr:"Club Gimnasia y Esgrima, 4 de Enero 2011 · natatorio cubierto, planta baja, entrada por el portón lateral.",
-      zona:"Santa Fe capital" },
-    { id:"pcr-vereda", fam:"PCR / RCP", title:"PCR en la vereda del club",
-      card:"Un hombre se desplomó en la vereda. No responde, no respira.",
-      scene:"Salías del club y un hombre de unos 60 años se desplomó en la vereda delante tuyo. No responde y no respira. Hay dos personas mirando que pueden darte una mano si les decís qué hacer. Sabés que hay un DEA en la recepción del club, a unos 30 metros.",
-      addr:"4 de Enero al 2000 · vereda impar, frente a la entrada principal del club.",
-      zona:"Santa Fe capital" },
-    { id:"dos-victimas", fam:"Ahogamiento", guia:"ahogamiento", title:"Dos víctimas fuera de zona de guardavidas",
-      card:"Dos rescatados: uno tose, el otro no responde.",
-      scene:"Rescataste a dos adolescentes de unos 15 y 17 años en una zona sin guardavidas. Uno está sentado, tose y habla. El otro está tirado boca arriba, no responde y no respira. Estás solo, sin equipo, con el celular en la mano y gente que se acerca a mirar.",
-      addr:"Costanera Este, frente al camping · 400 m al norte del Puesto 5, acceso por el camino de tierra del camping.",
-      zona:"Santa Fe capital" },
-
-    /* Primer escenario armado con guía completa y evolución. El arco es grado 6 que
-       recupera a grado 4 con buena RCP: obliga a clasificar, a reportar maniobras y a
-       avisar los cambios mientras se espera el móvil. */
+    /* Escenario de referencia, con guía completa. Grado 6: obliga a clasificar, a decir
+       qué maniobras están haciendo y con qué material cuentan. */
     { id:"ahogamiento-puro", fam:"Ahogamiento", guia:"ahogamiento",
       title:"Balneario · ahogamiento puro, víctima en paro",
       card:"Lo sacaste del agua en paro. Tenés que pedir ayuda sin soltar la reanimación.",

@@ -283,11 +283,12 @@ se "corrija" de vuelta desde el manual:
    falta ver si el evaluador **aplica bien la vara** en llamadas reales, que es harina de
    otro costal. Prueba clave: una llamada deliberadamente mala tiene que dar bajo, y una
    buena de verdad tiene que llegar a 85+. Si una buena queda en 60, la vara está dura.
-2. Escenarios nuevos. El usuario los está escribiendo; los carga desde la app con
-   "+ Cargar un escenario propio" (quedan en `localStorage`, se exportan con el botón
-   Exportar) y después se pegan en `SCENARIOS`. Los tres escenarios viejos de ahogamiento
-   ya usan la guía, pero les falta escribir la `evolucion`: hasta que la tengan, no se les
-   evalúa el criterio de reportar cambios.
+2. Escenarios nuevos. **Hoy hay uno solo**, `ahogamiento-puro`, porque el instructor quiso
+   mostrar el prototipo con eso. Los otros cuatro (laguna-inconsciente, pileta-nino,
+   pcr-vereda, dos-victimas) se sacaron y están en el historial de git: se recuperan del
+   commit anterior al que los quitó. Los nuevos se cargan desde la app con "+ Cargar un
+   escenario propio" (quedan en `localStorage`, se exportan con el botón Exportar) y
+   después se pegan en `SCENARIOS`.
 3. Una guía para PCR sin ahogamiento. El Bloque 1 se reutiliza tal cual; el Bloque 2
    cambia entero (dolor previo, medicación, si hay DEA cerca).
 4. Modo lego, que es el otro público previsto. No alcanza con ablandar al operador: un
