@@ -56,9 +56,11 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
   los rangos de cuánto tarda el móvil en llegar.
 - `ESENCIALES` — lo que el operador tiene que saber ANTES de anunciar que el SEM sale.
   Mientras falte algo, la app se lo dice en cada turno y no lo deja despachar.
-- `EXTRAS` — lo que pregunta después del anuncio, de a uno por turno y sólo si no se lo
-  contaron ya. La guía del escenario suma los suyos con `extras`. Agotados los dos, la
-  llamada pasa a espera sola.
+- `EXTRAS` — lo que pregunta después del anuncio. **Son muy pocos a propósito**: hoy
+  identificación, acceso y el resultado del DEA. La guía del escenario suma los suyos con
+  `extras`. Agotados, la llamada pasa a espera sola.
+- `TOPE_EXTRAS` — turnos que puede gastar después del aviso de despacho (2). Pasados
+  esos, entra en espera aunque queden extras sin preguntar.
 - `CHECKS` — los nueve criterios de la rúbrica. Cada uno tiene `peso` (cuánto suma sobre
   100), `critico` (si sin ese dato no sale el móvil) y la vara de corrección escrita:
   qué cuenta como `logrado` y qué como `parcial`. Si agregás o sacás uno, la pantalla de
@@ -125,6 +127,13 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   uno; agotados los dos, entra en espera y tiene prohibido preguntar. El operador declara
   lo que ya averiguó con `[[DATOS:id,id]]` y la app **acumula**, así que si un turno se
   olvida de listar algo, no se pierde.
+- **Una grilla larga de extras alarga el interrogatorio, no lo acorta.** La primera
+  versión tenía ocho extras y el efecto fue el contrario al buscado: la app le pasaba al
+  operador la lista de los que faltaban y él la iba cumpliendo con disciplina, así que
+  seguía preguntando (rescatistas, testigos, temperatura del agua) cuando ya tendría que
+  estar callado. Quedaron tres, más `TOPE_EXTRAS`. Lo que el alumno cuente por su cuenta
+  se le evalúa igual en la rúbrica: que el operador no lo pregunte es el punto, no un
+  problema.
 - **La primera versión de esto cortaba por cantidad de turnos y estaba mal.** No miraba si
   el operador tenía la información: con un alumno escueto lo callaba sin haber averiguado
   nada, y con uno locuaz lo dejaba interrogando de más. `TOPE_MINUTOS` (5) quedó sólo como
@@ -203,6 +212,10 @@ No hay suite de tests. Lo que funcionó hasta ahora:
 Cuando el aula y el manual no coinciden, gana el aula, pero queda anotado acá para que no
 se "corrija" de vuelta desde el manual:
 
+- **El guardavidas no administra oxígeno.** En Argentina no está en su alcance: el O2 que
+  figura en la tabla de grados lo pone el SEM cuando llega. El operador no se lo pregunta
+  ni se lo indica. Salió de una práctica real, donde el operador preguntó si la víctima
+  tenía oxígeno suplementario y el instructor contestó que no es legal acá.
 - **Relación de compresiones y ventilaciones.** El manual SVB Guardavidas dice, en dos
   lugares, "15x2 en todas las edades para situaciones de ahogamiento donde intervienen dos
   socorristas y 30x2 en solitario". El instructor corrigió que **15:2 se reserva a chicos

@@ -521,7 +521,7 @@
     "NO sos instructor. Tu trabajo es sacar información y despachar, no enseñarle a trabajar a quien llama. Si es guardavidas ya sabe qué hacer: no le dictes maniobras, no le marques el ritmo de las compresiones, no le expliques la técnica y no le recuerdes lo que tiene que hacer.",
     "En vez de indicarle qué hacer, preguntale si YA lo está haciendo y con qué cuenta para hacerlo. 'Ya estás comprimiendo' es una pregunta, no una orden.",
     "PROHIBIDO mandarlo a hacer cosas, ni siquiera de refilón al final de una frase. Nada de 'seguí con', 'continuá con', 'sigan con el ciclo 15:2', 'mantené el ritmo', 'no interrumpas las compresiones', 'seguí así'. Si una frase tuya arranca con un verbo en imperativo apuntado a la maniobra, está mal: borrala y dejá sólo la pregunta o el acuse de recibo.",
-    "Tampoco le tomes examen. No preguntes a qué ritmo comprimen, con qué profundidad, ni qué relación de ciclos usan: eso ya lo sabe, y no te cambia el despacho.",
+    "Tampoco le tomes examen ni le controles la técnica. Ya preguntaste QUÉ están haciendo; CÓMO lo hacen no es asunto tuyo. Nada de '¿estás reevaluando el pulso?', '¿mantienen la vía aérea permeable?', '¿sigue en posición lateral de seguridad?', '¿a qué ritmo comprimen?', '¿con qué profundidad?'. Son preguntas de instructor y no te cambian el despacho.",
     "Un acuse de recibo alcanza y sobra: 'Recibido', 'Entendido, Luka'. No hace falta agregarle nada atrás.",
     "Sólo das una indicación en dos casos: si te la piden, o si te cuentan algo que pone en riesgo a la víctima (por ejemplo que frenaron la RCP por la espuma). Ahí corregís en UNA frase y seguís preguntando.",
     "Si te hacen una pregunta, contestala. Para eso estás en línea.",
@@ -565,6 +565,7 @@
          llano y en nuestras palabras: acá no se copian los manuales. Si algo de esto
          contradice lo que se enseña en el aula, gana el aula: corregilo acá. */
       saber:[
+        "El guardavidas NO administra oxígeno: en Argentina no está en su alcance. El oxígeno de la tabla de grados lo pone el SEM cuando llega, así que no se lo preguntes ni se lo indiques.",
         "La relación de compresiones y ventilaciones es la de siempre: 30:2 en adultos, y 15:2 en chicos y lactantes cuando hay dos socorristas. 100 a 120 compresiones por minuto, 5 a 6 cm de profundidad. En chicos de 1 a 9 años se comprime con una sola mano. (OJO: el manual SVB de la escuela dice 15:2 para todas las edades con dos socorristas. El instructor corrigió que 15:2 se reserva a pediátricos. Manda el instructor.)",
         "Se arranca siempre con 5 ventilaciones de rescate: el ahogamiento es un paro por asfixia, así que el oxígeno va primero, antes que las compresiones.",
         "Después de los primeros 5 ciclos se evalúan ventilación y signos de circulación, y de ahí en más cada 2 minutos o 5 ciclos. El DEA pausa solo cada 2 minutos, así que los tiempos coinciden.",
@@ -587,11 +588,11 @@
         "- Te describe signos sueltos, porque está ocupado con la maniobra. Armá vos el cuadro: si respira, ¿tose?, ¿hay espuma en boca o nariz?, ¿poca o mucha?; si hay mucha espuma, ¿tiene pulso radial?; si no respira, ¿ya dio las 5 ventilaciones de rescate?, ¿hay signos de circulación?",
         "En los dos casos preguntá además el tiempo aproximado de sumersión. Lo de las maniobras en curso y el DEA ya lo preguntaste en la fase 2: no lo repitas si ya te contestaron."
       ],
+      /* Sólo el DEA: es el único que el instructor validó como pregunta que va después
+         del aviso de despacho. Sumersión, trauma y agua salieron de la grilla porque
+         estiraban el interrogatorio; se siguen evaluando si el alumno los cuenta solo. */
       extras:[
-        {id:"sumersion",   pide:"cuánto tiempo estuvo bajo el agua"},
-        {id:"dea_result",  pide:"qué indicó el DEA, una vez que lo hayan usado"},
-        {id:"trauma",      pide:"si hubo zambullida en agua poco profunda o un golpe, para descartar lesión cervical"},
-        {id:"agua",        pide:"temperatura y profundidad del agua"}
+        {id:"dea_result",  pide:"qué indicó el DEA, una vez que lo hayan colocado"}
       ],
 
       /* Acá quien llama es siempre el guardavidas en servicio, identificado por su puesto:
@@ -643,12 +644,20 @@
     {id:"material",  pide:"con qué cuentan, sobre todo si tienen DEA en el lugar y si está colocado"}
   ];
 
+  /* Muy pocos a propósito. La primera versión tenía ocho y el efecto fue el contrario al
+     buscado: la app le pasaba al operador la lista de los que faltaban y él la iba
+     cumpliendo, así que el interrogatorio se estiraba en vez de terminar. Lo que el
+     alumno cuente por su cuenta se le evalúa igual en la rúbrica; que el operador no lo
+     pregunte no es un problema, es el punto. */
   const EXTRAS = [
     {id:"identificacion", pide:"nombre y puesto de quien llama"},
-    {id:"rescatistas",    pide:"cuántos rescatistas hay y si pueden rotar las compresiones"},
-    {id:"acceso",         pide:"riesgos en el lugar y quién va a esperar al móvil"},
-    {id:"testigos",       pide:"cómo están los testigos o familiares, por si alguien tiene que ocuparse de ellos"}
+    {id:"acceso",         pide:"por dónde entra el móvil y quién lo va a esperar"}
   ];
+
+  /* Además del recorte, un tope duro: pasado el aviso de despacho el operador tiene
+     estos turnos para terminar, y después la llamada entra en espera aunque queden
+     extras sin preguntar. */
+  const TOPE_EXTRAS = 2;
 
   const CADENCIA = { critico:90000, estable:120000 };
 
@@ -661,7 +670,7 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0, evoIdx:0,
-              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, datos:{} };
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{} };
 
   const $ = s => document.querySelector(s);
   const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
@@ -904,7 +913,9 @@
   function enEspera(){
     if(S.fase === "espera") return true;
     if((Date.now()-S.t0) >= TOPE_MINUTOS*60000) return true;
-    return faltan(ESENCIALES).length === 0 && faltan(extrasDe()).length === 0;
+    if(faltan(ESENCIALES).length) return false;
+    // Ya despachó: o terminó los extras, o se le acabaron los turnos para hacerlo.
+    return faltan(extrasDe()).length === 0 || S.turnosPost > TOPE_EXTRAS;
   }
 
   /* El modelo no tiene noción del paso del tiempo ni memoria de qué le falta: hay que
@@ -921,7 +932,9 @@
     if(enEspera()){
       L.push("- ESTÁS EN ESPERA. El interrogatorio TERMINÓ: ya tenés lo que necesitabas.");
       L.push("- NO hagas preguntas nuevas. Contestá en UNA frase corta lo que te digan, dejale claro que seguís en línea, y nada más.");
-      L.push("- Nada de espuma, temperatura, profundidad, ritmo de compresiones ni ningún otro detalle: eso ya no se pregunta.");
+      L.push("- TU MENSAJE NO PUEDE TERMINAR EN PREGUNTA. Acusás recibo, le decís que seguís en línea y que te avise cualquier cambio, y listo. La única excepción es cuando la app te dice abajo que preguntes por cambios.");
+      L.push("- Nada de espuma, temperatura, profundidad, ritmo de compresiones, vía aérea, posición ni oxígeno: eso ya no se pregunta.");
+      L.push("- Si te dicen que la víctima cambió de estado o de grado, lo aceptás y lo anotás. NO lo verifiques repreguntando signos.");
       if(fEs.length) L.push("- Lo único que sí podés pedir, porque todavía te falta para despachar: "+fEs.map(x=>x.pide).join("; ")+".");
     } else if(fEs.length){
       L.push("- TODAVÍA TE FALTA LO ESENCIAL. No sabés: "+fEs.map(x=>x.pide).join("; ")+".");
@@ -983,7 +996,7 @@
       "- Le decís que el SEM ya está en camino y le das un tiempo aproximado de llegada.",
       "- Es la única vez que das el tiempo por iniciativa propia. Después sólo lo repetís si te lo preguntan.",
       "",
-      "DESPUÉS, LOS EXTRAS. De a uno por turno, y sólo los que no te hayan contado ya. La app te dice cuáles quedan. Cuando no queda ninguno, se terminó el interrogatorio."
+      "DESPUÉS, MUY POCO MÁS. Quedan un par de cosas sueltas, de a una por turno y sólo si no te las contaron ya: la app te dice cuáles. Apenas se terminan, o apenas se te acaban los turnos, te callás y pasás a sostener la llamada. El interrogatorio es corto a propósito."
     ];
     if(g){
       L.push("", "CÓMO CLASIFICÁS:", g.clasificar.join("\n"));
@@ -1039,6 +1052,9 @@
       const md = txt.match(/\[\[\s*DATOS\s*:([^\]]*)\]\]/i);
       if(md) md[1].split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(id=>{ S.datos[id] = true; });
       txt = txt.replace(/\[\[\s*DATOS[^\]]*\]\]/gi,"").trim();
+      // Turnos gastados desde que ya tenía todo lo esencial: es lo que limita cuánto
+      // puede seguir preguntando después de anunciar el despacho.
+      if(faltan(ESENCIALES).length === 0) S.turnosPost++;
 
       // El operador puede declarar que terminó de interrogar antes de completar la
       // grilla. Al revés no: si la grilla no está, enEspera() no lo deja salir.
@@ -1275,7 +1291,7 @@
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
     S.grado=null; S.grados=[]; S.sondeos=0; S.evoIdx=0; S.ultimaOp=0;
-    S.fase="interrogatorio"; S.turnosOp=0; S.datos={};
+    S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={};
     S.rub = rubrica(S.scn);
     // Tiempo de arribo al azar dentro del rango: el alumno no lo sabe y no puede memorizarlo.
     const rgo = ARRIBOS[S.arriboKey] || ARRIBOS.normal;
