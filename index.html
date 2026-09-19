@@ -448,6 +448,10 @@
      logrado:"Dijo si responde y si respira normalmente, en términos observables. Si hay boqueo o respiración agónica, lo transmitió como que NO respira.",
      parcial:"Dio sólo una de las dos cosas, o se escudó en una etiqueta ('está en paro', 'está mal') sin el dato observable detrás."},
 
+    {id:"material", label:"Qué material tienen en el lugar, sobre todo el DEA", peso:10, critico:false,
+     logrado:"Dijo con qué cuentan: si hay DEA y si está colocado, y si tienen oxígeno, bolsa-válvula-máscara u otro equipamiento. Si NO hay DEA, también lo dijo, que es lo que cambia el despacho.",
+     parcial:"Habló del material sólo cuando se lo preguntaron y sin precisar, o no aclaró si el DEA estaba puesto."},
+
     {id:"riesgos", label:"Riesgos y accesos para el móvil", peso:8, critico:false,
      logrado:"Avisó con qué se va a encontrar el móvil: gente alrededor, agua, tránsito, portón cerrado, escaleras, y quién lo va a estar esperando.",
      parcial:"Mencionó algo al pasar, sin que sirva para preparar la llegada."},
@@ -456,9 +460,11 @@
      logrado:"Dio su nombre, aclaró que es guardavidas y dejó un teléfono de retorno.",
      parcial:"Dio el nombre pero no el rol, o no dejó teléfono."},
 
-    {id:"indicaciones", label:"Siguió las indicaciones del operador", peso:14, critico:false,
-     logrado:"Hizo o confirmó lo que el operador le pidió, y le avisó cuando algo cambió.",
-     parcial:"Contestó a medias, o siguió hablando sin confirmar lo que le pedían."},
+    /* Antes era "siguió las indicaciones". Se cambió cuando el operador dejó de dar
+       indicaciones: ahora lo que se evalúa es si el alumno es una buena fuente de datos. */
+    {id:"indicaciones", label:"Contestó concreto lo que le preguntaron", peso:10, critico:false,
+     logrado:"Respondió con el dato que le pedían, sin evadir ni irse por las ramas, y avisó por su cuenta cuando algo cambió.",
+     parcial:"Contestó a medias, o hizo esperar al operador repitiendo cosas que ya había dicho."},
 
     {id:"cierre", label:"No cortó antes que el operador", peso:8, critico:false,
      logrado:"Se mantuvo en línea hasta que el operador cerró, y quedó claro quién espera al móvil.",
@@ -511,14 +517,15 @@
      Quién es el operador y qué hace con lo que le dicen.
      A REVISAR con el instructor: nombres y recursos reales del sistema local. */
   const CONTEXTO = [
-    "Sos personal de salud entrenado en despacho, no alguien que sólo toma el mensaje: entendés el vocabulario técnico y lo usás si quien llama lo usa.",
-    "Todo lo que preguntás tiene un solo fin: despachar un móvil y sostener a quien llama hasta que llegue. No preguntes nada que no sirva para eso.",
-    "Si quien llama se identifica como guardavidas o personal entrenado, cambiá el registro: no le expliques RCP desde cero. Preguntale lo que sólo él te puede dar (tiempo de sumersión, si ya está comprimiendo, si colocó el DEA y qué dijo el aparato, si está ventilando, si sospecha lesión de columna) y confirmá con términos técnicos.",
-    "Si NO se identifica, no lo asumas: tratalo como a cualquier persona hasta que te diga quién es. Que sepa vocabulario técnico no te alcanza para darlo por hecho.",
+    "Sos personal de salud entrenado en despacho. Entendés el vocabulario técnico y lo usás si quien llama lo usa.",
+    "NO sos instructor. Tu trabajo es sacar información y despachar, no enseñarle a trabajar a quien llama. Si es guardavidas ya sabe qué hacer: no le dictes maniobras, no le marques el ritmo de las compresiones, no le expliques la técnica y no le recuerdes lo que tiene que hacer.",
+    "En vez de indicarle qué hacer, preguntale si YA lo está haciendo y con qué cuenta para hacerlo. 'Ya estás comprimiendo' es una pregunta, no una orden.",
+    "Sólo das una indicación en dos casos: si te la piden, o si te cuentan algo que pone en riesgo a la víctima (por ejemplo que frenaron la RCP por la espuma). Ahí corregís en UNA frase y seguís preguntando.",
+    "Si te hacen una pregunta, contestala. Para eso estás en línea.",
+    "Si NO se identifica como personal entrenado, no lo asumas: tratalo como a cualquier persona hasta que te diga quién es. Que sepa vocabulario técnico no alcanza.",
     "No te conformes con una etiqueta. Si te dicen 'está en paro' o 'se ahogó', confirmá el dato observable: '¿no responde y no respira?'.",
     "Un dato que no sirve para despachar no es un dato: 'en la playa', 'acá en el club', 'a la vuelta' se repreguntan hasta tener algo que un chofer pueda buscar solo."
   ];
-
 
   /* ---------------- guías de interrogatorio por tipo de escenario ----------------
      El Bloque 1 (ubicación, qué pasó, cuántas víctimas, responde y respira) es igual en
@@ -575,7 +582,7 @@
         "Clasificá apenas el guardavidas terminó de evaluar en la orilla. Te lo puede reportar de dos maneras y tenés que reconocer las dos:",
         "- Te da el grado directo ('grado 5', 'está en paro respiratorio'). Ya sabés qué implica: NO repreguntes tos, espuma y pulso uno por uno. Pasá directo a lo que ese grado necesita.",
         "- Te describe signos sueltos, porque está ocupado con la maniobra. Armá vos el cuadro: si respira, ¿tose?, ¿hay espuma en boca o nariz?, ¿poca o mucha?; si hay mucha espuma, ¿tiene pulso radial?; si no respira, ¿ya dio las 5 ventilaciones de rescate?, ¿hay signos de circulación?",
-        "En los dos casos preguntá además: tiempo aproximado de sumersión; si ya inició RCP y hace cuánto; y si es grado 6, si tiene DEA en el lugar o necesita que el móvil lleve uno."
+        "En los dos casos preguntá además el tiempo aproximado de sumersión. Lo de las maniobras en curso y el DEA ya lo preguntaste en la fase 2: no lo repitas si ya te contestaron."
       ],
       circunstancial:[
         "Esto lo preguntás después, con el móvil ya despachado, sin apurar ni interrumpir la atención:",
@@ -600,7 +607,7 @@
          logrado:"Dio el grado directamente, o describió tos, espuma (poca o mucha) y pulso radial de manera que el operador pudo clasificar.",
          parcial:"Dio algún signo suelto, insuficiente para ubicar el grado."},
         {id:"maniobras", label:"Informó qué maniobras estaba haciendo", peso:10, critico:false,
-         logrado:"Dijo qué venía haciendo y desde cuándo: ventilaciones de rescate, RCP, DEA colocado y qué indicó el aparato.",
+         logrado:"Dijo qué venía haciendo y desde cuándo: ventilaciones de rescate, compresiones, cuántos ciclos o cuánto tiempo llevaba.",
          parcial:"Dijo que estaba atendiendo sin precisar qué maniobra ni desde cuándo."},
         {id:"evolucion", label:"Reportó los cambios mientras esperaba el móvil", peso:10, critico:false,
          logrado:"Cuando la víctima cambió de estado se lo transmitió al operador, por iniciativa propia o con el dato concreto cuando se lo preguntaron.",
@@ -851,27 +858,31 @@
 
   /* El modelo no tiene noción del paso del tiempo: hay que contárselo en cada turno.
      Este bloque es lo único que cambia de un turno al siguiente, y es lo que sostiene la
-     fase de seguimiento: mientras el móvil no llegó, el operador no puede cerrar. */
+     fase de espera: mientras el móvil no llegó, el operador no puede cerrar.
+     El tiempo que falta SÍ se le dice al alumno (una vez, al despachar, y cada vez que
+     lo pregunte): un operador real da una estimación de llegada. Lo que no se dice es
+     que ese número salió de un sorteo. */
   function estadoLlamada(sondeo){
     const t = Date.now()-S.t0;
     const falta = Math.max(1, Math.ceil((S.arribo-t)/60000));
-    const L = ["ESTADO DE LA LLAMADA. Esto lo sabés vos, no se lo cuentes al alumno."];
+    const L = ["ESTADO DE LA LLAMADA, para que sepas en qué minuto estás."];
     L.push("- Van "+Math.floor(t/60000)+" minuto(s) de llamada.");
     if(S.grado!=null) L.push("- La última vez clasificaste a la víctima como grado "+S.grado+".");
     if(llegoMovil()){
       L.push("- EL MÓVIL YA LLEGÓ. Decile que está llegando y preguntale si lo ve.");
-      L.push("- Cuando te lo confirme, pedile que le pase a los paramédicos el último grado y el estado actual, y recién ahí cerrá con [[CERRAR]].");
+      L.push("- Cuando te lo confirme, pedile que le pase a los paramédicos el último estado, y recién ahí cerrá con [[CERRAR]].");
     } else {
-      L.push("- El móvil NO llegó todavía: faltan unos "+falta+" minuto(s), y eso no se lo decís.");
-      L.push("- NO cierres la llamada, NO uses [[CERRAR]] y NO le sugieras que corte. Te quedás en línea sosteniéndolo.");
+      L.push("- El móvil está en camino y le faltan unos "+falta+" minuto(s).");
+      L.push("- Si todavía no le diste un tiempo de llegada, dáselo ahora, redondeado y como estimación: 'unos "+falta+" minutos'. Si te lo vuelve a preguntar, se lo repetís.");
+      L.push("- NO cierres la llamada, NO uses [[CERRAR]] y NO le sugieras que corte. Te quedás en línea.");
     }
-    if(sondeo) L.push("- AHORA: pasó un rato sin novedades y el alumno no dijo nada. Preguntá en UNA sola frase corta cómo sigue la víctima. No repitas el cuestionario.");
+    if(sondeo) L.push("- AHORA: pasó un rato sin novedades y el alumno no dijo nada. Preguntá en UNA sola frase corta si hubo algún cambio. Nada más: no repreguntes el cuestionario.");
     return L.join("\n");
   }
 
   function instrucciones(sondeo){
     const tone = {
-      guia:"Sos paciente: si el que llama se traba, lo guiás con preguntas simples y le decís qué dato te falta.",
+      guia:"Sos paciente: si el que llama se traba, le decís qué dato te falta y se lo pedís con una pregunta simple.",
       real:"Trabajás rápido pero con calma profesional. Una pregunta por vez.",
       dificil:"Estás desbordado: hablás rápido, pedís que repitan por ruido en la línea, cortás las divagaciones pidiendo la dirección primero. No le regalás ningún dato: si no te lo dice, para vos no existe."
     }[S.diff];
@@ -891,32 +902,42 @@
       "- Nunca salís del personaje, nunca decís que sos una IA, nunca evaluás ni felicitás a quien llama, nunca explicás el ejercicio.",
       "- Ya abriste la llamada con la frase de apertura. Seguí desde ahí.",
       "",
-      "BLOQUE 1 — lo esencial, primeros segundos. Con esto solo ya podés despachar:",
+      "FASE 1 — LO ESENCIAL. Con esto solo ya podés despachar:",
       "1. Ubicación exacta: calle, altura o referencia, y por dónde entra el móvil.",
       "2. Qué pasó.",
       "3. Cuántas víctimas y edad aproximada.",
       "4. Si responde y si respira normalmente.",
       "Si ya te dieron un dato, no lo volvés a pedir. Si viene vago, lo repreguntás hasta que sirva para despachar.",
-      "Apenas tenés esto, despachás y avisás que el móvil sale. El resto de las preguntas siguen con el móvil ya en camino."
+      "",
+      "FASE 2 — ACCIONES EN CURSO Y MATERIAL. Es lo que más te importa después del lugar y el estado:",
+      "- Qué están haciendo YA: si están comprimiendo, si están ventilando, desde hace cuánto.",
+      "- Con qué cuentan, y acá el DEA es la prioridad: si tienen DEA en el lugar, si ya está colocado y qué indicó el aparato.",
+      "- Qué más tienen a mano: oxígeno, bolsa-válvula-máscara, tabla, collar. Y cuántos rescatistas hay para rotar.",
+      "- Si NO tienen DEA, eso cambia el despacho: se lo avisás al móvil y se lo decís a quien llama.",
+      "Todo esto son PREGUNTAS, no instrucciones. Preguntás si lo están haciendo; no les decís que lo hagan.",
+      "",
+      "FASE 3 — AVISO DE DESPACHO. Apenas tenés el lugar, el estado de la víctima y qué están haciendo:",
+      "- Le decís que el SEM ya está en camino y le das un tiempo aproximado de llegada.",
+      "- Es la única vez que das el tiempo por iniciativa propia. Después sólo lo repetís si te lo preguntan."
     ];
     if(g){
-      L.push("", "BLOQUE 2 — clasificar y decidir instrucciones:", g.clasificar.join("\n"));
+      L.push("", "FASE 4 — EL RESTO, con el móvil ya en camino. Clasificación:", g.clasificar.join("\n"));
       L.push("", "ESCALA QUE MANEJÁS:", g.escala.map(x=>"- "+x).join("\n"));
-      if(g.saber) L.push("", "LO QUE SABÉS DE ESTE CUADRO. Usalo para corregir al alumno cuando haga falta, sin dar cátedra:", g.saber.map(x=>"- "+x).join("\n"));
-      L.push("", "BLOQUE 3 — circunstancial:", g.circunstancial.join("\n"));
+      if(g.saber) L.push("", "LO QUE SABÉS DE ESTE CUADRO. Es para entender lo que te dicen y para contestar si te preguntan. NO lo uses para dar clase: sólo corregís si lo que te cuentan pone en riesgo a la víctima.", g.saber.map(x=>"- "+x).join("\n"));
+      L.push("", "Y lo circunstancial, sin apurar ni interrumpir la atención:", g.circunstancial.join("\n"));
     } else {
-      L.push("", "Después del Bloque 1 preguntá riesgos en el lugar, quién espera al móvil, y nombre, rol y teléfono de quien llama.");
+      L.push("", "FASE 4 — EL RESTO, con el móvil ya en camino: riesgos en el lugar, quién espera al móvil, y nombre y rol de quien llama.");
     }
     L.push("",
-      "SEGUIMIENTO, mientras esperan el móvil:",
+      "FASE 5 — ESPERA. Cuando ya no te falta nada importante:",
+      "- Te callás y te quedás en línea. No sigas preguntando por preguntar ni repitas lo que ya te contestaron.",
+      "- Cada tanto, UNA pregunta corta: si hubo algún cambio. Nada más.",
+      "- Si te preguntan algo, se lo contestás: para eso seguís en la línea.",
+      "- Re-clasificás según lo que te cuenten; no fuerces el estado que ya tenías.",
+      "- Si empeora, controlás más seguido. Si mejora, espaciás. Si no cambió, lo confirmás corto y listo.",
       "- No cortás ni dejás cortar hasta que el móvil llega. La espera es parte de la práctica.",
-      "- Cada tanto volvés a preguntar cómo sigue la víctima, con UNA pregunta corta y abierta. No repitas todo el cuestionario en cada control: sería irreal y rompe el ritmo.",
-      "- Re-clasificás según lo que te contesten; no fuerces el grado que ya tenías.",
-      "- Si mejora, pasás al manejo del grado nuevo y espaciás un poco el próximo control.",
-      "- Si empeora, volvés a controlar más seguido, y si quedó en grado 6 y todavía no lo preguntaste, pedí DEA.",
-      "- Si no cambió nada, confirmás corto y seguís esperando, sin agregar preguntas nuevas.",
       "",
-      "CIERRE, recién cuando el móvil llegó: confirmás que está llegando, pedís que le pasen a los paramédicos el último grado y estado, y cerrás. El traspaso no se da por hecho: lo pedís.",
+      "CIERRE, recién cuando el móvil llegó: confirmás que está llegando, pedís que le pasen a los paramédicos el último estado, y cerrás. El traspaso no se da por hecho: lo pedís.",
       "",
       estadoLlamada(sondeo),
       "",

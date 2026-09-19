@@ -60,6 +60,10 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
   devolución y el informe descargable se actualizan solos, pero **los pesos tienen que
   seguir sumando 100**.
 - `TOPE_CRITICO` — el puntaje máximo cuando falta un criterio crítico (hoy 40).
+  Ojo con dos criterios que cambiaron de sentido: `material` (qué equipamiento hay en el
+  lugar, el DEA ante todo) es distinto de `maniobras` (qué están haciendo), y
+  `indicaciones` dejó de ser "siguió las indicaciones" —que se quedó sin objeto cuando el
+  operador dejó de indicar— y pasó a ser "contestó concreto lo que le preguntaron".
 - `DIFF_TXT` y el bloque `tone` dentro de `instrucciones()` — los tres niveles de
   operador: Guía, Real, Exigente.
 - `instrucciones()` — el prompt de sistema del operador. Es el archivo donde se afina el
@@ -107,9 +111,17 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   criterio, si está logrado / a medias / faltó; `puntuar()` suma los pesos. Se hizo así
   porque un modelo al que se le pide un 0-100 es blando: una llamada mala sacaba un
   número aprobatorio. No vuelvas a pedirle el puntaje al modelo.
+- **El operador es despachador, no instructor.** No le dicta maniobras ni le marca el
+  ritmo al guardavidas: se supone que ya sabe. Pregunta si las acciones YA se están
+  haciendo y con qué material cuentan, con el DEA como prioridad. Sólo indica algo si se
+  lo piden o si le cuentan una maniobra peligrosa, y ahí en una frase. El interrogatorio
+  está escrito en cinco fases dentro de `instrucciones()`: esencial → acciones y material
+  → aviso de despacho → el resto → espera.
 - **El operador no puede cortar hasta que llega el móvil.** El tiempo de arribo se sortea
-  al inicio dentro del rango elegido y no se le dice al alumno. Si el modelo manda
-  `[[CERRAR]]` antes, la app le ignora la marca y la llamada sigue. Está probado: con un
+  al inicio dentro del rango elegido. El tiempo que FALTA sí se le dice al alumno, una vez
+  al despachar y cada vez que lo pregunte, porque un operador real da una estimación de
+  llegada; lo que no se dice es que salió de un sorteo. Si el modelo manda
+  `[[CERRAR]]` antes del arribo, la app le ignora la marca y la llamada sigue. Está probado: con un
   operador que intenta cortar en todos los turnos, la app bloqueó los 3 intentos previos
   al arribo y aceptó el primero posterior.
 - **El modelo no tiene noción del tiempo.** Hay que decírselo en cada turno; eso hace
