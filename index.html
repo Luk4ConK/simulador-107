@@ -673,7 +673,7 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
-              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, turnosCierre:0, datos:{}, despachado:false };
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false };
 
   const $ = s => document.querySelector(s);
   const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
@@ -1058,6 +1058,9 @@
     // Un sondeo es el operador hablando sin que el alumno haya dicho nada: se lo
     // contamos como tal para que la conversación siga teniendo sentido.
     if(sondeo) S.turns.push({role:"user", content:"[silencio: el guardavidas no dice nada]"});
+    // Si en ESTE turno la instrucción le dice que cierre. Se guarda ahora porque después
+    // de la respuesta los contadores ya cambiaron y no se sabría qué se le pidió.
+    const tocaCerrar = S.despachado && enEspera();
     const live = addMsg("op","…","live");
     try{
       const { texto } = await api({ modo:"operador", instrucciones: instrucciones(sondeo), turnos: S.turns });
@@ -1100,13 +1103,19 @@
       txt = txt.replace("[[CERRAR]]","").trim();
       if(cerrar && !(S.despachado && enEspera())) cerrar = false;
 
-      // Y al revés: si le toca cerrar y no lo hace, corta la app. El modelo se resiste a
-      // colgarle el teléfono a alguien que está reanimando: en la práctica contestaba
-      // "seguimos en línea" y seguía preguntando. Se le da un turno de gracia y al
-      // siguiente se cierra igual, con lo último que haya dicho.
-      if(enEspera() && S.despachado){
-        S.turnosCierre++;
-        if(!cerrar && S.turnosCierre >= 2) cerrar = true;
+      // Y al revés: si le tocaba cerrar y no cerró, cierra la app y la despedida la dice
+      // ella. El modelo se resiste a colgarle el teléfono a alguien que está reanimando:
+      // en las prácticas contestaba "seguimos en línea" o abría otra pregunta.
+      // `tocaCerrar` se calculó ANTES de pedirle la respuesta, así que sólo se fuerza en
+      // un turno donde la instrucción ya le decía que cerrara. Si se forzara en el turno
+      // anterior, la llamada terminaría sobre una pregunta que el alumno nunca pudo
+      // contestar, que es justo lo que había que evitar.
+      if(tocaCerrar && !cerrar){
+        const despedida = textoDeCierre();
+        // Si lo último que dijo fue una pregunta, se la reemplaza: dejarla colgando y
+        // cortar es peor que no haberla hecho. Si no, la despedida va detrás.
+        txt = /\?/.test(txt) ? despedida : (txt ? txt + " " + despedida : despedida);
+        cerrar = true;
       }
       if(!txt) txt = "¿Cómo sigue?";
 
@@ -1135,6 +1144,15 @@
       S.busy = false; S.hablando = false; S.ultimaOp = Date.now(); updateControls();
       escuchar();
     }
+  }
+
+  /* Lo que dice el operador cuando la app tiene que cerrar por él. En grado 6 no se pide
+     avisar si empeora: ya está en paro y no hay empeoramiento posible. */
+  function textoDeCierre(){
+    return "El móvil ya está en camino. Voy a cortar la comunicación: "
+         + (S.grado === 6
+            ? "si cambia la situación o necesitás algo más, volvé a llamar al 107."
+            : "si la víctima empeora, volvé a llamar al 107.");
   }
 
   function cadencia(){ return (S.grado!=null && S.grado>=5) ? CADENCIA.critico : CADENCIA.estable; }
@@ -1329,7 +1347,7 @@
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
     S.grado=null; S.grados=[]; S.sondeos=0; S.ultimaOp=0;
-    S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.turnosCierre=0; S.datos={}; S.despachado=false;
+    S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={}; S.despachado=false;
     S.rub = rubrica(S.scn);
     // Tiempo de arribo al azar dentro del rango: el alumno no lo sabe y no puede memorizarlo.
     const rgo = ARRIBOS[S.arriboKey] || ARRIBOS.normal;
