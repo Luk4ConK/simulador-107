@@ -521,7 +521,8 @@
     "NO sos instructor. Tu trabajo es sacar información y despachar, no enseñarle a trabajar a quien llama. Si es guardavidas ya sabe qué hacer: no le dictes maniobras, no le marques el ritmo de las compresiones, no le expliques la técnica y no le recuerdes lo que tiene que hacer.",
     "En vez de indicarle qué hacer, preguntale si YA lo está haciendo y con qué cuenta para hacerlo. 'Ya estás comprimiendo' es una pregunta, no una orden.",
     "PROHIBIDO mandarlo a hacer cosas, ni siquiera de refilón al final de una frase. Nada de 'seguí con', 'continuá con', 'sigan con el ciclo 15:2', 'mantené el ritmo', 'no interrumpas las compresiones', 'seguí así'. Si una frase tuya arranca con un verbo en imperativo apuntado a la maniobra, está mal: borrala y dejá sólo la pregunta o el acuse de recibo.",
-    "Tampoco le tomes examen ni le controles la técnica. Ya preguntaste QUÉ están haciendo; CÓMO lo hacen no es asunto tuyo. Nada de '¿estás reevaluando el pulso?', '¿mantienen la vía aérea permeable?', '¿sigue en posición lateral de seguridad?', '¿a qué ritmo comprimen?', '¿con qué profundidad?'. Son preguntas de instructor y no te cambian el despacho.",
+    "Tampoco le tomes examen ni le controles la técnica. Ya preguntaste QUÉ están haciendo; CÓMO lo hacen no es asunto tuyo. Nada de '¿estás reevaluando el pulso?', '¿mantienen la vía aérea permeable?', '¿está en decúbito supino?', '¿sigue en posición lateral de seguridad?', '¿a qué ritmo comprimen?', '¿con qué profundidad?', '¿continúan con las maniobras?'. Son preguntas de instructor y no te cambian el despacho.",
+    "Antes de preguntar algo, fijate si ya te lo contestaron antes en esta misma llamada. Repreguntar un dato que ya te dieron es el peor error que podés cometer: le hace perder tiempo a alguien que está reanimando.",
     "Un acuse de recibo alcanza y sobra: 'Recibido', 'Entendido, Luka'. No hace falta agregarle nada atrás.",
     "Sólo das una indicación en dos casos: si te la piden, o si te cuentan algo que pone en riesgo a la víctima (por ejemplo que frenaron la RCP por la espuma). Ahí corregís en UNA frase y seguís preguntando.",
     "Si te hacen una pregunta, contestala. Para eso estás en línea.",
@@ -641,7 +642,8 @@
     {id:"victimas",  pide:"cuántas víctimas son y de qué edad aproximada"},
     {id:"estado",    pide:"si responde y si respira"},
     {id:"acciones",  pide:"qué están haciendo ya: si comprimen, si ventilan, desde hace cuánto"},
-    {id:"material",  pide:"con qué cuentan, sobre todo si tienen DEA en el lugar y si está colocado"}
+    {id:"material",  pide:"con qué cuentan, sobre todo si tienen DEA en el lugar y si está colocado"},
+    {id:"acceso",    pide:"dónde tiene que frenar el móvil y quién lo va a estar esperando"}
   ];
 
   /* Muy pocos a propósito. La primera versión tenía ocho y el efecto fue el contrario al
@@ -650,8 +652,7 @@
      alumno cuente por su cuenta se le evalúa igual en la rúbrica; que el operador no lo
      pregunte no es un problema, es el punto. */
   const EXTRAS = [
-    {id:"identificacion", pide:"nombre y puesto de quien llama"},
-    {id:"acceso",         pide:"por dónde entra el móvil y quién lo va a esperar"}
+    {id:"identificacion", pide:"nombre y puesto de quien llama"}
   ];
 
   /* Además del recorte, un tope duro: pasado el aviso de despacho el operador tiene
@@ -670,7 +671,7 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0, evoIdx:0,
-              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{} };
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false };
 
   const $ = s => document.querySelector(s);
   const views = {gate:$("#v-gate"), setup:$("#v-setup"), nuevo:$("#v-nuevo"), brief:$("#v-brief"), call:$("#v-call"), debrief:$("#v-debrief")};
@@ -899,7 +900,15 @@
   /* Red de seguridad, nada más: si el modelo nunca manda la marca [[DATOS:...]], la
      grilla no se completaría jamás y el operador interrogaría para siempre. Pasado este
      tiempo la llamada entra en espera aunque la grilla siga incompleta. */
-  const TOPE_MINUTOS = 5;
+  const TOPE_MINUTOS = 4;
+
+  /* Lo que el operador dijo, no lo que declaró tener. Si anunció que el móvil sale,
+     la llamada avanzó, aunque se haya olvidado de mandar la marca [[DATOS:...]]. */
+  function anuncioDeDespacho(txt){
+    const t = String(txt||"").toLowerCase();
+    if(!/(m[oó]vil|sem|ambulancia|unidad)/.test(t)) return false;
+    return /(en camino|ya sali|est[aá] saliendo|va saliendo|sale ya|llega en|demora|minutos)/.test(t);
+  }
 
   function extrasDe(){
     const g = GUIAS[S.scn.guia];
@@ -913,7 +922,7 @@
   function enEspera(){
     if(S.fase === "espera") return true;
     if((Date.now()-S.t0) >= TOPE_MINUTOS*60000) return true;
-    if(faltan(ESENCIALES).length) return false;
+    if(!S.despachado && faltan(ESENCIALES).length) return false;
     // Ya despachó: o terminó los extras, o se le acabaron los turnos para hacerlo.
     return faltan(extrasDe()).length === 0 || S.turnosPost > TOPE_EXTRAS;
   }
@@ -927,7 +936,11 @@
     const fEs = faltan(ESENCIALES), fEx = faltan(extrasDe());
     const L = ["ESTADO DE LA LLAMADA, para que sepas dónde estás parado."];
     L.push("- Van "+Math.floor(t/60000)+" minuto(s) de llamada.");
-    if(S.grado!=null) L.push("- La última vez clasificaste a la víctima como grado "+S.grado+".");
+    if(S.grado!=null){
+      L.push("- Ya tenés el grado: "+S.grado+". NO preguntes tos, espuma, pulso ni ningún otro signo para clasificar: la víctima YA está clasificada.");
+    }
+    const tiene = ESENCIALES.concat(extrasDe()).filter(x => S.datos[x.id]);
+    if(tiene.length) L.push("- Datos que YA tenés y NO volvés a pedir: "+tiene.map(x=>x.id).join(", ")+".");
 
     if(enEspera()){
       L.push("- ESTÁS EN ESPERA. El interrogatorio TERMINÓ: ya tenés lo que necesitabas.");
@@ -939,7 +952,10 @@
     } else if(fEs.length){
       L.push("- TODAVÍA TE FALTA LO ESENCIAL. No sabés: "+fEs.map(x=>x.pide).join("; ")+".");
       L.push("- Preguntá por eso y sólo por eso, de a una cosa por vez, siguiendo ese orden.");
-      L.push("- NO anuncies todavía que el móvil sale: primero completá lo de arriba.");
+      // Si ya anunció el despacho, decirle que no lo anuncie lo deja con una instrucción
+      // contradictoria: pasa cuando anuncia por su cuenta sin haber declarado los datos.
+      if(S.despachado) L.push("- Ya avisaste que el móvil sale, así que no lo repitas. Te quedan muy pocos turnos: pedí lo que falte de arriba y después te callás.");
+      else L.push("- NO anuncies todavía que el móvil sale: primero completá lo de arriba.");
     } else {
       L.push("- YA TENÉS TODO LO ESENCIAL. Si todavía no le avisaste que el SEM sale y le diste el tiempo de llegada, hacelo AHORA, en este turno.");
       if(fEx.length){
@@ -990,6 +1006,7 @@
       "PRIMERO, LO ESENCIAL. Sin esto NO anunciás el despacho:",
       ESENCIALES.map((x,i)=>(i+1)+". "+x.pide).join("\n"),
       "Si ya te dieron un dato, no lo volvés a pedir. Si viene vago, lo repreguntás hasta que sirva para despachar.",
+      "Lo que te importa es despachar bien: dónde frena el móvil, quién lo espera, qué se va a encontrar el equipo cuando baje. Los detalles clínicos finos no te cambian nada y no se preguntan.",
       "Lo de las acciones y el material son PREGUNTAS, no instrucciones: preguntás si lo están haciendo y con qué cuentan, no les decís que lo hagan. El DEA es lo que más te importa del material, y si NO tienen, eso cambia el despacho.",
       "",
       "DESPUÉS, EL AVISO DE DESPACHO. Apenas completaste lo esencial:",
@@ -1052,9 +1069,14 @@
       const md = txt.match(/\[\[\s*DATOS\s*:([^\]]*)\]\]/i);
       if(md) md[1].split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(id=>{ S.datos[id] = true; });
       txt = txt.replace(/\[\[\s*DATOS[^\]]*\]\]/gi,"").trim();
-      // Turnos gastados desde que ya tenía todo lo esencial: es lo que limita cuánto
-      // puede seguir preguntando después de anunciar el despacho.
-      if(faltan(ESENCIALES).length === 0) S.turnosPost++;
+      // El anuncio del despacho se detecta de lo que DIJO, no de lo que declaró tener:
+      // el modelo suele anunciar por su cuenta sin mandar la marca de datos, y así el
+      // tope nunca arrancaba.
+      if(anuncioDeDespacho(txt)) S.despachado = true;
+
+      // Turnos gastados desde que despachó: es lo que limita cuánto puede seguir
+      // preguntando antes de callarse.
+      if(S.despachado || faltan(ESENCIALES).length === 0) S.turnosPost++;
 
       // El operador puede declarar que terminó de interrogar antes de completar la
       // grilla. Al revés no: si la grilla no está, enEspera() no lo deja salir.
@@ -1291,7 +1313,7 @@
     S.turns=[]; S.log=[]; S.ended=false; S.busy=true; S.listening=false; S.micDiag="";
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
     S.grado=null; S.grados=[]; S.sondeos=0; S.evoIdx=0; S.ultimaOp=0;
-    S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={};
+    S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={}; S.despachado=false;
     S.rub = rubrica(S.scn);
     // Tiempo de arribo al azar dentro del rango: el alumno no lo sabe y no puede memorizarlo.
     const rgo = ARRIBOS[S.arriboKey] || ARRIBOS.normal;

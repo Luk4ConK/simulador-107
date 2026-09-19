@@ -55,7 +55,10 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
 - `CADENCIA` y `ARRIBOS` — cada cuánto el operador vuelve a controlar a la víctima, y
   los rangos de cuánto tarda el móvil en llegar.
 - `ESENCIALES` — lo que el operador tiene que saber ANTES de anunciar que el SEM sale.
-  Mientras falte algo, la app se lo dice en cada turno y no lo deja despachar.
+  Mientras falte algo, la app se lo dice en cada turno y no lo deja despachar. Incluye
+  `acceso` (dónde frena el móvil y quién lo espera), que el instructor puso al mismo nivel
+  que la ubicación: es lo que de verdad le sirve a la ambulancia, a diferencia del detalle
+  clínico fino.
 - `EXTRAS` — lo que pregunta después del anuncio. **Son muy pocos a propósito**: hoy
   identificación, acceso y el resultado del DEA. La guía del escenario suma los suyos con
   `extras`. Agotados, la llamada pasa a espera sola.
@@ -127,6 +130,12 @@ Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario p
   uno; agotados los dos, entra en espera y tiene prohibido preguntar. El operador declara
   lo que ya averiguó con `[[DATOS:id,id]]` y la app **acumula**, así que si un turno se
   olvida de listar algo, no se pierde.
+- **El anuncio del despacho se detecta del TEXTO, no de la marca.** `anuncioDeDespacho()`
+  busca en lo que dijo el operador. Hubo que hacerlo porque el modelo anuncia que el móvil
+  sale por su cuenta pero no siempre manda `[[DATOS:...]]`: la grilla quedaba vacía, la app
+  se creía todavía en interrogatorio y el tope de turnos no arrancaba nunca. Regla general:
+  **no atar una transición a que el modelo coopere con una marca** si el mismo hecho se
+  puede leer de lo que dijo.
 - **Una grilla larga de extras alarga el interrogatorio, no lo acorta.** La primera
   versión tenía ocho extras y el efecto fue el contrario al buscado: la app le pasaba al
   operador la lista de los que faltaban y él la iba cumpliendo con disciplina, así que
