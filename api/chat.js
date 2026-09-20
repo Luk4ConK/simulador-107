@@ -81,9 +81,11 @@ export default async function handler(req, res) {
         : turnos;
 
       const texto = await generar(prov, "operador", {
-        sistema: String(cuerpo.instrucciones || "").slice(0, 8000),
+        sistema: String(cuerpo.instrucciones || "").slice(0, 24000),
         mensajes,
-        maxTokens: 320,
+        // Alcanza para dos oraciones más los marcadores. Si el modelo piensa antes de
+        // contestar, esos tokens salen de acá: por eso no va más justo.
+        maxTokens: 500,
         rapido: true
       });
       return res.status(200).json({ texto });
@@ -93,7 +95,11 @@ export default async function handler(req, res) {
       const texto = await generar(prov, "evaluador", {
         sistema: SISTEMA_EVALUADOR,
         mensajes: [{ role: "user", content: String(cuerpo.prompt || "").slice(0, 40000) }],
-        maxTokens: 1800,
+        // El presupuesto de razonamiento se descuenta de maxTokens. Con 1800 y el
+        // razonamiento encendido, el modelo lo gastaba pensando en voz alta y la
+        // respuesta se cortaba a mitad de palabra, antes del JSON.
+        maxTokens: 4000,
+        sinPensar: true,
         rapido: false
       });
       const datos = extraerJSON(texto);
@@ -191,7 +197,18 @@ async function viaAnthropic(clave, { modelo, sistema, mensajes, maxTokens }) {
   return texto;
 }
 
-async function viaGemini(clave, { modelo, sistema, mensajes, maxTokens, rapido }) {
+async function viaGemini(clave, opciones) {
+  try {
+    return await pedirAGemini(clave, opciones);
+  } catch (e) {
+    // No todos los modelos aceptan que se les apague el razonamiento. Si se queja de
+    // eso, se reintenta sin pedírselo antes de dar la llamada por perdida.
+    if (e.sinPensarNoSoportado) return await pedirAGemini(clave, { ...opciones, sinPensar: false, rapido: false });
+    throw e;
+  }
+}
+
+async function pedirAGemini(clave, { modelo, sistema, mensajes, maxTokens, rapido, sinPensar }) {
   const cuerpo = {
     systemInstruction: { parts: [{ text: sistema }] },
     contents: mensajes.map(m => ({
@@ -200,8 +217,10 @@ async function viaGemini(clave, { modelo, sistema, mensajes, maxTokens, rapido }
     })),
     generationConfig: { maxOutputTokens: maxTokens }
   };
-  // El operador tiene que contestar rápido; si el modelo "piensa" antes, se nota en la llamada.
-  if (rapido && process.env.GEMINI_SIN_PENSAR === "1") {
+  // El evaluador lo pide siempre (`sinPensar`), porque razonar le come los tokens de la
+  // respuesta. El operador lo pide sólo si el instructor prendió GEMINI_SIN_PENSAR,
+  // porque ahí es una decisión de velocidad, no de correctitud.
+  if (sinPensar || (rapido && process.env.GEMINI_SIN_PENSAR === "1")) {
     cuerpo.generationConfig.thinkingConfig = { thinkingBudget: 0 };
   }
 
@@ -227,6 +246,8 @@ function fallo(texto, status) {
   err.estado = (status === 429) ? 429 : 502;
   // Modelo que esta clave no puede usar: no es una falla real, hay que probar el siguiente.
   err.modeloInexistente = status === 404 || /NOT_FOUND|not_found|not found|does not exist|is not supported|unknown model/i.test(t);
+  // El modelo no acepta thinkingConfig: hay que repetir el pedido sin eso.
+  err.sinPensarNoSoportado = status === 400 && /thinking/i.test(t);
   return err;
 }
 

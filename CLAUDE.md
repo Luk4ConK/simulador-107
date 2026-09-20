@@ -132,6 +132,18 @@ justamente para que la dispare el teclado.
   y avisa, en vez de quedar en bucle.
 - **La clave de API nunca toca el navegador.** Va en variables de entorno de Vercel y se
   usa sólo dentro de `api/chat.js`. No la escribas en ningún archivo del repo.
+- **El prompt del operador NO se puede truncar.** `api/chat.js` lo recortaba a 8.000
+  caracteres cuando el prompt real mide ~15.100: se perdía el 47% final, o sea la base de
+  conocimiento, el bloque de estado dinámico, los marcadores y el nivel de dificultad. La
+  app no se caía, porque las garantías viven en su propio código, pero **todo lo que el
+  prompt intenta enseñarle al operador no le llegaba**. El tope quedó en 24.000 por
+  seguridad: **si el prompt crece, hay que subirlo**. Se descubrió probando ocho perfiles
+  de alumno contra producción; era la causa de casi todos los comportamientos raros.
+- **Al evaluador hay que apagarle el razonamiento.** El presupuesto de "pensar" de Gemini
+  se descuenta de `maxTokens`: con 1.800 el modelo lo gastaba razonando en voz alta y lo
+  cortaban antes de escribir el JSON, así que **ocho de ocho prácticas terminaban sin
+  devolución**. Ahora pide `thinkingBudget: 0` y tiene 4.000 tokens. Si un modelo no acepta
+  ese ajuste, `viaGemini` reintenta una vez sin pedirlo.
 - **`api/chat.js` prueba varios modelos en orden** hasta dar con uno que la cuenta acepte,
   y recuerda cuál anduvo. Un 404 de modelo no es un error: es "probá el siguiente".
 - **El puntaje lo calcula la app, no el modelo.** El evaluador sólo decide, criterio por
@@ -174,6 +186,13 @@ justamente para que la dispare el teclado.
   lo piden o si le cuentan una maniobra peligrosa, y ahí en una frase. El interrogatorio
   está escrito en cinco fases dentro de `instrucciones()`: esencial → acciones y material
   → aviso de despacho → el resto → espera.
+- **Si el que llama no colabora, el operador abandona.** Antes repetía la misma pregunta
+  hasta nueve veces y la llamada no terminaba nunca. `S.sinAvance` cuenta los turnos
+  seguidos sin arrancarle un dato nuevo: a los 2 se le pide que cambie el enfoque, a los 4
+  (`TOPE_SIN_AVANCE`) cierra explicando que sin ese dato no puede mandar el móvil. Para el
+  alumno esa es la lección del ejercicio, y `abandona()` es un cierre válido aunque nunca
+  haya despachado: ahí la despedida dice otra cosa, porque prometerle una ambulancia que
+  no salió sería mentirle.
 - **Si le toca cerrar y no cierra, cierra la app y la despedida la dice ella.** El modelo
   se resiste a colgarle el teléfono a alguien que está reanimando: en las prácticas
   contestaba "Seguimos en línea" o abría otra pregunta. Cuando pasa, `textoDeCierre()`
