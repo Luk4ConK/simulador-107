@@ -1184,13 +1184,15 @@
       S.turns.push({role:"assistant", content:txt});
       logIt("op", txt);
       $("#cstate").textContent = "En línea"; $("#dot").classList.remove("ring");
+      // Si este mensaje es el último, la entrada se cierra ANTES de leerlo en voz alta.
+      // Mientras el operador habla el botón de enviar queda habilitado a propósito, para
+      // poder adelantarse; pero si ya se decidió cortar, lo que entre por esa ventana
+      // provoca un turno más y el operador se despide dos veces.
+      if(cerrar){ S.cerrando = true; detenerEscucha(); }
       S.busy = false; S.hablando = true; updateControls();
       await speak(txt);
       S.hablando = false; S.ultimaOp = Date.now(); updateControls();
       if(cerrar && !S.ended){
-        // La entrada se cierra ya: si no, en los 900 ms que faltan todavía entra un
-        // mensaje y el operador se despide dos veces.
-        S.cerrando = true; detenerEscucha(); updateControls();
         addMsg("sys","El operador cortó la llamada.");
         setTimeout(()=>endCall("operador"), 900);
       } else {
