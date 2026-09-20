@@ -143,7 +143,7 @@ async function generar(prov, rol, opciones) {
       return texto;
     } catch (e) {
       ultimo = e;
-      if (!e.modeloInexistente) throw e;
+      if (!e.modeloInexistente && !e.modeloOcupado) throw e;
     }
   }
   throw ultimo || new Error("sin modelos disponibles");
@@ -248,6 +248,9 @@ function fallo(texto, status) {
   err.modeloInexistente = status === 404 || /NOT_FOUND|not_found|not found|does not exist|is not supported|unknown model/i.test(t);
   // El modelo no acepta thinkingConfig: hay que repetir el pedido sin eso.
   err.sinPensarNoSoportado = status === 400 && /thinking/i.test(t);
+  // El modelo está saturado. No es una falla de la cuenta ni del pedido: hay que probar
+  // el siguiente de la lista, que es justamente para lo que está.
+  err.modeloOcupado = status === 503 || /UNAVAILABLE|high demand|overloaded/i.test(t);
   return err;
 }
 
