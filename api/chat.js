@@ -237,7 +237,13 @@ async function generar(prov, rol, opciones) {
       throw e;
     }
   }
-  if (ultimo && ultimo.cuota) ultimo.estado = 429;
+  // Si alguno se quedó sin cuota, eso es lo que hay que contar (429), aunque el último
+  // de la lista haya fallado por otra cosa (por ejemplo, que no existe para esta clave).
+  if (cuotas) {
+    const e = new Error("Todos los modelos disponibles llegaron a su tope de uso por ahora. " + String((ultimo && ultimo.message) || "").slice(0, 120));
+    e.estado = 429; e.cuota = true;
+    throw e;
+  }
   throw ultimo || new Error("sin modelos disponibles");
 }
 
