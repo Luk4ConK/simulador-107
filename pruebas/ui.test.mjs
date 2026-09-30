@@ -191,6 +191,46 @@ try {
     await page.context().close();
   });
 
+  await prueba("entrada: cada uno por su puerta; el instructor llega al panel y /activar marca todo en verde", async () => {
+    const page = await nuevaPagina();
+    await page.goto(base + "/");
+    await page.waitForSelector("#v-gate:not([hidden])");
+    // Con base de datos se pide código: no hay práctica libre, y el panel figura activado.
+    assert.equal(await page.locator("#gate-libre").isHidden(), true);
+    assert.equal(await page.locator("#inst-activar").isHidden(), true);
+    assert.ok(await page.locator(".escudo").evaluate(img => img.complete && img.naturalWidth > 0), "el escudo de Sumar Salud carga");
+    await page.fill("#inst-in", "NO-ES-UN-CODIGO");
+    await page.click("#inst-go");
+    await page.waitForFunction(() => /no abre el panel/.test(document.querySelector("#inst-err").textContent));
+    await page.fill("#inst-in", "ADMIN-DE-PRUEBA-99");
+    await page.click("#inst-go");
+    await page.waitForURL(u => new URL(u).pathname === "/panel");
+    await page.waitForSelector("#v-panel:not([hidden])");
+    assert.match(await page.locator("#p-rol").textContent(), /Administrador/);
+
+    // Un alumno entra a practicar desde la misma entrada, con el código de su clase.
+    const admin = { "x-panel": "ADMIN-DE-PRUEBA-99" };
+    const inst = { "x-panel": (await api("/api/datos", { accion: "cuenta-guardar", cuenta: { nombre: "Escuela Norte" } }, admin)).cuenta.codigoInstructor };
+    const sala = (await api("/api/datos", { accion: "sala-crear", nombre: "Jueves" }, inst)).sala;
+    const alumno = await nuevaPagina();
+    await alumno.goto(base + "/");
+    await alumno.waitForSelector("#v-gate:not([hidden])");
+    await alumno.fill("#gate-in", sala.codigo.toLowerCase());
+    await alumno.click("#gate-go");
+    await alumno.waitForSelector("#v-setup:not([hidden])");
+    assert.match(await alumno.locator("#cuenta-info").innerText(), /Jueves/);
+    assert.equal(await alumno.locator("#cambiar-codigo").textContent(), "Cambiar de código");
+    await alumno.click("#cambiar-codigo");
+    await alumno.waitForSelector("#v-gate:not([hidden])");
+
+    // La página para el dueño revisa lo que está activado.
+    const activar = await nuevaPagina();
+    await activar.goto(base + "/activar");
+    await activar.waitForSelector("#listo:not([hidden])");
+    assert.equal(await activar.locator(".fila.lista").count(), 3);
+    for (const p of [page, alumno, activar]) await p.context().close();
+  });
+
   await prueba("panel: el administrador ve la clase en vivo, revisa una práctica, mide el acuerdo y exporta", async () => {
     const page = await nuevaPagina();
     page.on("dialog", d => d.accept());

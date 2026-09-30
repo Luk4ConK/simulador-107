@@ -191,7 +191,7 @@
       <label class="chk" style="justify-content:center"><input type="checkbox" id="login-recordar"> Recordarlo en este equipo</label>
       <div class="err" id="login-err"></div>
       <button class="btn pri" id="login-go">Entrar</button>
-      <p class="small muted">¿Sos alumno? <a href="./">Andá al simulador</a>.</p>
+      <p class="small muted"><a href="./">Volver a la página principal</a></p>
     </div>
   </section>
 
@@ -537,10 +537,12 @@
     $("#login-err").textContent = "";
     try{ await entrar(v, $("#login-recordar").checked); }
     catch(e){
-      $("#login-err").textContent = e.code === "sin_base"
-        ? "Todavía no está conectada la base de datos (sin_base). Seguí el paso «Conectar la base de datos» del README."
+      const err = $("#login-err");
+      err.textContent = e.code === "sin_base"
+        ? "Todavía no está conectada la base de datos (sin_base). "
         : e.code === "demasiados_intentos" ? "Muchos intentos seguidos. Esperá diez minutos (demasiados_intentos)."
         : "Ese código no abre el panel (" + (e.code || e.status) + ").";
+      if(e.code === "sin_base") err.append(h("a", { href:"activar", text:"Ver qué falta activar" }), ".");
     }
   });
   $("#login-cod").addEventListener("keydown", e => { if(e.key === "Enter") $("#login-go").click(); });

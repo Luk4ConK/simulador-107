@@ -41,6 +41,10 @@ test("sin base y sin códigos: anda como antes", async () => {
     const g = await llamar(chat, null, {}, "GET");
     assert.equal(g.cuerpo.requiereCodigo, false);
     assert.equal(g.cuerpo.registro, false);
+    // Lo que la entrada y /activar muestran como pendiente: nunca el valor, sólo si está.
+    assert.equal(g.cuerpo.admin, false);
+    assert.equal(g.cuerpo.clave, true);
+    assert.ok(!JSON.stringify(g.cuerpo).includes(process.env.GEMINI_API_KEY));
     const r = await llamar(chat, { modo: "operador", fijo: "Sos operador.", variable: "ESTADO DE LA LLAMADA\n- TODAVÍA TE FALTA LO ESENCIAL", turnos: turnosDeEjemplo });
     assert.equal(r.statusCode, 200, JSON.stringify(r.cuerpo));
     assert.match(r.cuerpo.texto, /Entendido/);

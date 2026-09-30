@@ -21,6 +21,19 @@ Gemini. Micrófono, voz del operador y evaluación andando en el celular.
 
 Vercel está conectado a este repositorio: **todo push despliega solo**, conservando la
 URL y las variables de entorno. No hay build: es HTML estático más una función.
+La web es **https://simulador-107.vercel.app** (equipo `sumar-salud-ong`, proyecto
+`simulador-107` en Vercel; producción sale de `main`). Si no la encontrás, está en el campo
+*website* del repositorio y en los *deployments* de GitHub.
+
+**La raíz es la entrada única** (pedido del instructor: todo empieza en la web principal,
+así los alumnos la conocen): `v-gate` de `index.html` tiene dos puertas, alumnos con el
+código de la clase y instructores con el suyo. La de instructores verifica el código con
+`/api/datos` (`accion: "panel"`), lo deja en `sessionStorage.sim107_panel` y manda a
+`/panel`, que entra solo. Sin código guardado la web abre siempre en la entrada; la
+práctica libre ("Practicar sin código") sólo aparece si el servidor no pide códigos. El
+GET de `/api/chat` dice qué está activado (`registro`, `admin`, `clave`, nunca los
+valores) y `/activar` (activar.html) lo muestra como lista de control con los pasos y los
+enlaces directos a Vercel, para que el dueño no dependa de nadie para activar el panel.
 
 **Septiembre de 2026: se armó el producto completo** (en la rama
 `claude/simulador-107-producto-rllxr2`; producción se actualiza recién cuando se une a la
@@ -55,6 +68,7 @@ index.html            la app de los alumnos: pantallas, voz, rúbrica, estado. S
 panel.html            panel del instructor y del administrador (lee SCENARIOS de index.html)
 instructores.html     presentación para instructores, formulario de contacto, PLANES
 fundamentos.html      decisiones con su evidencia; arma la tabla de la rúbrica con rubrica()
+activar.html          para el dueño: qué falta activar en Vercel (base, CODIGO_ADMIN, clave) y los pasos
 terminos.html         términos de uso (datos del titular desde /api/datos?info=1)
 privacidad.html       política de privacidad, Ley 25.326
 publico.css/.js       estilo y datos del titular de las páginas públicas
@@ -63,7 +77,7 @@ api/datos.js          salas, prácticas, revisiones, escenarios, cuentas, contac
 manifest.webmanifest  para que se instale como app
 sw.js                 service worker: abre rápido, nunca cachea /api/
 vercel.json           maxDuration de las funciones, direcciones cortas, cabeceras
-icons/                íconos
+icons/                íconos y el escudo de Sumar Salud que usa la entrada
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
 herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
 README.md             guía de despliegue, escrita para el usuario
@@ -155,7 +169,7 @@ listo cuando el alumno toca el botón. Antes saltaba derecho al informe y quedab
 cortaba la voz del operador en la última frase. Por eso ahora `speechSynthesis.cancel()`
 sólo se llama si el que cortó fue el alumno.
 
-Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario propio) →
+Pantallas: `v-gate` (la entrada: alumnos e instructores) → `v-setup` → `v-nuevo` (escenario propio) →
 `v-brief` → `v-dial` (el teclado del teléfono) → `v-call` → `v-debrief`. Se muestran con
 `show(nombre)`.
 

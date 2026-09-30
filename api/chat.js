@@ -63,7 +63,12 @@ export default async function handler(req, res) {
     if (req.query && (req.query.diag === "1" || req.query.diag === "true")) {
       return res.status(200).json(await diagnostico());
     }
-    return res.status(200).json({ requiereCodigo: requiereCodigo(), proveedor: proveedor().nombre, registro: Boolean(kvConfig()) });
+    // Qué está activado, sin mostrar ningún valor: la entrada y la página /activar lo usan
+    // para decirle al dueño qué le falta cargar en Vercel.
+    return res.status(200).json({
+      requiereCodigo: requiereCodigo(), proveedor: proveedor().nombre, registro: Boolean(kvConfig()),
+      admin: Boolean((process.env.CODIGO_ADMIN || "").trim()), clave: Boolean(proveedor().clave)
+    });
   }
   if (req.method !== "POST") {
     return res.status(405).json({ error: "metodo_no_permitido" });

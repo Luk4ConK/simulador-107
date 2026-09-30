@@ -34,8 +34,19 @@ function cambiar(viejo, nuevo) {
 
 /* ---------------- pantallas ---------------- */
 
+// La entrada (alumnos e instructores) no se muestra nunca en la copia: se sacan sus enlaces
+// a otras páginas para que no quede ninguno roto.
 cambiar(
-  `      <p class="note" style="margin:6px 0 0">¿Sos instructor? <a href="panel.html">Entrá al panel</a> · <a href="instructores.html">Conocé el simulador</a></p>\n`,
+  `      <p class="pie">¿Querés usarlo con tus alumnos? <a href="instructores">Conocé el simulador</a><br>
+        <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a></p>\n`,
+  ``
+);
+cambiar(
+  `El panel todavía no está activado. <a href="activar">Ver qué falta</a>.`,
+  `El panel no existe en la copia de Claude.`
+);
+cambiar(
+  `        <img class="escudo" src="icons/sumarsalud-guardavidas.png" width="84" height="84" alt="Escudo de Sumar Salud: capacitación y entrenamiento de guardavidas">\n`,
   ``
 );
 cambiar(
@@ -145,6 +156,16 @@ cambiar(
   }`
 );
 cambiar(
+`  async function pedirDatos(cuerpo, encabezados){
+    const r = await fetch("/api/datos", { method:"POST",
+      headers: Object.assign({"content-type":"application/json"}, encabezados || {}), body: JSON.stringify(cuerpo) });
+    const d = await r.json().catch(()=>({error:"respuesta_ilegible"}));
+    if(!r.ok){ const e = new Error(d.detalle||d.error||"error"); e.code = d.error; e.status = r.status; throw e; }
+    return d;
+  }`,
+`  async function pedirDatos(){ const e = new Error("sin_servidor"); e.code = "sin_servidor"; throw e; }`
+);
+cambiar(
 `  function avisarSala(estado){
     if(!S.acceso || !S.acceso.sala) return;
     fetch("/api/datos", { method:"POST", headers:{"content-type":"application/json", "x-codigo":S.codigo},
@@ -161,14 +182,18 @@ cambiar(
     $("#alias").value = S.alias;
     pintarPerfil();
     const delLink = codigoDelLink();
-    let requiere = false;
-    try{ const r = await fetch("/api/chat"); requiere = (await r.json()).requiereCodigo; }catch(e){}
+    let estado = {};
+    try{ const r = await fetch("/api/chat"); estado = await r.json(); }catch(e){}
+    S.requiere = Boolean(estado.requiereCodigo);
+    pintarEntrada(estado);
     if(delLink){
       try{ await verificar(delLink); show("setup"); }
       catch(e){ pedirCodigo(textoError(e)); $("#gate-in").value = delLink; }
       return;
     }
-    if(requiere && !S.codigo){ show("gate"); $("#gate-in").focus(); return; }
+    // Sin un código guardado, la web abre en la entrada: cada uno por su puerta.
+    if(!S.codigo && (S.requiere || !libreEnSesion())){ show("gate"); return; }
+    pintarCuenta();
     show("setup");
     // Con un código guardado se vuelve a verificar en segundo plano: trae el nombre de la
     // institución y sus escenarios, y si la clase ya cerró, vuelve a pedir un código.
