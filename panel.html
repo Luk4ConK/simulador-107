@@ -151,6 +151,7 @@
   .tr{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:12px; font-family:var(--mono); font-size:12.5px; line-height:1.6; max-height:320px; overflow:auto; white-space:pre-wrap}
   .crit{display:grid; grid-template-columns:1fr 150px; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid var(--line-soft)}
   .crit select{padding:7px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2)}
+  #dlg.ciega .ia{display:none}
 
   /* columnas de uso */
   /* Columnas de uso: 24px de grosor como máximo, repartidas a lo ancho; la escala va
@@ -290,7 +291,7 @@
     <div class="tab" id="t-calidad" hidden>
       <div class="card">
         <h2 style="font-size:17px">¿Corrige bien la IA?</h2>
-        <p class="sec small" style="margin-top:6px">Cada vez que revisás una práctica y marcás vos cada criterio, queda un par «IA vs. instructor». Con esos pares se mide el acuerdo (kappa de Cohen). La meta del piloto es un kappa de 0,6 o más con al menos 50 prácticas revisadas: recién ahí la devolución automática se puede usar para evaluar, y no sólo para practicar.</p>
+        <p class="sec small" style="margin-top:6px">Cada vez que revisás una práctica a ciegas (marcando cada criterio antes de ver lo que dijo la IA), queda un par «IA vs. instructor». Con esos pares se mide el acuerdo (kappa de Cohen); las revisiones hechas después de mirar a la IA no cuentan, porque salen parecidas a la suya sin querer. La meta del piloto es un kappa de 0,6 o más con al menos 50 prácticas revisadas: recién ahí la devolución automática se puede usar para evaluar, y no sólo para practicar.</p>
       </div>
       <div class="grid g3" id="ca-tiles" style="margin-top:12px"></div>
       <div class="card scroll" style="margin-top:12px"><table class="tabla" id="ca-tabla"></table><p class="vacio" id="ca-vacio" hidden>Todavía no revisaste ninguna práctica. Abrí una desde «Prácticas», marcá cada criterio y guardá.</p></div>
@@ -388,11 +389,12 @@
     <div class="grid g3" id="d-tiles"></div>
     <div>
       <span class="lbl">Criterios · la IA y tu revisión</span>
+      <p class="aviso small" id="d-ciega" hidden style="margin:8px 0">Revisión a ciegas: marcá cada criterio leyendo la transcripción, antes de ver lo que dijo la IA. Si la ves primero, tu revisión se parece a la suya sin querer y el acuerdo que mide la pestaña Calidad deja de ser real. <button class="link" id="d-ver-ia">Ver lo que dijo la IA igual</button></p>
       <div id="d-crit"></div>
       <label class="f" style="margin-top:10px"><span>Nota para el alumno o para vos</span><textarea id="d-nota" rows="2"></textarea></label>
       <div class="fila" style="margin-top:10px"><button class="btn pri" id="d-guardar">Guardar mi revisión</button><span class="small" id="d-estado"></span><span class="sp"></span><button class="btn peligro" id="d-borrar">Borrar esta práctica</button></div>
     </div>
-    <div><span class="lbl">Devolución de la IA</span><div id="d-devolucion" class="small sec" style="margin-top:6px"></div></div>
+    <div id="d-devolucion-wrap"><span class="lbl">Devolución de la IA</span><div id="d-devolucion" class="small sec" style="margin-top:6px"></div></div>
     <div><span class="lbl">Transcripción</span><div class="tr" id="d-tr" style="margin-top:6px"></div></div>
   </div>
 </dialog>
@@ -758,15 +760,15 @@
     const lista = P.practicas;
     const ids = []; const etiquetas = {};
     lista.forEach(p => (p.rubrica || []).forEach(c => { if(!ids.includes(c.id)){ ids.push(c.id); etiquetas[c.id] = c.label; } }));
-    const cab = ["fecha","alumno_o_grupo","clase","escenario","quien_llama","dificultad","duracion_s","puntaje_ia","topeado","puntaje_instructor","t_ubicacion_s","t_rcp_s","modelo_evaluador"].concat(ids.map(id => "ia_" + id));
+    const cab = ["fecha","alumno_o_grupo","clase","escenario","quien_llama","dificultad","duracion_s","puntaje_ia","topeado","puntaje_instructor","revision_a_ciegas","t_ubicacion_s","t_rcp_s","modelo_evaluador"].concat(ids.map(id => "ia_" + id), ids.map(id => "instructor_ciego_" + id));
     const esc = v => {
       let s = v == null ? "" : String(v);
       if(/^[=+\-@]/.test(s)) s = "'" + s;   // que Excel no lo tome como fórmula
       return /[",;\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
     };
     const filas = lista.map(p => [new Date(p.fecha).toISOString(), p.grupo || p.alias, p.sala || "", p.escenario && p.escenario.titulo, p.perfil, p.dificultad,
-      Math.round((p.duracionMs||0)/1000), p.puntaje, p.topeado ? "si" : "no", p.puntajeInstructor, p.tUbicacionMs == null ? "" : Math.round(p.tUbicacionMs/1000),
-      p.tRcpMs == null ? "" : Math.round(p.tRcpMs/1000), p.modeloEvaluador].concat(ids.map(id => (p.items || {})[id] || "")));
+      Math.round((p.duracionMs||0)/1000), p.puntaje, p.topeado ? "si" : "no", p.puntajeInstructor, p.revisionCiega ? "si" : (p.revision ? "no" : ""), p.tUbicacionMs == null ? "" : Math.round(p.tUbicacionMs/1000),
+      p.tRcpMs == null ? "" : Math.round(p.tRcpMs/1000), p.modeloEvaluador].concat(ids.map(id => (p.items || {})[id] || ""), ids.map(id => (p.revisionCiega || {})[id] || "")));
     const csv = "﻿" + [cab].concat(filas).map(f => f.map(esc).join(",")).join("\n");
     const a = h("a", { href: URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })), download: "practicas-simulador107-" + new Date().toISOString().slice(0,10) + ".csv" });
     document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
@@ -785,8 +787,14 @@
     const rev = (p.revision && p.revision.items) || {};
     const mios = (p.transcripcion || []).filter(l => l.w === "yo");
     const tu = mios[Number(ev.turno_ubicacion) - 1];
+    // Sin revisión previa, se revisa a ciegas: lo de la IA queda oculto hasta guardar.
+    ciega = !p.revision && Boolean(p.evaluacion);
+    $("#dlg").classList.toggle("ciega", ciega);
+    $("#d-ciega").hidden = !ciega;
+    const tIA = tile("Puntaje de la IA", p.puntaje == null ? "—" : String(p.puntaje), p.topeado ? "topeado: faltó un dato crítico" : ev.titular || "");
+    tIA.classList.add("ia");
     vaciar($("#d-tiles")).append(
-      tile("Puntaje de la IA", p.puntaje == null ? "—" : String(p.puntaje), p.topeado ? "topeado: faltó un dato crítico" : ev.titular || ""),
+      tIA,
       tile("Tu puntaje", p.revision ? String(p.revision.puntaje) : "—", p.revision ? "revisada el " + fecha(p.revision.fecha) : "todavía sin revisar"),
       tile(p.perfil === "lego" ? "Ubicación · RCP" : "Tiempo hasta la ubicación", (tu ? mmss(tu.t) : "—") + (p.perfil === "lego" ? " · " + mmss(p.tRcpMs) : ""), "minutos:segundos desde que atendió"));
     const box = vaciar($("#d-crit"));
@@ -794,15 +802,19 @@
       const it = items[c.id] || { estado:"falto", comentario:"" };
       const st = String(it.estado || "falto").toLowerCase().replace(/ó/g,"o");
       const sel = h("select", { "data-id":c.id, "aria-label":"Tu revisión de " + c.label },
+        h("option", { value:"", text:"Elegí…" }),
         ["logrado","parcial","falto"].map(v => h("option", { value:v, text: v === "logrado" ? "Logrado" : v === "parcial" ? "A medias" : "Faltó" })));
-      sel.value = rev[c.id] || (["logrado","parcial","falto"].includes(st) ? st : "falto");
+      // A ciegas arranca vacío; si ya la revisaste, muestra tu revisión; si no hay
+      // devolución de la IA, no hay nada que sesgar y arranca vacío igual.
+      sel.value = rev[c.id] || "";
       box.append(h("div", { class:"crit" },
         h("div", {}, h("div", {}, h("b", { text:c.label + (c.critico ? " (crítico)" : "") })),
-          h("div", { class:"small sec" }, h("span", { class:"pip " + st }), " IA: " + (st === "logrado" ? "logrado" : st === "parcial" ? "a medias" : "faltó") + (it.comentario ? " — " + it.comentario : ""))),
+          p.evaluacion ? h("div", { class:"small sec ia" }, h("span", { class:"pip " + st }), " IA: " + (st === "logrado" ? "logrado" : st === "parcial" ? "a medias" : "faltó") + (it.comentario ? " — " + it.comentario : "")) : ""),
         sel));
     });
     $("#d-nota").value = (p.revision && p.revision.nota) || "";
     $("#d-estado").textContent = "";
+    $("#d-devolucion-wrap").classList.add("ia");
     vaciar($("#d-devolucion")).append(
       ev.bien && ev.bien.length ? h("div", {}, h("b", { text:"Lo que hizo bien: " }), ev.bien.join(" · ")) : "",
       ev.corregir && ev.corregir.length ? h("div", {}, h("b", { text:"Para corregir: " }), ev.corregir.join(" · ")) : "",
@@ -811,13 +823,19 @@
     $("#d-tr").textContent = (p.transcripcion || []).map(l => "[" + mmss(l.t) + "] " + (l.w === "op" ? "OPERADOR" : "ALUMNO #" + (++n)) + ": " + l.x).join("\n") || "(sin transcripción)";
     $("#dlg").showModal();
   }
+  let ciega = false;
+  function mostrarIA(){ ciega = false; $("#dlg").classList.remove("ciega"); $("#d-ciega").hidden = true; }
+  $("#d-ver-ia").addEventListener("click", mostrarIA);
   $("#d-cerrar").addEventListener("click", () => $("#dlg").close());
   $("#d-guardar").addEventListener("click", async ()=>{
-    const items = {}; document.querySelectorAll("#d-crit select").forEach(s => items[s.dataset.id] = s.value);
+    const items = {}; let faltan = 0;
+    document.querySelectorAll("#d-crit select").forEach(s => { if(s.value) items[s.dataset.id] = s.value; else faltan++; });
+    if(faltan){ $("#d-estado").textContent = "Te falta marcar " + faltan + (faltan === 1 ? " criterio." : " criterios."); $("#d-estado").className = "small err"; return; }
     try{
-      const { revision } = await api("revisar", { id:actual.id, items, nota:$("#d-nota").value });
-      $("#d-estado").textContent = "Guardado: tu puntaje es " + revision.puntaje + ".";
+      const { revision } = await api("revisar", { id:actual.id, items, nota:$("#d-nota").value, ciega });
+      $("#d-estado").textContent = "Guardado: tu puntaje es " + revision.puntaje + "." + (ciega ? " Ahora podés comparar con la IA." : "");
       $("#d-estado").className = "small ok";
+      mostrarIA();
       if(P.tab === "practicas") verPracticas();
     }catch(e){ $("#d-estado").textContent = "No se guardó (" + (e.code||e.status) + ")."; $("#d-estado").className = "small err"; }
   });
@@ -913,13 +931,16 @@
   async function verCalidad(){
     let lista;
     try{ lista = await cargarPracticas(400); }catch(e){ pintarSinBase($("#ca-tabla"), e); return; }
-    const revisadas = lista.filter(p => p.revision);
-    $("#ca-vacio").hidden = revisadas.length > 0;
+    const todas = lista.filter(p => p.revision);
+    // El acuerdo se mide sólo con las revisiones hechas a ciegas: las otras están
+    // sesgadas hacia lo que dijo la IA.
+    const revisadas = todas.filter(p => p.revisionCiega);
+    $("#ca-vacio").hidden = todas.length > 0;
     const porCrit = {}, todos = [], etiquetas = {};
     let difs = [];
     revisadas.forEach(p => {
       (p.rubrica || []).forEach(c => etiquetas[c.id] = c.label);
-      Object.entries(p.revision).forEach(([id, st]) => {
+      Object.entries(p.revisionCiega).forEach(([id, st]) => {
         const ia = (p.items || {})[id] || "falto";
         (porCrit[id] = porCrit[id] || []).push([ia, st]); todos.push([ia, st]);
       });
@@ -928,7 +949,7 @@
     const kg = kappa(todos);
     const dif = difs.length ? difs.reduce((a,b)=>a+b,0)/difs.length : null;
     vaciar($("#ca-tiles")).append(
-      tile("Prácticas revisadas", String(revisadas.length), "meta del piloto: 50", Math.min(100, revisadas.length/50*100)),
+      tile("Revisadas a ciegas", String(revisadas.length), "meta del piloto: 50" + (todas.length > revisadas.length ? " · " + (todas.length - revisadas.length) + " más sin ciego, que no cuentan" : ""), Math.min(100, revisadas.length/50*100)),
       tile("Acuerdo general (kappa)", kg ? kg.k.toFixed(2).replace(".", ",") : "—", kg ? leerKappa(kg.k) + " · " + Math.round(kg.po*100) + "% de coincidencia exacta" : "sin pares todavía"),
       tile("La IA puntúa", dif == null ? "—" : (dif > 0 ? "+" : "") + Math.round(dif), dif == null ? "" : "puntos en promedio respecto de vos (" + (dif > 3 ? "más blanda" : dif < -3 ? "más dura" : "parecido") + ")"));
     const t = vaciar($("#ca-tabla"));

@@ -257,7 +257,7 @@ function resumen(p) {
     id: p.id, fecha: p.fecha, grupo: p.grupo, alias: p.alias, sala: p.sala, perfil: p.perfil,
     dificultad: p.dificultad, escenario: p.escenario, duracionMs: p.duracionMs, cortoPor: p.cortoPor,
     puntaje: p.puntaje, topeado: p.topeado, titular: ev.titular || "", error: p.error || null,
-    items, revision: rev, puntajeInstructor: p.revision ? p.revision.puntaje : null,
+    items, revision: rev, puntajeInstructor: p.revision ? p.revision.puntaje : null, revisionCiega: p.revision && p.revision.itemsCiegos ? p.revision.itemsCiegos : null,
     tUbicacionMs: tUbic, tRcpMs: p.tRcpMs == null ? null : p.tRcpMs, modeloEvaluador: p.modeloEvaluador || null,
     rubrica: (p.rubrica || []).map(c => ({ id: c.id, label: c.label, peso: c.peso, critico: c.critico }))
   };
@@ -291,7 +291,11 @@ async function revisarPractica(cuentaId, b) {
     if (permitidos.has(k) && ["logrado", "parcial", "falto"].includes(v)) items[k] = v;
   });
   const calc = puntuar({ items: Object.entries(items).map(([id, estado]) => ({ id, estado })) }, p.rubrica || [], p.topeCritico);
-  p.revision = { items, nota: corto(b.nota, 1500), puntaje: calc.puntaje, topeado: calc.topeado, fecha: Date.now() };
+  // La primera revisión hecha a ciegas (sin ver antes lo que dijo la IA) se guarda aparte
+  // y no se pisa: es la única que sirve para medir el acuerdo. Si después el instructor
+  // corrige su revisión mirando la de la IA, cambia su puntaje pero no esa medición.
+  const ciegos = p.revision && p.revision.itemsCiegos ? p.revision.itemsCiegos : (b.ciega ? items : null);
+  p.revision = { items, nota: corto(b.nota, 1500), puntaje: calc.puntaje, topeado: calc.topeado, fecha: Date.now(), itemsCiegos: ciegos };
   const ttl = Number(await kv("TTL", P + "p:" + p.id));
   await kv("SET", P + "p:" + p.id, JSON.stringify(p), "EX", ttl > 0 ? ttl : RETENCION_DIAS * 86400);
   return { revision: p.revision };

@@ -236,9 +236,16 @@ try {
     await page.waitForSelector("#dlg[open]");
     assert.equal(await page.locator("#d-crit select").count(), 10);
     assert.match(await page.locator("#d-tr").textContent(), /ALUMNO #1: Estoy en el gimnasio/);
+    // Revisión a ciegas: lo de la IA está oculto y los criterios arrancan sin marcar.
+    assert.equal(await page.locator("#d-ciega").isVisible(), true);
+    assert.equal(await page.locator("#d-crit .ia").first().isVisible(), false, "no se ve el juicio de la IA antes de revisar");
+    await page.click("#d-guardar");
+    await page.waitForFunction(() => /Te falta marcar 10 criterios/.test(document.querySelector("#d-estado").textContent));
+    for (const sel of await page.locator("#d-crit select").all()) await sel.selectOption("logrado");
     await page.selectOption('#d-crit select[data-id="respiracion"]', "falto");
     await page.click("#d-guardar");
     await page.waitForFunction(() => /tu puntaje es 40/.test(document.querySelector("#d-estado").textContent));
+    assert.equal(await page.locator("#d-crit .ia").first().isVisible(), true, "después de guardar se puede comparar con la IA");
     await page.click("#d-cerrar");
     await page.waitForFunction(() => /revisada/.test(document.querySelector("#pr-tabla").textContent));
 
@@ -251,7 +258,7 @@ try {
 
     // Calidad: 10 pares, 9 coinciden.
     await page.click('#tabs button[data-t="calidad"]');
-    await page.waitForFunction(() => /Prácticas revisadas/.test(document.querySelector("#ca-tiles").textContent));
+    await page.waitForFunction(() => /Revisadas a ciegas/.test(document.querySelector("#ca-tiles").textContent));
     assert.match(await page.locator("#ca-tiles").innerText(), /90% de coincidencia exacta/);
     assert.ok(await page.locator("#ca-tabla tr").count() > 1);
 
