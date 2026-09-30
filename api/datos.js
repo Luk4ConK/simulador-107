@@ -87,6 +87,7 @@ export default async function handler(req, res) {
       "cuenta-guardar": () => guardarCuenta(b.cuenta),
       "contactos": () => listarContactos(),
       "contacto-estado": () => estadoContacto(b.id, b.estado, b.nota),
+      "contacto-borrar": () => borrarContacto(b.id),
       "uso": () => usoGlobal(b.dias)
     };
     if (acciones[accion]) return res.status(200).json(await acciones[accion]());
@@ -441,6 +442,14 @@ async function estadoContacto(id, estado, nota) {
   if (nota != null) lead.nota = corto(nota, 1500);
   await kv("SET", k, JSON.stringify(lead), "EX", RETENCION_DIAS * 86400);
   return { contacto: lead };
+}
+
+// Para los pedidos de supresión (Ley 25.326, art. 16): se borra del todo, no se archiva.
+async function borrarContacto(id) {
+  const limpio = corto(id, 40);
+  const [borrados] = await kvPipe([["DEL", P + "lead:" + limpio], ["ZREM", P + "leads", limpio]]);
+  if (!Number(borrados)) throw problema("sin_contacto", "No se encontró ese contacto.", 404);
+  return { ok: true };
 }
 
 // ---------------- uso global (sólo administrador) ----------------

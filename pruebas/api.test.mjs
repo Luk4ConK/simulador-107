@@ -41,6 +41,10 @@ test("sin base y sin códigos: anda como antes", async () => {
     const g = await llamar(chat, null, {}, "GET");
     assert.equal(g.cuerpo.requiereCodigo, false);
     assert.equal(g.cuerpo.registro, false);
+    // Lo que la entrada y /activar muestran como pendiente: nunca el valor, sólo si está.
+    assert.equal(g.cuerpo.admin, false);
+    assert.equal(g.cuerpo.clave, true);
+    assert.ok(!JSON.stringify(g.cuerpo).includes(process.env.GEMINI_API_KEY));
     const r = await llamar(chat, { modo: "operador", fijo: "Sos operador.", variable: "ESTADO DE LA LLAMADA\n- TODAVÍA TE FALTA LO ESENCIAL", turnos: turnosDeEjemplo });
     assert.equal(r.statusCode, 200, JSON.stringify(r.cuerpo));
     assert.match(r.cuerpo.texto, /Entendido/);
@@ -290,6 +294,16 @@ test("contacto desde la página: se guarda, frena el spam y lo ve el administrad
     const id = lista.cuerpo.contactos.find(c => c.mensaje === "Quiero probarlo").id;
     const est = await llamar(datos, { accion: "contacto-estado", id, estado: "demo", nota: "Demo el jueves" }, { "x-panel": "ADMIN-SECRETO-1234" });
     assert.equal(est.cuerpo.contacto.estado, "demo");
+    // Pedido de supresión: sólo el administrador lo borra, y se borra del todo.
+    const alta = await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Instructor Gómez", tipo: "instructor", plan: "prueba", cupoMensual: 30 } }, { "x-panel": "ADMIN-SECRETO-1234" });
+    const ajeno = await llamar(datos, { accion: "contacto-borrar", id }, { "x-panel": alta.cuerpo.cuenta.codigoInstructor });
+    assert.equal(ajeno.statusCode, 403, "un instructor no borra contactos");
+    const borrado = await llamar(datos, { accion: "contacto-borrar", id }, { "x-panel": "ADMIN-SECRETO-1234" });
+    assert.equal(borrado.statusCode, 200);
+    const despues = await llamar(datos, { accion: "contactos" }, { "x-panel": "ADMIN-SECRETO-1234" });
+    assert.ok(!despues.cuerpo.contactos.some(c => c.id === id), "ya no aparece en la lista");
+    const otraVez = await llamar(datos, { accion: "contacto-borrar", id }, { "x-panel": "ADMIN-SECRETO-1234" });
+    assert.equal(otraVez.statusCode, 404);
   } finally { quitar(); }
 });
 

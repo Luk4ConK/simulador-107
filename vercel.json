@@ -8,7 +8,8 @@
     { "source": "/instructores", "destination": "/instructores.html" },
     { "source": "/fundamentos", "destination": "/fundamentos.html" },
     { "source": "/terminos", "destination": "/terminos.html" },
-    { "source": "/privacidad", "destination": "/privacidad.html" }
+    { "source": "/privacidad", "destination": "/privacidad.html" },
+    { "source": "/activar", "destination": "/activar.html" }
   ],
   "headers": [
     {

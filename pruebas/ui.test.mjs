@@ -12,7 +12,7 @@ process.env.RAPIDO = "1";
 process.env.CON_BASE = "1";
 process.env.CODIGO_ADMIN = "ADMIN-DE-PRUEBA-99";
 process.env.PUERTO = process.env.PUERTO || "8123";
-const { default: servidor, redis } = await import("./servidor.mjs");
+const { default: servidor, redis, gemini: geminiFalso } = await import("./servidor.mjs");
 const base = "http://localhost:" + process.env.PUERTO;
 
 const require = createRequire(import.meta.url);
@@ -123,6 +123,45 @@ try {
     await page.context().close();
   });
 
+  await prueba("sin ubicación no hay despacho, aunque el operador diga que la tiene", async () => {
+    // El caso de las pruebas contra producción: un alumno que contesta con preguntas y un
+    // operador que declara todos los datos, ubicación incluida, y anuncia el móvil.
+    const estados = [];
+    geminiFalso.operador = (sistema) => {
+      const estado = sistema.slice(sistema.lastIndexOf("ESTADO DE LA LLAMADA"));
+      estados.push(estado);
+      if (/SE TERMINÓ/.test(estado)) return "Sin la dirección no puedo mandarte el móvil. Averiguala y volvé a llamar al 107.\n[[CERRAR]]";
+      return "El SEM ya está en camino, llega en unos 6 minutos. ¿Algo más?\n[[DATOS:ubicacion,motivo,victimas,estado,acciones,material,acceso]]";
+    };
+    try {
+      const page = await nuevaPagina();
+      await page.goto(base + "/");
+      await page.waitForSelector("#v-gate:not([hidden])");
+      await page.fill("#gate-in", "ADMIN-DE-PRUEBA-99");
+      await page.click("#gate-go");
+      await page.waitForSelector("#v-setup:not([hidden])");
+      await page.click('.card[data-id="ahogamiento-puro"]');
+      await page.click("#btn-brief");
+      await page.click("#btn-call");
+      await marcar(page, "107");
+      await page.waitForSelector("#typer:not([hidden])", { timeout: 10000 });
+      await page.waitForFunction(() => document.querySelectorAll(".msg.op:not(.live)").length >= 1, null, { timeout: 10000 });
+      // Nada que un móvil pueda buscar: la edad no es una dirección.
+      for (const t of ["¿Qué hago?", "Hay un hombre de 40 años que no respira", "¿Ya viene?", "¿Me escuchás?", "¿Qué tengo que hacer?", "Apurate por favor"]) {
+        if ((await decir(page, t)) === false) break;
+      }
+      await page.waitForSelector("#ver-informe:not([hidden])", { timeout: 20000 });
+      const feed = await page.locator("#feed").innerText();
+      assert.match(feed, /no puedo mandarte el móvil/, "cierra abandonando, no despachando");
+      assert.ok(estados.some(e => /NO tenés la ubicación/.test(e)), "la app le hace aclarar que sin ubicación no sale nada");
+      assert.ok(!estados.some(e => /El móvil está en camino y le faltan/.test(e)), "nunca le dice que el móvil está en camino");
+      assert.ok(!estados.some(e => /Datos que YA tenés[^\n]*ubicacion/.test(e)), "la ubicación inventada no entra en la grilla");
+      await page.context().close();
+    } finally {
+      geminiFalso.operador = null;
+    }
+  });
+
   await prueba("lego en una clase: entra por link, RCP guiada hasta que llega la ambulancia, y el tablero lo ve", async () => {
     const admin = { "x-panel": "ADMIN-DE-PRUEBA-99" };
     const cuenta = (await api("/api/datos", { accion: "cuenta-guardar", cuenta: { nombre: "Curso RCP Norte", plan: "instructor" } }, admin)).cuenta;
@@ -189,6 +228,60 @@ try {
     await page.waitForSelector("#v-gate:not([hidden])");
     await page.waitForFunction(() => /clase ya terminó/.test(document.querySelector("#gate-err").textContent));
     await page.context().close();
+  });
+
+  await prueba("entrada: cada uno por su puerta; el instructor llega al panel y /activar marca todo en verde", async () => {
+    const page = await nuevaPagina();
+    await page.goto(base + "/");
+    await page.waitForSelector("#v-gate:not([hidden])");
+    // Con base de datos se pide código: no hay práctica libre, y el panel figura activado.
+    assert.equal(await page.locator("#gate-libre").isHidden(), true);
+    assert.equal(await page.locator("#inst-activar").isHidden(), true);
+    assert.ok(await page.locator(".escudo").evaluate(img => img.complete && img.naturalWidth > 0), "el escudo de Sumar Salud carga");
+    await page.fill("#inst-in", "NO-ES-UN-CODIGO");
+    await page.click("#inst-go");
+    await page.waitForFunction(() => /no abre el panel/.test(document.querySelector("#inst-err").textContent));
+    await page.fill("#inst-in", "ADMIN-DE-PRUEBA-99");
+    await page.click("#inst-go");
+    await page.waitForURL(u => new URL(u).pathname === "/panel");
+    await page.waitForSelector("#v-panel:not([hidden])");
+    assert.match(await page.locator("#p-rol").textContent(), /Administrador/);
+
+    // Un alumno entra a practicar desde la misma entrada, con el código de su clase.
+    const admin = { "x-panel": "ADMIN-DE-PRUEBA-99" };
+    const inst = { "x-panel": (await api("/api/datos", { accion: "cuenta-guardar", cuenta: { nombre: "Escuela Norte" } }, admin)).cuenta.codigoInstructor };
+    const sala = (await api("/api/datos", { accion: "sala-crear", nombre: "Jueves" }, inst)).sala;
+    const alumno = await nuevaPagina();
+    await alumno.goto(base + "/");
+    await alumno.waitForSelector("#v-gate:not([hidden])");
+    await alumno.fill("#gate-in", sala.codigo.toLowerCase());
+    await alumno.click("#gate-go");
+    await alumno.waitForSelector("#v-setup:not([hidden])");
+    assert.match(await alumno.locator("#cuenta-info").innerText(), /Jueves/);
+    assert.equal(await alumno.locator("#cambiar-codigo").textContent(), "Cambiar de código");
+    await alumno.click("#cambiar-codigo");
+    await alumno.waitForSelector("#v-gate:not([hidden])");
+
+    // La página para el dueño revisa lo que está activado.
+    const activar = await nuevaPagina();
+    await activar.goto(base + "/activar");
+    await activar.waitForSelector("#listo:not([hidden])");
+    assert.equal(await activar.locator(".fila.lista").count(), 3);
+
+    // El recuadro para la web de Sumar Salud lleva a esta dirección y deja entrar con el código.
+    const fuente = await activar.locator("#bloque-codigo").inputValue();
+    assert.ok(fuente.includes('action="' + base + '/"') && fuente.includes('name="c"'), "el formulario apunta a la app");
+    assert.ok(fuente.includes('href="' + base + '/panel"'), "el botón del instructor lleva al panel");
+    assert.ok(!/<script/i.test(fuente), "el recuadro no necesita JavaScript");
+    await activar.fill("#bloque-vista #sim107-codigo", " " + sala.codigo.toLowerCase());
+    const [desdeLaWeb] = await Promise.all([activar.context().waitForEvent("page"), activar.click("#bloque-vista button[type=submit]")]);
+    desdeLaWeb.on("pageerror", e => errores.push(e.message));
+    await desdeLaWeb.waitForSelector("#v-setup:not([hidden])");
+    assert.match(await desdeLaWeb.locator("#cuenta-info").innerText(), /Jueves/);
+    assert.equal(new URL(desdeLaWeb.url()).search, "", "el código no queda a la vista en la dirección");
+    await activar.click("#copiar");
+    await activar.waitForFunction(() => document.querySelector("#copiado").textContent !== "");
+    for (const p of [page, alumno, activar]) await p.context().close();
   });
 
   await prueba("panel: el administrador ve la clase en vivo, revisa una práctica, mide el acuerdo y exporta", async () => {
@@ -291,6 +384,10 @@ try {
     await api("/api/datos", { accion: "contacto", nombre: "Marta Instructora", email: "marta@example.com", rol: "Instructora de RCP", mensaje: "Quiero probarlo" });
     await page.click('#tabs button[data-t="contactos"]');
     await page.waitForFunction(() => /Marta Instructora/.test(document.querySelector("#co-tabla").textContent));
+    // Pedido de supresión: se borra desde el panel, con confirmación.
+    await page.locator("#co-tabla tr", { hasText: "Marta Instructora" }).locator("button", { hasText: "Borrar" }).click();
+    await page.waitForFunction(() => !/Marta Instructora/.test(document.querySelector("#co-tabla").textContent));
+    assert.ok(!(await api("/api/datos", { accion: "contactos" }, { "x-panel": "ADMIN-DE-PRUEBA-99" })).contactos.some(c => c.nombre === "Marta Instructora"));
     await page.click('#tabs button[data-t="uso"]');
     await page.waitForSelector("#us-cols .c");
     assert.equal(await page.locator("#us-cols .c").count(), 30);

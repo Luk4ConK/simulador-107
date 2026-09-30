@@ -21,6 +21,23 @@ Gemini. Micrófono, voz del operador y evaluación andando en el celular.
 
 Vercel está conectado a este repositorio: **todo push despliega solo**, conservando la
 URL y las variables de entorno. No hay build: es HTML estático más una función.
+La web es **https://simulador-107.vercel.app** (equipo `sumar-salud-ong`, proyecto
+`simulador-107` en Vercel; producción sale de `main`). Si no la encontrás, está en el campo
+*website* del repositorio y en los *deployments* de GitHub.
+
+**La raíz es la entrada única** (pedido del instructor: todo empieza en la web principal,
+así los alumnos la conocen): `v-gate` de `index.html` tiene dos puertas, alumnos con el
+código de la clase y instructores con el suyo. La de instructores verifica el código con
+`/api/datos` (`accion: "panel"`), lo deja en `sessionStorage.sim107_panel` y manda a
+`/panel`, que entra solo. Sin código guardado la web abre siempre en la entrada; la
+práctica libre ("Practicar sin código") sólo aparece si el servidor no pide códigos. El
+GET de `/api/chat` dice qué está activado (`registro`, `admin`, `clave`, nunca los
+valores) y `/activar` (activar.html) lo muestra como lista de control con los pasos y los
+enlaces directos a Vercel, para que el dueño no dependa de nadie para activar el panel.
+Al final, `/activar` arma el recuadro para pegar en la web institucional (dos puertas: un
+formulario GET que manda `?c=CÓDIGO` y un enlace a `/panel`). Va sin JavaScript, con estilos
+en línea y `target="_blank"` (en una web que lo mete en un iframe, el micrófono no andaría),
+y toma la dirección de `location.origin`: con un dominio propio se copia de nuevo desde ahí.
 
 **Septiembre de 2026: se armó el producto completo** (en la rama
 `claude/simulador-107-producto-rllxr2`; producción se actualiza recién cuando se une a la
@@ -34,11 +51,19 @@ carpeta «Simulador 107 · Operativa» (no en el repo). Veredicto: viable a esca
 31/03/2027 y decisión con cuatro criterios (kappa ≥ 0,6 con ≥ 50 revisiones a ciegas, 5
 instructores externos activos, 3 compromisos de pago, baja del tiempo hasta la ubicación).
 
-Existe además una copia publicada como artifact de Claude, que se usa para escribir
-guiones gratis (sin gastar API). Ahí el micrófono NO funciona — el contenedor de Claude
-no le pasa el permiso, da `NotAllowedError` — así que esa copia se usa sólo en modo
-texto y no tiene manos libres. Si cambiás escenarios o rúbrica, avisá que conviene
-reflejarlo también en esa copia.
+Existe además una copia publicada como artifact de Claude
+(https://claude.ai/artifact/XcYsqaPVXuPJqJnG8nikGi), que se usa para escribir guiones
+gratis (sin gastar API): el operador y la devolución los hace Claude con la cuenta de
+quien la abre (capacidad `sample`), y el informe se baja con la capacidad `downloads`.
+Ahí el micrófono NO funciona — el contenedor de Claude no le pasa el permiso, da
+`NotAllowedError` — así que esa copia se usa sólo en modo texto y no tiene manos libres,
+ni código de acceso, ni clases en vivo, ni registro. **No se edita a mano**: se arma desde
+`index.html` con `node herramientas/copia-claude.mjs salida.html`, se prueba con
+`NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs` y se publica en esa misma
+dirección con `capabilities: {sample: {}, downloads: true}`. Cada reemplazo del armador
+exige encontrar su texto exactamente una vez: si cambiás `index.html` y alguno deja de
+calzar, el armador se detiene y dice cuál; ajustalo ahí. Si cambiás escenarios, rúbrica o
+el prompt del operador, regenerá y republicá la copia.
 
 ## Archivos
 
@@ -47,6 +72,7 @@ index.html            la app de los alumnos: pantallas, voz, rúbrica, estado. S
 panel.html            panel del instructor y del administrador (lee SCENARIOS de index.html)
 instructores.html     presentación para instructores, formulario de contacto, PLANES
 fundamentos.html      decisiones con su evidencia; arma la tabla de la rúbrica con rubrica()
+activar.html          para el dueño: qué falta activar en Vercel (base, CODIGO_ADMIN, clave) y los pasos
 terminos.html         términos de uso (datos del titular desde /api/datos?info=1)
 privacidad.html       política de privacidad, Ley 25.326
 publico.css/.js       estilo y datos del titular de las páginas públicas
@@ -55,8 +81,9 @@ api/datos.js          salas, prácticas, revisiones, escenarios, cuentas, contac
 manifest.webmanifest  para que se instale como app
 sw.js                 service worker: abre rápido, nunca cachea /api/
 vercel.json           maxDuration de las funciones, direcciones cortas, cabeceras
-icons/                íconos
+icons/                íconos y el escudo de Sumar Salud que usa la entrada
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
+herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
 README.md             guía de despliegue, escrita para el usuario
 ```
 
@@ -146,7 +173,7 @@ listo cuando el alumno toca el botón. Antes saltaba derecho al informe y quedab
 cortaba la voz del operador en la última frase. Por eso ahora `speechSynthesis.cancel()`
 sólo se llama si el que cortó fue el alumno.
 
-Pantallas: `v-gate` (código de acceso) → `v-setup` → `v-nuevo` (escenario propio) →
+Pantallas: `v-gate` (la entrada: alumnos e instructores) → `v-setup` → `v-nuevo` (escenario propio) →
 `v-brief` → `v-dial` (el teclado del teléfono) → `v-call` → `v-debrief`. Se muestran con
 `show(nombre)`.
 
@@ -210,6 +237,19 @@ justamente para que la dispare el teclado.
   se creía todavía en interrogatorio y el tope de turnos no arrancaba nunca. Regla general:
   **no atar una transición a que el modelo coopere con una marca** si el mismo hecho se
   puede leer de lo que dijo.
+- **La ubicación no se le cree al modelo: la verifica la app.** Probando ocho perfiles
+  contra producción, con un alumno que contestaba con preguntas, el operador declaró en
+  `[[DATOS:...]]` una ubicación que nunca le dieron y despachó a ningún lado. Ahora
+  `dijoUbicacion()` acepta `ubicacion` sólo si en lo que dijo el alumno hay algo que un
+  móvil pueda buscar: un número que no sea edad ni tiempo, una palabra de
+  `PISTAS_UBICACION` o una palabra de la dirección del escenario (`addr`, `zona`). Si el
+  operador anuncia el móvil sin eso, el anuncio no cuenta (`S.anuncioSinUbicacion`) y el
+  turno siguiente se le hace aclarar que sin dirección no sale nada. Si es exacta o no lo
+  juzga la devolución; esto sólo mira que exista. Los demás datos se le siguen creyendo.
+- **"El móvil está en camino" se le dice al operador recién después del despacho.** Antes
+  `estadoLlamada()` lo decía en todos los turnos, pegado al "no anuncies todavía": dos
+  instrucciones contradictorias que lo empujaban a anunciar sin los datos. Sin despacho,
+  `llegoMovil()` da falso también en guardavidas.
 - **Una grilla larga de extras alarga el interrogatorio, no lo acorta.** La primera
   versión tenía ocho extras y el efecto fue el contrario al buscado: la app le pasaba al
   operador la lista de los que faltaban y él la iba cumpliendo con disciplina, así que
@@ -358,8 +398,19 @@ navegador usa el Playwright global y el Chromium del entorno):
 ```
 node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs   # servidor y rúbrica, sin red
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs            # punta a punta en Chromium
+NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs  # la copia de Claude, con un Claude falso
 RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107
 ```
+
+En la computadora del titular (Windows) hay una copia local del repositorio. Ahí Playwright
+está instalado sin navegador propio, y las pruebas de navegador usan el Chrome instalado:
+`CHROMIUM="C:/Program Files/Google/Chrome/Application/chrome.exe"`. El Chrome completo
+pide `/favicon.ico` por su cuenta, y `copia-claude.test.mjs` ya lo tiene en cuenta. En un
+clon de Windows hay que poner `git config core.autocrlf false`: con CRLF,
+`herramientas/copia-claude.mjs` no encuentra los textos que reemplaza.
+
+`pruebas/falsos.mjs`: `gemini.operador` reemplaza al operador falso en el medio de una
+prueba (volverlo a `null` al terminar); así se prueba un operador que se porta mal.
 
 `pruebas/falsos.mjs` tiene un Redis en memoria (sólo los comandos que se usan: si agregás
 uno en `api/`, agregalo ahí) y un Gemini falso con cuotas, 404 y un operador que sigue el
@@ -424,8 +475,9 @@ se "corrija" de vuelta desde el manual:
    cancelación de eco o una API de voz en tiempo real.
 4. Conseguir el manual de operadores del SIES 107 de Santa Fe para afinar el
    interrogatorio con el protocolo local (existe; no fue accesible desde este entorno).
-5. Botón para borrar un contacto del formulario desde el panel (hoy se borra a mano o
-   vence a los 13 meses).
+5. Hecho en septiembre de 2026: botón para borrar un contacto del formulario desde el
+   panel (pestaña Contactos, sólo administrador; acción `contacto-borrar` de `api/datos.js`).
+   Es para los pedidos de supresión de la Ley 25.326: borra del todo, no archiva.
 6. Voz de mejor calidad vía API de voz (multiplica el costo, cambia mucho la experiencia).
 7. Al pasar a planes pagos: sacar los avisos de etapa piloto de `terminos.html` y
    `privacidad.html` y sumar las condiciones de pago revisadas por un abogado.

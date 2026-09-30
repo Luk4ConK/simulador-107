@@ -191,7 +191,7 @@
       <label class="chk" style="justify-content:center"><input type="checkbox" id="login-recordar"> Recordarlo en este equipo</label>
       <div class="err" id="login-err"></div>
       <button class="btn pri" id="login-go">Entrar</button>
-      <p class="small muted">¿Sos alumno? <a href="./">Andá al simulador</a>.</p>
+      <p class="small muted"><a href="./">Volver a la página principal</a></p>
     </div>
   </section>
 
@@ -537,10 +537,12 @@
     $("#login-err").textContent = "";
     try{ await entrar(v, $("#login-recordar").checked); }
     catch(e){
-      $("#login-err").textContent = e.code === "sin_base"
-        ? "Todavía no está conectada la base de datos (sin_base). Seguí el paso «Conectar la base de datos» del README."
+      const err = $("#login-err");
+      err.textContent = e.code === "sin_base"
+        ? "Todavía no está conectada la base de datos (sin_base). "
         : e.code === "demasiados_intentos" ? "Muchos intentos seguidos. Esperá diez minutos (demasiados_intentos)."
         : "Ese código no abre el panel (" + (e.code || e.status) + ").";
+      if(e.code === "sin_base") err.append(h("a", { href:"activar", text:"Ver qué falta activar" }), ".");
     }
   });
   $("#login-cod").addEventListener("keydown", e => { if(e.key === "Enter") $("#login-go").click(); });
@@ -1132,17 +1134,26 @@
     const t = vaciar($("#co-tabla"));
     $("#co-vacio").hidden = contactos.length > 0;
     if(!contactos.length) return;
-    t.append(h("tr", {}, ["Fecha","Quién","Contacto","Mensaje","Estado"].map(x => h("th", { text:x }))));
+    t.append(h("tr", {}, ["Fecha","Quién","Contacto","Mensaje","Estado",""].map(x => h("th", { text:x }))));
     contactos.forEach(c => {
       const sel = h("select", { class:"inp", style:"min-width:150px" }, ESTADOS_CONTACTO.map(([v,tx]) => h("option", { value:v, text:tx })));
       sel.value = c.estado;
       sel.addEventListener("change", () => api("contacto-estado", { id:c.id, estado:sel.value }));
+      // Para cuando alguien pide que borren sus datos: se borra del todo, no se archiva.
+      const borrar = h("button", { class:"btn peligro", text:"Borrar" });
+      borrar.addEventListener("click", async ()=>{
+        if(!confirm("¿Borrar a " + c.nombre + " de los contactos? Se borra del todo y no se puede deshacer. Si lo pidió la persona, anotá la fecha del pedido y la de hoy.")) return;
+        borrar.disabled = true;
+        try{ await api("contacto-borrar", { id:c.id }); verContactos(); }
+        catch(e){ borrar.disabled = false; alert("No se pudo borrar (" + (e.code || e.status || "error") + ")."); }
+      });
       t.append(h("tr", {},
         h("td", { class:"num", text:fecha(c.fecha) }),
         h("td", {}, h("b", { text:c.nombre }), h("div", { class:"small muted", text:[c.rol, c.institucion].filter(Boolean).join(" · ") })),
         h("td", { class:"small" }, c.email ? h("div", {}, h("a", { href:"mailto:" + c.email, text:c.email })) : "", c.telefono ? h("div", { text:c.telefono }) : ""),
         h("td", { class:"small", text:c.mensaje || "" }),
-        h("td", {}, sel)));
+        h("td", {}, sel),
+        h("td", {}, borrar)));
     });
   }
 

@@ -108,6 +108,8 @@ export function crearGemini(opciones = {}) {
   const registro = [];
   return {
     registro,
+    // Una prueba puede cambiar el operador en el medio (y volver a null al terminar).
+    operador: null,
     async responder(url, init) {
       const m = url.match(/models\/([^:]+):generateContent/);
       if (!m) {
@@ -130,7 +132,7 @@ export function crearGemini(opciones = {}) {
       const esEvaluador = /Respondés únicamente con un objeto JSON/.test(sistema);
       const texto = esEvaluador
         ? (opciones.evaluador || evaluadorPorDefecto)(cuerpo.contents[0].parts[0].text, modelo)
-        : (opciones.operador || operadorPorDefecto)(sistema, cuerpo.contents, modelo);
+        : (this.operador || opciones.operador || operadorPorDefecto)(sistema, cuerpo.contents, modelo);
       return json(200, { candidates: [{ content: { parts: [{ text: texto }], role: "model" }, finishReason: "STOP" }] });
     }
   };

@@ -87,7 +87,7 @@
   .opts{display:grid; gap:14px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:15px}
   .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
   .row .t{font-size:14.5px}
-  .row .d{font-size:12.5px; color:var(--ink-3); margin-top:2px}
+  .row .d, .opts > .d{font-size:12.5px; color:var(--ink-3); margin-top:2px}
   .seg{display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; flex:none}
   .seg button{background:var(--surface); border:0; padding:7px 11px; font-size:13px; color:var(--ink-2)}
   .seg button + button{border-left:1px solid var(--line)}
@@ -123,10 +123,28 @@
   .note{margin-top:12px; font-size:12.5px; color:var(--ink-3); line-height:1.45}
   .note b{color:var(--ink-2); font-weight:600}
 
-  .gate{max-width:360px; margin:14vh auto 0; display:grid; gap:14px; text-align:center}
-  .gate input{width:100%; padding:14px; font:inherit; font-family:var(--mono); font-size:18px; text-align:center;
-              letter-spacing:.2em; border:1px solid var(--line); border-radius:11px; background:var(--surface); color:var(--ink)}
-  .gate .err{color:var(--bad); font-size:13.5px; min-height:20px}
+  /* ---- entrada: la puerta principal de la web, con una puerta para cada uno ---- */
+  .portal{max-width:720px; margin:3vh auto 0; display:grid; gap:22px}
+  .marca{display:flex; align-items:center; gap:16px}
+  .escudo{width:84px; height:84px; flex:none; border-radius:50%; background:#fff; box-shadow:0 0 0 1px var(--line)}
+  .marca .lbl{display:block}
+  .marca h1{font-size:30px; line-height:1.05; margin-top:4px}
+  .puertas{display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:14px}
+  .puerta{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px;
+          display:grid; gap:12px; align-content:start; min-width:0}
+  .puerta h2{font-size:19px}
+  .puerta .note{margin:0}
+  .puerta input[type="text"]{width:100%; padding:13px; font:inherit; font-family:var(--mono); font-size:17px; text-align:center;
+          letter-spacing:.12em; border:1px solid var(--line); border-radius:11px; background:var(--surface-2); color:var(--ink)}
+  .puerta input[type="text"]::placeholder{letter-spacing:.06em; font-size:14px}
+  .puerta .go{margin-top:0}
+  .puerta .go.otra{background:var(--ink); color:var(--ground)}
+  .puerta .err{color:var(--bad); font-size:13.5px}
+  .puerta .err:empty{display:none}
+  .puerta .chk{display:flex; gap:8px; align-items:center; justify-content:center; font-size:13px; color:var(--ink-2)}
+  .aviso-activar{background:var(--accent-soft); border:1px solid var(--accent); border-radius:11px; padding:10px 12px;
+                 font-size:13px; line-height:1.45; color:var(--ink); margin:0}
+  .aviso-activar a{color:var(--ink)}
 
   .brief{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; display:grid; gap:12px}
   .brief .scene{font-size:15.5px; line-height:1.55}
@@ -225,16 +243,40 @@
 <body>
 <div class="wrap">
 
-  <!-- ======== código de acceso ======== -->
+  <!-- ======== entrada ========
+       La puerta principal de la web: los alumnos entran con el código de su clase y los
+       instructores con el suyo, que los lleva al panel. Todo empieza acá. -->
   <section id="v-gate" hidden>
-    <div class="gate">
-      <div class="sigil" style="margin:0 auto">107</div>
-      <h1 style="font-size:22px">Simulador 107</h1>
-      <p class="note" style="margin:0">Ingresá el código de tu clase o el que te dio tu instructor.</p>
-      <input id="gate-in" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="CÓDIGO" aria-label="Código de acceso">
-      <div class="err" id="gate-err"></div>
-      <button class="go" id="gate-go" style="margin:0">Entrar</button>
-      <p class="note" style="margin:6px 0 0">¿Sos instructor? <a href="panel.html">Entrá al panel</a> · <a href="instructores.html">Conocé el simulador</a></p>
+    <div class="portal">
+      <header class="marca">
+        <img class="escudo" src="icons/sumarsalud-guardavidas.png" width="84" height="84" alt="Escudo de Sumar Salud: capacitación y entrenamiento de guardavidas">
+        <div>
+          <span class="lbl">Sumar Salud · Escuela de guardavidas</span>
+          <h1>Simulador 107</h1>
+          <p class="sub">Practicá la llamada al sistema de emergencias con un operador simulado y recibí la devolución al cortar.</p>
+        </div>
+      </header>
+      <div class="puertas">
+        <section class="puerta" aria-labelledby="t-alumnos">
+          <h2 id="t-alumnos">Soy alumno</h2>
+          <p class="note">Ingresá el código de la clase que te dio tu instructor.</p>
+          <input type="text" id="gate-in" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="CÓDIGO DE LA CLASE" aria-label="Código de la clase">
+          <div class="err" id="gate-err" role="alert"></div>
+          <button class="go" id="gate-go">Entrar a practicar</button>
+          <button class="backlink" id="gate-libre" hidden>Practicar sin código</button>
+        </section>
+        <section class="puerta" aria-labelledby="t-instructores">
+          <h2 id="t-instructores">Soy instructor</h2>
+          <p class="note">Entrá con tu código para abrir clases, ver las prácticas y revisar a tus alumnos.</p>
+          <input type="text" id="inst-in" autocomplete="off" autocapitalize="characters" placeholder="CÓDIGO DE INSTRUCTOR" aria-label="Código de instructor">
+          <label class="chk"><input type="checkbox" id="inst-recordar"> Recordarlo en este equipo</label>
+          <div class="err" id="inst-err" role="alert"></div>
+          <button class="go otra" id="inst-go">Entrar al panel</button>
+          <p class="aviso-activar" id="inst-activar" hidden>El panel todavía no está activado. <a href="activar">Ver qué falta</a>.</p>
+        </section>
+      </div>
+      <p class="pie">¿Querés usarlo con tus alumnos? <a href="instructores">Conocé el simulador</a><br>
+        <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a></p>
     </div>
   </section>
 
@@ -1098,10 +1140,10 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               marcado:"", arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
-              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false, sinAvance:0, cerrando:false,
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false, sinAvance:0, cerrando:false, anuncioSinUbicacion:false,
               // Quién llama en el ejercicio, cómo se llama el alumno o el grupo, y a qué
               // cuenta y clase pertenece (lo contesta el servidor al verificar el código).
-              perfil:"guardavidas", alias:"", acceso:null,
+              perfil:"guardavidas", alias:"", acceso:null, requiere:false,
               tDespacho:0, tRcp:null, primerTurno:true, practicaId:null, evaluando:false, avisoArribo:false };
 
   const $ = s => document.querySelector(s);
@@ -1176,12 +1218,66 @@
   }
 
   function pedirCodigo(msg){
-    try{ localStorage.removeItem("sim107_codigo"); }catch(x){}
+    try{ localStorage.removeItem("sim107_codigo"); sessionStorage.removeItem("sim107_libre"); }catch(x){}
     S.codigo = ""; aplicarAcceso(null);
     show("gate");
     $("#gate-err").textContent = msg || "";
-    $("#gate-in").focus();
+    if(msg) $("#gate-in").focus();
   }
+
+  /* La práctica libre, sin código, sólo existe si el servidor no pide códigos (sin base de
+     datos ni CODIGO_ACCESO) y se elige desde la entrada. Dura lo que dura la pestaña. */
+  function libreEnSesion(){ try{ return sessionStorage.getItem("sim107_libre") === "1"; }catch(e){ return false; } }
+
+  /* Lo que la entrada muestra según lo que esté activado en el servidor. */
+  function pintarEntrada(estado){
+    $("#gate-libre").hidden = S.requiere;
+    // Sólo se avisa si el servidor contestó: sin respuesta no se sabe qué falta.
+    if(estado && "registro" in estado) $("#inst-activar").hidden = Boolean(estado.registro && estado.admin);
+  }
+
+  /* Lo que la entrada le pregunta a /api/datos: si un código abre el panel. */
+  async function pedirDatos(cuerpo, encabezados){
+    const r = await fetch("/api/datos", { method:"POST",
+      headers: Object.assign({"content-type":"application/json"}, encabezados || {}), body: JSON.stringify(cuerpo) });
+    const d = await r.json().catch(()=>({error:"respuesta_ilegible"}));
+    if(!r.ok){ const e = new Error(d.detalle||d.error||"error"); e.code = d.error; e.status = r.status; throw e; }
+    return d;
+  }
+
+  /* La puerta de los instructores: se verifica el código acá mismo, para que el error se
+     vea en la entrada, y el panel lo toma de sessionStorage (la misma clave que usa su
+     propio formulario) y abre directo. */
+  async function entrarAlPanel(){
+    const v = $("#inst-in").value.trim();
+    if(!v) return;
+    $("#inst-err").textContent = "";
+    $("#inst-go").disabled = true;
+    try{
+      await pedirDatos({ accion:"panel" }, { "x-panel": v });
+      try{
+        sessionStorage.setItem("sim107_panel", v);
+        if($("#inst-recordar").checked) localStorage.setItem("sim107_panel", v);
+      }catch(e){}
+      location.href = "panel";
+    }catch(e){
+      if(e.code === "sin_base"){
+        $("#inst-activar").hidden = false;
+        $("#inst-err").textContent = "El panel todavía no está activado (sin_base).";
+      } else {
+        $("#inst-err").textContent = e.code === "demasiados_intentos"
+          ? "Muchos intentos seguidos. Esperá diez minutos (demasiados_intentos)."
+          : "Ese código no abre el panel. Revisalo o pedíselo a quien administra el simulador (" + (e.code || e.status || "error") + ").";
+      }
+    }finally{ $("#inst-go").disabled = false; }
+  }
+  $("#inst-go").addEventListener("click", entrarAlPanel);
+  $("#inst-in").addEventListener("keydown", e=>{ if(e.key==="Enter") entrarAlPanel(); });
+  $("#gate-libre").addEventListener("click", ()=>{
+    try{ sessionStorage.setItem("sim107_libre", "1"); }catch(e){}
+    pintarCuenta();
+    show("setup");
+  });
 
   (async function init(){
     try{ S.codigo = localStorage.getItem("sim107_codigo") || ""; }catch(e){ S.codigo = ""; }
@@ -1189,14 +1285,18 @@
     $("#alias").value = S.alias;
     pintarPerfil();
     const delLink = codigoDelLink();
-    let requiere = false;
-    try{ const r = await fetch("/api/chat"); requiere = (await r.json()).requiereCodigo; }catch(e){}
+    let estado = {};
+    try{ const r = await fetch("/api/chat"); estado = await r.json(); }catch(e){}
+    S.requiere = Boolean(estado.requiereCodigo);
+    pintarEntrada(estado);
     if(delLink){
       try{ await verificar(delLink); show("setup"); }
       catch(e){ pedirCodigo(textoError(e)); $("#gate-in").value = delLink; }
       return;
     }
-    if(requiere && !S.codigo){ show("gate"); $("#gate-in").focus(); return; }
+    // Sin un código guardado, la web abre en la entrada: cada uno por su puerta.
+    if(!S.codigo && (S.requiere || !libreEnSesion())){ show("gate"); return; }
+    pintarCuenta();
     show("setup");
     // Con un código guardado se vuelve a verificar en segundo plano: trae el nombre de la
     // institución y sus escenarios, y si la clase ya cerró, vuelve a pedir un código.
@@ -1233,7 +1333,9 @@
     if(a && a.registro) partes.push("tus prácticas quedan registradas para tu instructor");
     el.textContent = partes.join(" · ");
     el.hidden = !partes.length;
-    $("#cambiar-codigo").hidden = !S.codigo;
+    // Con código, se puede cambiar; sin código, se vuelve a la entrada.
+    $("#cambiar-codigo").hidden = false;
+    $("#cambiar-codigo").textContent = S.codigo ? "Cambiar de código" : "Volver al inicio";
     $("#alias-req").hidden = !(a && a.sala);
   }
 
@@ -1498,7 +1600,8 @@
      porque el operador se queda en línea guiando la RCP hasta que la ambulancia llega. */
   function llegoMovil(){
     if(esLego()) return S.despachado && S.tDespacho > 0 && (Date.now()-S.tDespacho) >= S.arribo;
-    return (Date.now()-S.t0) >= S.arribo;
+    // Sin despacho no hay móvil que llegue, por más que el reloj haya corrido.
+    return S.despachado && (Date.now()-S.t0) >= S.arribo;
   }
   function minutosParaArribo(){
     const base = esLego() ? (S.tDespacho || Date.now()) : S.t0;
@@ -1534,6 +1637,33 @@
     if(/(comprim|empujando|estoy empujando|ya empuj|estoy apretando|apretando el pecho|masaje card|estoy haciendo (la )?rcp|haciendo rcp|ya empec[eé]|ya arranqu[eé])/.test(t)) return true;
     const numeros = t.match(/\b(\d{1,2}|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\b/g) || [];
     return numeros.length >= 4 && numeros.length >= t.split(/\s+/).filter(Boolean).length * 0.6;
+  }
+
+  /* La ubicación no se le cree al modelo sin más. El operador declara con [[DATOS:...]] lo
+     que ya averiguó y casi siempre está bien, pero probando ocho perfiles de alumno contra
+     producción (septiembre de 2026), con uno que contestaba con preguntas declaró una
+     ubicación que nunca le dieron y despachó a ningún lado. Es el dato que más importa y
+     el más fácil de chequear: la app lo acepta sólo si en lo que dijo el alumno hay algo
+     que un móvil pueda buscar (una calle, un número, una referencia, o alguna palabra de
+     la dirección del escenario). Si es exacta o no lo juzga la devolución; acá sólo se
+     mira que exista. */
+  const PISTAS_UBICACION = /\b(calle|avenida|av|bulevar|boulevard|bv|ruta|km|kil[oó]metros?|esquina|entre|frente|enfrente|al lado|altura|n[uú]mero|piso|depto|departamento|barrio|puesto|balneario|playa|costanera|club|plaza|parque|escuela|colegio|laguna|pileta|natatorio|camping|parador|bajada|acceso|port[oó]n|entrada|estaci[oó]n|quinta|gimnasio|edificio|hospital|puente|espig[oó]n|muelle|r[ií]o|comercio|super|supermercado|cancha|estadio|iglesia|terminal|peaje|rotonda|cruce|localidad|ciudad|manzana|lote|pasaje|diagonal)\b/;
+  // Un número cuenta como pista salvo que sea una edad, un tiempo o una cantidad de gente.
+  const NUMEROS_QUE_NO_UBICAN = /\d+\s*(a[ñn]os?|minutos?|min|segundos?|seg|veces|personas|chicos|nenes|v[ií]ctimas|kilos|kg|grados)\b/g;
+  // Palabras de la dirección del escenario que no alcanzan para ubicar a nadie.
+  const GENERICAS_DIRECCION = new Set(["primer","primera","segundo","segunda","puerta","abierta","abierto","cerrada","cerrado","adentro","afuera","arriba","abajo","izquierda","derecha","cuando","siempre","también"]);
+  function palabras(txt){ return String(txt||"").toLowerCase().split(/[^a-záéíóúñü]+/).filter(Boolean); }
+  function dijoUbicacion(){
+    const propias = palabras(((S.scn && S.scn.addr) || "") + " " + ((S.scn && S.scn.zona) || ""))
+      .filter(p => p.length >= 6 && !GENERICAS_DIRECCION.has(p));
+    return S.turns.some(t => {
+      if(t.role !== "user" || /^\[silencio/.test(t.content)) return false;
+      const txt = String(t.content).toLowerCase();
+      if(/\d/.test(txt.replace(NUMEROS_QUE_NO_UBICAN, ""))) return true;
+      if(PISTAS_UBICACION.test(txt)) return true;
+      const dichas = palabras(txt);
+      return propias.some(p => dichas.includes(p));
+    });
   }
 
   function extrasDe(){
@@ -1629,6 +1759,7 @@
       // Si ya anunció el despacho, decirle que no lo anuncie lo deja con una instrucción
       // contradictoria: pasa cuando anuncia por su cuenta sin haber declarado los datos.
       if(S.despachado) L.push("- Ya avisaste que el móvil sale, así que no lo repitas. Te quedan muy pocos turnos: pedí lo que falte de arriba y después te callás.");
+      else if(S.anuncioSinUbicacion) L.push("- Dijiste que el móvil sale, pero NO tenés la ubicación: sin ubicación no sale nada. Aclaralo en una frase (el móvil sale apenas te diga dónde es) y pedísela. No la supongas ni la inventes.");
       else L.push("- NO anuncies todavía que el móvil sale: primero completá lo de arriba.");
     } else {
       L.push("- YA TENÉS TODO LO ESENCIAL. Si todavía no le avisaste que el SEM sale y le diste el tiempo de llegada, hacelo AHORA, en este turno.");
@@ -1642,9 +1773,15 @@
       L.push("- EL MÓVIL YA LLEGÓ. Decile que está llegando y preguntale si lo ve.");
       L.push("- Cuando te lo confirme, pedile que le pase a los paramédicos el último estado, y recién ahí cerrá con [[CERRAR]].");
     } else {
-      if(S.despachado) L.push("- Ya despachaste, así que los signos clínicos ya no te cambian nada: NO preguntes por espuma, tos, pulso, pupilas ni color. Eso lo valora el equipo cuando llegue.");
-      L.push("- El móvil está en camino y le faltan unos "+falta+" minuto(s).");
-      L.push("- Si ya lo anunciaste, no repitas el tiempo salvo que te lo pregunten.");
+      // "Está en camino" sólo después del despacho. Antes se le decía siempre, y chocaba
+      // con el "no anuncies todavía" de arriba: lo empujaba a anunciar sin tener los datos.
+      if(S.despachado){
+        L.push("- Ya despachaste, así que los signos clínicos ya no te cambian nada: NO preguntes por espuma, tos, pulso, pupilas ni color. Eso lo valora el equipo cuando llegue.");
+        L.push("- El móvil está en camino y le faltan unos "+falta+" minuto(s).");
+        L.push("- Si ya lo anunciaste, no repitas el tiempo salvo que te lo pregunten.");
+      } else if(!fEs.length){
+        L.push("- Cuando anuncies que el SEM sale, el tiempo estimado de llegada es de unos "+falta+" minuto(s).");
+      }
       if(!enEspera()) L.push("- Todavía NO cierres: primero terminá de juntar lo que te falta.");
     }
 
@@ -1683,7 +1820,9 @@
       if(S.datos.conciencia && S.datos.respiracion && !S.datos.rcp){
         L.push("- Ya te dijo que no responde y cómo respira: si no respira normalmente, arrancá YA la RCP guiada mientras le seguís pidiendo lo que falta.");
       }
-      L.push(S.despachado ? "- Ya avisaste que la ambulancia sale: no lo repitas." : "- NO avises todavía que la ambulancia sale: primero completá lo de arriba.");
+      L.push(S.despachado ? "- Ya avisaste que la ambulancia sale: no lo repitas."
+        : S.anuncioSinUbicacion ? "- Dijiste que la ambulancia sale, pero NO tenés la dirección: sin dirección no sale nada. Aclaralo en una frase (la ambulancia sale apenas te diga dónde es) y pedísela, sin dejar de guiar la RCP si ya arrancó. No la supongas ni la inventes."
+        : "- NO avises todavía que la ambulancia sale: primero completá lo de arriba.");
     } else if(!S.datos.rcp){
       L.push("- YA TENÉS LO ESENCIAL.");
       if(!S.despachado) L.push("- En ESTE mensaje avisale en una frase corta que la ambulancia ya sale.");
@@ -1866,7 +2005,10 @@
       // listar un dato que ya tenía, no se pierde.
       const teniaAntes = Object.keys(S.datos).length;
       const md = txt.match(/\[\[\s*DATOS\s*:([^\]]*)\]\]/i);
-      if(md) md[1].split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(id=>{ S.datos[id] = true; });
+      if(md) md[1].split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(id=>{
+        if(id === "ubicacion" && !dijoUbicacion()) return; // ver dijoUbicacion()
+        S.datos[id] = true;
+      });
       txt = txt.replace(/\[\[\s*DATOS[^\]]*\]\]/gi,"").trim();
       if(S.datos.rcp && S.tRcp == null) S.tRcp = Date.now()-S.t0;
 
@@ -1877,7 +2019,12 @@
       // El anuncio del despacho se detecta de lo que DIJO, no de lo que declaró tener:
       // el modelo suele anunciar por su cuenta sin mandar la marca de datos, y así el
       // tope nunca arrancaba.
-      if(anuncioDeDespacho(txt) && !S.despachado){ S.despachado = true; S.tDespacho = Date.now(); }
+      // Sin ubicación no sale nada, lo diga o no el operador: si anunció el móvil sin que
+      // se la dieran, el anuncio no cuenta y el próximo turno se le hace aclarar.
+      if(anuncioDeDespacho(txt) && !S.despachado){
+        if(dijoUbicacion()){ S.despachado = true; S.tDespacho = Date.now(); S.datos.ubicacion = true; S.anuncioSinUbicacion = false; }
+        else S.anuncioSinUbicacion = true;
+      }
 
       // Turnos gastados desde que despachó (guardavidas) o desde que arrancó la RCP
       // (lego): es lo que limita cuánto puede seguir preguntando antes de callarse.
@@ -2253,7 +2400,7 @@
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
     S.grado=null; S.grados=[]; S.sondeos=0; S.ultimaOp=0;
     S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={}; S.despachado=false;
-    S.sinAvance=0; S.cerrando=false;
+    S.sinAvance=0; S.cerrando=false; S.anuncioSinUbicacion=false;
     S.tDespacho=0; S.tRcp=null; S.primerTurno=true; S.practicaId=null; S.avisoArribo=false;
     // El perfil de la práctica es el del escenario (un escenario de lego es de lego
     // aunque el selector haya quedado en otra cosa).

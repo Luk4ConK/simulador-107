@@ -6,6 +6,17 @@ Sirve para dos públicos: la formación de guardavidas (el operador le pide lo q
 
 Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular como una app más, y la clave de API queda en el servidor: los alumnos nunca la ven ni la pueden copiar.
 
+## La dirección
+
+**https://simulador-107.vercel.app** — es la web principal y todo empieza ahí. Abre en una entrada con dos puertas:
+
+- **Soy alumno:** el alumno pone el código de la clase que le diste y entra a practicar.
+- **Soy instructor:** ponés tu código y entrás al panel, donde abrís las clases y ves las prácticas.
+
+Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. **https://simulador-107.vercel.app/activar** revisa sola cuáles faltan y tiene los pasos con los enlaces directos.
+
+**Desde la web de Sumar Salud.** Al final de esa misma página hay un recuadro listo para pegar en la web de Sumar Salud (en WordPress, con un bloque *HTML personalizado*): el alumno escribe ahí el código de la clase y entra directo a practicar, y el instructor tiene su botón al panel. Así todos entran siempre desde la web de Sumar Salud. Ahí mismo están los pasos para que el simulador tenga una dirección propia, como *simulador.sumarsalud.org*, si la querés.
+
 ---
 
 ## 1. Sacar la clave de API
@@ -60,6 +71,8 @@ Si ponés `CODIGO_ACCESO`, la app pide ese código la primera vez y lo recuerda 
 
 Sin base de datos el simulador anda igual que siempre, pero no hay clases en vivo, ni registro de prácticas, ni panel. Conectarla lleva cinco minutos y es gratis:
 
+La página **/activar** del simulador revisa si ya quedó conectada, junto con el código de administrador.
+
 1. En Vercel, en el proyecto: *Storage* → *Create Database* (o *Browse Marketplace*) → **Upstash for Redis** → plan gratuito.
 2. Conectala al proyecto. Vercel carga solo las variables que necesita (`UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`, o sus equivalentes `KV_REST_API_...`).
 3. *Deployments* → *Redeploy*.
@@ -82,7 +95,7 @@ Sobre los modelos: la app prueba varios en orden y se queda con el primero que t
 
 ## 6. Probarlo
 
-Abrí el link que te da Vercel (algo como `simulador-107.vercel.app`) desde el celular, en Chrome. La primera vez que toques *Llamar al 107* el navegador pide el micrófono: aceptá.
+Abrí **https://simulador-107.vercel.app** desde el celular, en Chrome. La primera vez que toques *Llamar al 107* el navegador pide el micrófono: aceptá.
 
 Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pantalla principal*. En iPhone, Safari → *Compartir* → *Agregar a inicio*.
 
@@ -90,7 +103,7 @@ Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pan
 
 ## El panel del instructor
 
-Está en la dirección del simulador más `/panel`. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
+Se entra desde la página principal, en *Soy instructor*, o directo en **https://simulador-107.vercel.app/panel**. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
 
 - **Clase en vivo.** Abrís una clase y te da un código de seis letras para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima y, al final, qué criterio costó más en toda la clase.
 - **Prácticas.** Cada llamada queda con su transcripción. Podés revisarla criterio por criterio (a ciegas: lo que dijo la IA se ve recién después de marcar lo tuyo), borrarla o descargar todo en una planilla.
@@ -98,11 +111,11 @@ Está en la dirección del simulador más `/panel`. Se entra con `CODIGO_ADMIN` 
 - **Calidad.** Cuánto coincide la IA con los instructores (kappa de Cohen), con las revisiones a ciegas.
 - **Escenarios.** Escenarios propios de la cuenta, que ven todos sus alumnos en cualquier celular.
 - **Mi cuenta.** Los códigos de alumnos y de instructor, y cómo cambiarlos.
-- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores, y el uso diario con los días en que se agotó la cuota gratuita.
+- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los días en que se agotó la cuota gratuita.
 
 ## Qué le pasás a los alumnos
 
-Para una clase: el código de la clase en vivo (o el link que copia el panel). Para practicar por su cuenta: el link y el código de alumnos de tu cuenta. Nada más. No necesitan cuenta ni instalar nada.
+Para una clase: la dirección de la web y el código de la clase en vivo, que ponen en *Soy alumno*; o directamente el link que copia el panel, que ya trae el código. Para practicar por su cuenta: el código de alumnos de tu cuenta, en la misma puerta. Nada más. No necesitan cuenta ni instalar nada.
 
 Antes de practicar conviene leerles el aviso: es una simulación, usen el nombre del grupo y datos inventados, y la conversación queda guardada para que la revises (se borra sola a los 13 meses).
 
