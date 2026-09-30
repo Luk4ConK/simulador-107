@@ -1,8 +1,10 @@
 # Simulador 107
 
-App web donde un alumno de guardavidas practica la llamada al sistema de emergencias
-hablando en voz alta con un operador simulado por IA. Al cortar recibe una devolución
-sobre qué datos del protocolo transmitió y cuáles faltaron.
+App web donde un alumno practica la llamada al sistema de emergencias hablando en voz
+alta con un operador simulado por IA. Al cortar recibe una devolución sobre qué datos del
+protocolo transmitió y cuáles faltaron. Tiene dos perfiles: **guardavidas** (el operador
+pregunta como a un profesional y no le dicta maniobras) y **lego** (persona sin formación,
+para los cursos de RCP: el operador reconoce el paro y guía la RCP por teléfono).
 
 La usa la formación de guardavidas de **Sumar Salud** (Asociación Civil Sumar Salud,
 Santa Fe capital, Argentina) en sus entrenamientos y en los cursos de RCP y primeros
@@ -20,6 +22,18 @@ Gemini. Micrófono, voz del operador y evaluación andando en el celular.
 Vercel está conectado a este repositorio: **todo push despliega solo**, conservando la
 URL y las variables de entorno. No hay build: es HTML estático más una función.
 
+**Septiembre de 2026: se armó el producto completo** (en la rama
+`claude/simulador-107-producto-rllxr2`; producción se actualiza recién cuando se une a la
+rama principal). Suma el modo lego, nueve escenarios, clases en vivo para 8 grupos, registro
+de prácticas con base de datos (Upstash Redis), un panel de instructor y de administrador,
+páginas públicas (presentación para instructores, fundamentos con fuentes, términos y
+privacidad) y pruebas automáticas en `pruebas/`. El plan de negocio, los precios, la
+operativa, los textos legales y el protocolo del piloto están en el Drive del titular,
+carpeta «Simulador 107 · Operativa» (no en el repo). Veredicto: viable a escala chica
+(7 instructores o 3 instituciones cubren la estructura paga); piloto gratuito hasta el
+31/03/2027 y decisión con cuatro criterios (kappa ≥ 0,6 con ≥ 50 revisiones a ciegas, 5
+instructores externos activos, 3 compromisos de pago, baja del tiempo hasta la ubicación).
+
 Existe además una copia publicada como artifact de Claude, que se usa para escribir
 guiones gratis (sin gastar API). Ahí el micrófono NO funciona — el contenedor de Claude
 no le pasa el permiso, da `NotAllowedError` — así que esa copia se usa sólo en modo
@@ -29,14 +43,31 @@ reflejarlo también en esa copia.
 ## Archivos
 
 ```
-index.html            la app entera: pantallas, voz, rúbrica, estado. Sin frameworks.
-api/chat.js           función del servidor: guarda la clave y habla con Gemini o Claude
+index.html            la app de los alumnos: pantallas, voz, rúbrica, estado. Sin frameworks.
+panel.html            panel del instructor y del administrador (lee SCENARIOS de index.html)
+instructores.html     presentación para instructores, formulario de contacto, PLANES
+fundamentos.html      decisiones con su evidencia; arma la tabla de la rúbrica con rubrica()
+terminos.html         términos de uso (datos del titular desde /api/datos?info=1)
+privacidad.html       política de privacidad, Ley 25.326
+publico.css/.js       estilo y datos del titular de las páginas públicas
+api/chat.js           operador y evaluador: clave, rotación de modelos, cupo, registro
+api/datos.js          salas, prácticas, revisiones, escenarios, cuentas, contactos, uso
 manifest.webmanifest  para que se instale como app
 sw.js                 service worker: abre rápido, nunca cachea /api/
-vercel.json           maxDuration 60 s para la función; sw.js sin caché
+vercel.json           maxDuration de las funciones, direcciones cortas, cabeceras
 icons/                íconos
+pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
 README.md             guía de despliegue, escrita para el usuario
 ```
+
+`api/chat.js` y `api/datos.js` no se importan entre sí a propósito (cada función de Vercel
+es autónoma): los ayudantes de base de datos y códigos están repetidos en las dos, en un
+bloque marcado "repetido de api/chat.js (mantener iguales)". Si cambiás uno, cambiá el otro.
+
+`panel.html` y `fundamentos.html` leen `SCENARIOS`, `CHECKS`, `CHECKS_LEGO`, `GUIAS` y
+`function rubrica(scn){` de `index.html` con un recorte de llaves balanceadas (el mismo que
+usa `pruebas/rubrica.test.mjs`). **Mantené esas declaraciones con esa forma exacta** o esas
+páginas se quedan sin datos.
 
 ## Mapa de `index.html`
 
@@ -48,7 +79,12 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
   el operador), `guia` (cuál de las `GUIAS` usa) y `notasInstructor` (el guion de cómo
   evoluciona la víctima, **para que lo cante el instructor presente**: la app no lo usa
   ni lo evalúa).
-- `GUIAS` — lo que cambia de un tipo de escenario a otro. Hoy existe `ahogamiento`, con:
+- `perfil` en cada escenario: `guardavidas` o `lego`. Filtra qué escenarios ve cada perfil
+  y elige la rúbrica (`CHECKS` o `CHECKS_LEGO`), el contexto (`CONTEXTO` o `CONTEXTO_LEGO`),
+  el glosario y las grillas (`ESENCIALES`/`EXTRAS` o `ESENCIALES_LEGO`/`EXTRAS_LEGO`).
+- `GUIAS` — lo que cambia de un tipo de escenario a otro. Hoy existen `ahogamiento`, `pcr`,
+  `trauma` (guardavidas), `lego-rcp` (sólo compresiones) y `lego-ahogamiento` (con
+  ventilaciones: chicos y ahogados). La de ahogamiento tiene:
   `escala` (los grados de Szpilman), `clasificar` (el Bloque 2 del interrogatorio),
   `circunstancial` (el Bloque 3), `saber` (lo que el operador sabe del cuadro y le cambia
   lo que indica), `cambia` (ajustes a criterios globales de la rúbrica) y `checks`
@@ -65,11 +101,12 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
   `extras`. Agotados, la llamada pasa a espera sola.
 - `TOPE_EXTRAS` — turnos que puede gastar después del aviso de despacho (2). Pasados
   esos, entra en espera aunque queden extras sin preguntar.
-- `CHECKS` — los nueve criterios de la rúbrica. Cada uno tiene `peso` (cuánto suma sobre
+- `CHECKS` — los diez criterios de la rúbrica de guardavidas (`CHECKS_LEGO`, los diez del
+  perfil lego, que sí suman 100). Cada uno tiene `peso` (cuánto suma sobre
   100), `critico` (si sin ese dato no sale el móvil) y la vara de corrección escrita:
   qué cuenta como `logrado` y qué como `parcial`. Si agregás o sacás uno, la pantalla de
-  devolución y el informe descargable se actualizan solos, pero **los pesos tienen que
-  seguir sumando 100**.
+  devolución y el informe descargable se actualizan solos. Los pesos se normalizan en
+  `puntuar()`, porque cada guía suma los suyos.
 - `TOPE_CRITICO` — el puntaje máximo cuando falta un criterio crítico (hoy 40).
   Ojo con dos criterios que cambiaron de sentido: `material` (qué equipamiento hay en el
   lugar, el DEA ante todo) es distinto de `maniobras` (qué están haciendo), y
@@ -79,7 +116,9 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
   operador: Guía, Real, Exigente.
 - `instrucciones()` — el prompt de sistema del operador. Es el archivo donde se afina el
   realismo: orden del interrogatorio, cuándo repregunta, cuándo da RCP guiada, cuándo
-  cierra.
+  cierra. Devuelve `{ fijo, variable }`: lo fijo va primero (se puede cachear) y el estado
+  de la llamada al final, en cada turno. En lego lo arman `promptFijoLego()` y
+  `estadoLlamadaLego()`.
 - `APERTURA` — la frase con la que atiende.
 - `NUMEROS` — el teclado del teléfono. `107` arranca la llamada; el resto no, y cada uno
   explica por qué. El mensaje del 911 dice cuál es el número que corresponde, no que esté
@@ -95,8 +134,10 @@ Todo el contenido editable está arriba del `<script>`, con nombres en castellan
 
 Fase de seguimiento: `estadoLlamada()` arma, en cada turno, el bloque que le dice al
 modelo en qué minuto va y si el móvil llegó. `sondear()` hace que el operador vuelva a
-preguntar solo cuando pasó la cadencia sin que nadie hable. `novedad()` le muestra al
-alumno los cambios de la escena. El operador marca su clasificación con `[[GRADO:n]]`.
+preguntar solo cuando pasó la cadencia sin que nadie hable. El operador marca su
+clasificación con `[[GRADO:n]]` (sólo si la guía tiene `escala`). La evolución de la
+víctima ya no la muestra la app: la canta el instructor con `notasInstructor`, que el
+panel muestra en la clase en vivo.
 
 Terminar la llamada y pasar a la devolución son dos pasos distintos. `endCall()` deja la
 llamada terminada en `v-call`, con la conversación a la vista y el botón **Ver la
@@ -122,9 +163,10 @@ justamente para que la dispare el teclado.
 - **La apertura es una frase fija**, no una llamada al modelo: sale al instante, como una
   llamada real, y ahorra una llamada por práctica.
 - **El micrófono se cierra mientras el operador habla.** Si queda abierto, el reconocedor
-  transcribe la voz sintetizada y la conversación se degrada. Por eso hoy no se puede
-  interrumpir al operador; resolverlo bien necesita cancelación de eco o una API de voz
-  en tiempo real, no un ajuste de tiempos.
+  transcribe la voz sintetizada y la conversación se degrada. Se puede interrumpir
+  **tocando** la franja de estado (`interrumpir()` corta la voz y abre el micrófono);
+  interrumpir **hablando** necesita cancelación de eco o una API de voz en tiempo real,
+  no un ajuste de tiempos.
 - **Manos libres es el modo por defecto**: apretar un botón por turno rompe el protocolo
   que se está entrenando. El turno se cierra por silencio (`S.pausa`, configurable:
   900 / 1500 / 2400 ms). Queda el modo botón para ambientes ruidosos (natatorio).
@@ -132,7 +174,10 @@ justamente para que la dispare el teclado.
   y avisa, en vez de quedar en bucle.
 - **La clave de API nunca toca el navegador.** Va en variables de entorno de Vercel y se
   usa sólo dentro de `api/chat.js`. No la escribas en ningún archivo del repo.
-- **El prompt del operador NO se puede truncar.** `api/chat.js` lo recortaba a 8.000
+- **El prompt del operador NO se puede truncar.** Hoy `TOPE_PROMPT` es 40.000 y, si el
+  prompt lo supera, el servidor contesta 413 `prompt_largo` en vez de recortarlo; el prompt
+  real mide unos 16.450 caracteres y `pruebas/ui.test.mjs` avisa si se acerca al tope.
+  Historia: `api/chat.js` lo recortaba a 8.000
   caracteres cuando el prompt real mide ~15.100: se perdía el 47% final, o sea la base de
   conocimiento, el bloque de estado dinámico, los marcadores y el nivel de dificultad. La
   app no se caía, porque las garantías viven en su propio código, pero **todo lo que el
@@ -176,6 +221,7 @@ justamente para que la dispare el teclado.
   el operador tenía la información: con un alumno escueto lo callaba sin haber averiguado
   nada, y con uno locuaz lo dejaba interrogando de más. `TOPE_MINUTOS` (5) quedó sólo como
   red de seguridad por si el modelo nunca manda `[[DATOS:...]]`, no como el mecanismo.
+  Hoy vale 4 (`TOPE_MINUTOS_LEGO`, 12: en lego el operador se queda en línea).
 - **Las prohibiciones al modelo van con la frase textual.** "No le dictes maniobras" no
   alcanzó: seguía cerrando con "seguí con el ciclo 15:2" o "continúen con las
   compresiones". Hubo que listar esas frases y prohibirlas una por una. Si aparece una
@@ -230,14 +276,58 @@ justamente para que la dispare el teclado.
   cambiar, y eso recién se sabe al final. Calcularlo al arrancar lo excluía siempre.
 - **El modelo no tiene noción del tiempo.** Hay que decírselo en cada turno; eso hace
   `estadoLlamada()`. No se puede confiar en que lo deduzca de la transcripción.
-- **La escena cambia sola, el operador no se entera.** Las novedades de `evolucion` se le
-  muestran SÓLO al alumno. Si el operador las supiera, se rompe lo de que es ciego y el
-  alumno aprueba sin transmitir nada.
+- **Lo que cambia en la escena, el operador no lo sabe.** Hoy la evolución la canta el
+  instructor en voz alta (ver `notasInstructor`); si algún día la app la vuelve a mostrar,
+  tiene que ser SÓLO al alumno. Si el operador la supiera, se rompe lo de que es ciego y
+  el alumno aprueba sin transmitir nada.
 - **La base de conocimiento está destilada, no copiada.** Los manuales no entran en un
   prompt que se manda en cada turno, y además son material publicado de terceros. Lo que
   hay en `GUIAS.ahogamiento.saber` son los hechos reescritos que le cambian al operador
   lo que dice. No pegues capítulos de los manuales acá.
 - **Sin frameworks, sin build, sin dependencias.** Se despliega tal cual. Mantenerlo así.
+  Anthropic y Upstash se llaman con `fetch` directo por lo mismo.
+
+### Decisiones de septiembre de 2026 (producto)
+
+- **Modo lego con RCP guiada por teléfono (T-CPR).** Sólo compresiones en adultos (AHA
+  2025); 5 ventilaciones y 30:2 en chicos y ahogados (ERC 2025, AHA/AAP 2024). A diferencia
+  del guardavidas, el operador **se queda en línea** alentando hasta que llega el móvil, y
+  el reloj del arribo arranca en el despacho (`S.tDespacho`), no al atender. La devolución
+  mide `tRcpMs`, el momento en que dijo que empezó a comprimir (meta AHA: antes de 150 s).
+- **Rotación ante cuota agotada.** Un 429 enfría ese modelo el tiempo que dice
+  `retryDelay` (una cuota diaria, al menos una hora) y se prueba el siguiente. Si todos
+  fallaron y alguno fue por cuota, el error final es 429 `cuota`, no 502. Así la capa
+  gratuita aguanta 8 grupos a la vez.
+- **El servidor recalcula el puntaje** con la rúbrica que manda la app (`puntuar()`
+  repetido en los dos archivos de `api/`). El registro guarda la práctica aunque la
+  evaluación falle, y el reintento reusa `practicaId` para no duplicarla.
+- **Revisión a ciegas.** En el panel, una práctica sin revisar se abre con lo de la IA
+  oculto y los criterios sin marcar. La primera revisión a ciegas se guarda aparte
+  (`revision.itemsCiegos`) y no se pisa; la pestaña Calidad calcula el kappa sólo con
+  esas. Pre-llenar con el juicio de la IA inflaba el acuerdo: no volver a hacerlo.
+- **Códigos.** Alfabeto sin 0/O ni 1/I (se dictan en voz alta). Tipos: administrador
+  (`CODIGO_ADMIN`), alumnos de la cuenta principal (`CODIGO_ACCESO`), alumnos e instructor
+  de cada cuenta (`cod:`, `codi:`) y clase en vivo (`sala:`, seis letras, vence sola). Una
+  clase cerrada sigue existiendo 6 h para que el que llega tarde lea "esa clase terminó".
+  30 códigos errados en 10 minutos desde la misma IP (con hash) frenan los intentos.
+- **Datos personales.** Se practica con alias o nombre de grupo; no se guarda audio; las
+  prácticas vencen a los 400 días. El reconocimiento de voz de Chrome manda el audio a
+  Google, y la capa gratuita de Gemini puede usar el contenido: por eso los avisos.
+  **Nunca escribas datos personales del titular en el repo**: salen de `TITULAR_*` y
+  `CONTACTO_*` vía `/api/datos?info=1`, y si faltan la página lo dice.
+- **`CODIGO_DEMO` sólo se publica si es un código de alumnos** de alguna cuenta (se
+  verifica en la base): si por error cargan el de administración o uno de instructor, no
+  sale en la página.
+- **Precios ocultos hasta el plan pago.** Vercel Hobby no admite uso comercial:
+  `MOSTRAR_PRECIOS=1` recién después de pasar a Vercel Pro. Los precios viven en `PLANES`,
+  al principio del script de `instructores.html` (Instructor $29.000, Institución
+  $89.000, septiembre de 2026; el razonamiento está en la planilla de precios del Drive).
+- **El tablero de la clase se refresca cada 10 s y sólo con la pestaña visible.** Cada
+  consulta gasta unos diez comandos de Upstash y la capa gratuita trae 500.000 por mes.
+- **Fuentes verificadas en PubMed.** `fundamentos.html` tiene 29 referencias con DOI. El
+  "7-10% por minuto" que circula no sale de Larsen 1993 (5,5 puntos por minuto sin
+  tratamiento); Ecker se cita como Resuscitation 2020 (en línea en 2019). Si agregás una
+  afirmación clínica, que tenga su fuente ahí.
 
 ## Variables de entorno (en Vercel, no en el repo)
 
@@ -248,14 +338,38 @@ justamente para que la dispare el teclado.
 | `CODIGO_ACCESO` | palabra que los alumnos ingresan una vez. Sin esto, cualquiera con el link gasta la cuota. |
 | `MODELO_OPERADOR` / `MODELO_EVALUADOR` | para forzar un modelo puntual |
 | `GEMINI_SIN_PENSAR` | `1` manda `thinkingBudget: 0` en la conversación, para que el operador conteste más rápido |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` (o `KV_REST_API_*`) | la base de datos; las carga Vercel al conectar Upstash. Sin esto, todo anda sin registro |
+| `CODIGO_ADMIN` | código del administrador: abre el panel completo |
+| `NOMBRE_PRINCIPAL` | nombre de la cuenta principal (por defecto, Sumar Salud) |
+| `TITULAR_NOMBRE` / `TITULAR_CUIT` / `TITULAR_DOMICILIO` | datos del titular para términos y privacidad |
+| `CONTACTO_EMAIL` / `CONTACTO_WHATSAPP` | contacto público |
+| `CODIGO_DEMO` | código de alumnos de la cuenta de demo pública |
+| `MOSTRAR_PRECIOS` | `1` muestra los planes en /instructores (sólo con Vercel Pro) |
 
-Diagnóstico: **`/api/chat?diag=1`** dice si la clave sirve, qué modelos hay disponibles y
-el resultado de una llamada de prueba. No expone la clave. Es lo primero que hay que
+Diagnóstico: **`/api/chat?diag=1`** dice si la clave sirve, qué modelos hay disponibles,
+el resultado de una llamada de prueba y si la base de datos responde. No expone la clave. Es lo primero que hay que
 mirar cuando algo no responde.
 
 ## Cómo probar los cambios
 
-No hay suite de tests. Lo que funcionó hasta ahora:
+Hay pruebas automáticas en `pruebas/`, sin dependencias del proyecto (Node 20+; la de
+navegador usa el Playwright global y el Chromium del entorno):
+
+```
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs   # servidor y rúbrica, sin red
+NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs            # punta a punta en Chromium
+RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107
+```
+
+`pruebas/falsos.mjs` tiene un Redis en memoria (sólo los comandos que se usan: si agregás
+uno en `api/`, agregalo ahí) y un Gemini falso con cuotas, 404 y un operador que sigue el
+ESTADO DE LA LLAMADA. `ui.test.mjs` recorre guardavidas, lego en una clase, una clase
+cerrada, el panel completo (revisión a ciegas, kappa, CSV, altas) y las páginas públicas,
+y falla si hay errores de JavaScript o si el prompt se acerca a `TOPE_PROMPT`. Las
+fórmulas de las planillas del Drive se verificaron con la librería `formulas` de Python
+(LibreOffice no abre archivos en la carpeta temporal de este entorno).
+
+Lo que funcionó antes de tener la suite, y sigue sirviendo para explorar:
 
 - **Sintaxis**: extraer el `<script>` de `index.html` a un archivo y `node --check`.
 - **Rúbrica**: extraer `CHECKS`, `rubrica()` y `puntuar()` con un `new Function` y correr
@@ -297,30 +411,24 @@ se "corrija" de vuelta desde el manual:
 
 ## Pendiente
 
-1. Probar en la cancha el operador y la rúbrica nuevos. La aritmética ya está resuelta
+1. Probar en la cancha el operador y la rúbrica nuevos (es el piloto: ver el protocolo en
+   el Drive). La aritmética ya está resuelta
    (una llamada sin dirección no pasa de 40 por más que todo lo demás esté bien), pero
    falta ver si el evaluador **aplica bien la vara** en llamadas reales, que es harina de
    otro costal. Prueba clave: una llamada deliberadamente mala tiene que dar bajo, y una
    buena de verdad tiene que llegar a 85+. Si una buena queda en 60, la vara está dura.
-2. Escenarios nuevos. **Hoy hay uno solo**, `ahogamiento-puro`, porque el instructor quiso
-   mostrar el prototipo con eso. Los otros cuatro (laguna-inconsciente, pileta-nino,
-   pcr-vereda, dos-victimas) se sacaron y están en el historial de git: se recuperan del
-   commit anterior al que los quitó. Los nuevos se cargan desde la app con "+ Cargar un
-   escenario propio" (quedan en `localStorage`, se exportan con el botón Exportar) y
-   después se pegan en `SCENARIOS`.
-3. Una guía para PCR sin ahogamiento. El Bloque 1 se reutiliza tal cual; el Bloque 2
-   cambia entero (dolor previo, medicación, si hay DEA cerca).
-4. Modo lego, que es el otro público previsto. No alcanza con ablandar al operador: un
-   lego no conoce el protocolo ni sabe nombrar lo que ve, así que necesita su propia guía
-   y su propia rúbrica. El criterio de identificación, por ejemplo, vuelve a necesitar
-   teléfono de contacto, que en el de guardavidas se sacó.
-5. Poder interrumpir al operador mientras habla. Ahora importa más que antes: las
-   llamadas duran varios minutos y el alumno tiene que poder avisar un cambio en el
-   momento en que lo ve, no esperar a que el operador termine de hablar.
-6. Panel de instructor: escenarios compartidos entre todos los alumnos, no por navegador.
-   Requiere base de datos.
-7. Registro de prácticas por alumno: quién practicó, cuántas veces, cómo evolucionó.
-8. Voz de mejor calidad vía API de voz (multiplica el costo, cambia mucho la experiencia).
+2. Hecho en septiembre de 2026: nueve escenarios (seis de guardavidas y tres lego), guías
+   `pcr` y `trauma`, modo lego con su rúbrica, panel con escenarios compartidos por
+   cuenta y registro de prácticas por alumno o grupo.
+3. Interrumpir al operador **hablando** (hoy sólo tocando la franja de estado). Necesita
+   cancelación de eco o una API de voz en tiempo real.
+4. Conseguir el manual de operadores del SIES 107 de Santa Fe para afinar el
+   interrogatorio con el protocolo local (existe; no fue accesible desde este entorno).
+5. Botón para borrar un contacto del formulario desde el panel (hoy se borra a mano o
+   vence a los 13 meses).
+6. Voz de mejor calidad vía API de voz (multiplica el costo, cambia mucho la experiencia).
+7. Al pasar a planes pagos: sacar los avisos de etapa piloto de `terminos.html` y
+   `privacidad.html` y sumar las condiciones de pago revisadas por un abogado.
 
 ## Convenciones
 

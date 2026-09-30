@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel del instructor · Simulador 107</title>
+<meta name="description" content="Panel del instructor del Simulador 107: clases en vivo, registro de prácticas, revisión y progreso de los alumnos.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#08191C">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Los mismos tokens que la app (index.html), más los de los gráficos. El azul de los
+     gráficos es el slot 1 de la paleta de referencia, validado contra estas superficies
+     (claro #FFFFFF, oscuro #0F1E21) con el validador de la guía de visualización. */
+  :root{
+    --ground:#E7EDEC; --surface:#FFFFFF; --surface-2:#F1F6F5;
+    --ink:#0C1B1E; --ink-2:#4C5E60; --ink-3:#75898A;
+    --line:#CEDAD9; --line-soft:#E0E9E8;
+    --accent:#C8451D; --accent-soft:#FBEAE4;
+    --ok:#1E7A4E; --warn:#A96D0C; --bad:#B0382A;
+    --serie:#2a78d6; --serie-suave:#cde2fb;
+    --r:14px;
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+      --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+      --line:#20373B; --line-soft:#1A2C2F;
+      --accent:#F2703F; --accent-soft:#2A1912;
+      --ok:#48B37C; --warn:#DDA43E; --bad:#E06A5A;
+      --serie:#3987e5; --serie-suave:#184f95;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+    --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+    --line:#20373B; --line-soft:#1A2C2F;
+    --accent:#F2703F; --accent-soft:#2A1912;
+    --ok:#48B37C; --warn:#DDA43E; --bad:#E06A5A;
+    --serie:#3987e5; --serie-suave:#184f95;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--ground); color:var(--ink); font-family:var(--body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px; margin:0 auto; padding:20px 16px 60px}
+  h1,h2,h3{font-family:var(--display); font-weight:700; letter-spacing:-.015em; margin:0}
+  p{margin:0}
+  a{color:var(--ink-2)}
+  button,input,select,textarea{font:inherit; color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+  [hidden]{display:none !important}
+  .lbl{font-family:var(--mono); font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-3)}
+  .num{font-variant-numeric:tabular-nums}
+  .muted{color:var(--ink-3)} .sec{color:var(--ink-2)}
+  .small{font-size:13px}
+
+  .mast{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .sigil{width:40px;height:40px;flex:none;border-radius:10px;background:var(--accent);display:grid;place-items:center;
+         font-family:var(--display);font-weight:700;font-size:15px;color:#fff;letter-spacing:-.03em}
+  .mast h1{font-size:22px}
+  .mast .quien{flex:1; min-width:200px}
+  .badge{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; padding:3px 7px; border-radius:5px;
+         background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line-soft)}
+  .tabs{display:flex; gap:4px; flex-wrap:wrap; margin:18px 0 16px; border-bottom:1px solid var(--line)}
+  .tabs button{background:none; border:0; border-bottom:2px solid transparent; padding:9px 11px; color:var(--ink-2); font-weight:500; margin-bottom:-1px}
+  .tabs button[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent)}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px}
+  .grid{display:grid; gap:12px}
+  .g2{grid-template-columns:repeat(auto-fit, minmax(300px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit, minmax(210px,1fr))}
+  .fila{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .sp{flex:1}
+  .sect{margin-top:22px}
+  .sect > .lbl{display:block; margin-bottom:10px}
+
+  .f{display:grid; gap:5px; font-size:13px; color:var(--ink-2)}
+  .f input,.f select,.f textarea,.inp{width:100%; padding:10px 11px; font-size:15px; color:var(--ink); background:var(--surface-2);
+     border:1px solid var(--line); border-radius:10px}
+  .f textarea{resize:vertical}
+  .btn{border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--surface); font-weight:600; font-size:14px}
+  .btn.pri{background:var(--accent); border-color:var(--accent); color:#fff}
+  .btn.peligro{color:var(--bad); border-color:var(--bad); background:transparent}
+  .btn[disabled]{opacity:.5; cursor:not-allowed}
+  .link{background:none; border:0; padding:0; color:var(--ink-2); text-decoration:underline; text-underline-offset:3px; font-size:13.5px}
+  .err{color:var(--bad); font-size:13.5px; min-height:20px}
+  .ok{color:var(--ok)}
+
+  /* login */
+  .login{max-width:380px; margin:12vh auto 0; display:grid; gap:14px; text-align:center}
+  .login input{text-align:center; font-family:var(--mono); letter-spacing:.14em; font-size:17px}
+
+  /* clase en vivo */
+  .codigo-grande{font-family:var(--mono); font-weight:500; font-size:clamp(48px, 12vw, 104px); letter-spacing:.14em; line-height:1; text-align:center; padding:10px 0}
+  .tablero{display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(220px,1fr))}
+  .grupo{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 13px; display:grid; gap:6px; text-align:left}
+  .grupo h3{font-size:16px}
+  .grupo .pts{font-size:26px; font-weight:600; font-family:var(--body)}
+  .estado{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-2)}
+  .estado i{width:8px; height:8px; border-radius:50%; background:var(--ink-3); flex:none}
+  .estado[data-e="en llamada"] i{background:var(--accent); animation:pulse 1s infinite}
+  .estado[data-e="evaluando"] i{background:var(--warn)}
+  .estado[data-e="terminada"] i{background:var(--ok)}
+  .estado[data-e="sin devolución"] i{background:var(--bad)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* tiles */
+  .tile{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 15px; display:grid; gap:4px}
+  .tile .v{font-size:30px; font-weight:600; line-height:1.1}
+  .tile .d{font-size:12.5px; color:var(--ink-3)}
+  .medidor{height:8px; border-radius:4px; background:var(--serie-suave); overflow:hidden; margin-top:6px}
+  .medidor i{display:block; height:100%; background:var(--serie); border-radius:4px}
+  .medidor.alto i{background:var(--warn)}
+  .medidor.lleno i{background:var(--bad)}
+
+  /* barras horizontales */
+  .barras{display:grid; gap:8px; max-width:780px}
+  .barra{display:grid; grid-template-columns:minmax(110px, 34%) 1fr auto; gap:10px; align-items:center; font-size:13.5px}
+  .barra .pista{position:relative; height:18px}
+  .barra .pista i{position:absolute; left:0; top:0; bottom:0; background:var(--serie); border-radius:0 4px 4px 0; min-width:2px}
+  .barra .pista .base{position:absolute; left:0; top:-3px; bottom:-3px; width:1px; background:var(--line)}
+  .barra .val{font-size:12.5px; color:var(--ink-2); white-space:nowrap; text-align:right; min-width:92px}
+
+  /* tablas */
+  .tabla{width:100%; border-collapse:collapse; font-size:13.5px}
+  .tabla th{font-weight:600; text-align:left; color:var(--ink-2); font-size:12px; border-bottom:1px solid var(--line); padding:8px 8px}
+  .tabla td{border-bottom:1px solid var(--line-soft); padding:8px 8px; vertical-align:middle}
+  .tabla tr.clic{cursor:pointer}
+  .tabla tr.clic:hover td{background:var(--surface-2)}
+  .tabla td.n{text-align:right; font-variant-numeric:tabular-nums}
+  .tabla th.n{text-align:right}
+  .scroll{overflow-x:auto}
+  .pip{display:inline-block; width:9px; height:9px; border-radius:50%; vertical-align:middle}
+  .pip.logrado{background:var(--ok)} .pip.parcial{background:var(--warn)} .pip.falto{background:var(--bad)}
+
+  /* detalle */
+  dialog{border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--ink); padding:0; width:min(920px, 96vw); max-height:92vh}
+  dialog::backdrop{background:rgba(5,15,17,.55)}
+  .dlg-cab{position:sticky; top:0; background:var(--surface); border-bottom:1px solid var(--line); padding:14px 16px; display:flex; gap:10px; align-items:flex-start; z-index:1}
+  .dlg-cuerpo{padding:16px; display:grid; gap:16px}
+  .tr{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:12px; font-family:var(--mono); font-size:12.5px; line-height:1.6; max-height:320px; overflow:auto; white-space:pre-wrap}
+  .crit{display:grid; grid-template-columns:1fr 150px; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid var(--line-soft)}
+  .crit select{padding:7px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2)}
+  #dlg.ciega .ia{display:none}
+
+  /* columnas de uso */
+  /* Columnas de uso: 24px de grosor como máximo, repartidas a lo ancho; la escala va
+     arriba, afuera de las barras, con una línea guía tenue. */
+  .cols{display:flex; align-items:flex-end; justify-content:space-between; gap:2px; height:170px; padding-top:20px;
+        border-bottom:1px solid var(--line); position:relative}
+  .cols .guia{position:absolute; left:0; right:0; top:20px; border-top:1px solid var(--line-soft)}
+  .cols .escala{position:absolute; left:0; top:0; font-size:11px; color:var(--ink-3)}
+  .cols .c{flex:1; max-width:24px; background:var(--serie); border-radius:4px 4px 0 0; min-height:1px; position:relative}
+  .cols .c:hover,.cols .c:focus{filter:brightness(1.15)}
+  .marcas{display:flex; justify-content:space-between; gap:2px; height:18px; font-size:11px}
+  .marcas span{flex:1; max-width:24px; text-align:center; color:var(--warn)}
+  .ejes{display:flex; justify-content:space-between; font-size:11px; color:var(--ink-3)}
+
+  .tip{position:fixed; z-index:50; pointer-events:none; background:var(--ink); color:var(--surface); border-radius:8px; padding:7px 9px; font-size:12.5px; max-width:260px}
+  .tip b{font-size:14px}
+
+  .aviso{background:var(--accent-soft); border:1px solid var(--accent); border-radius:12px; padding:12px 14px; font-size:14px}
+  .vacio{color:var(--ink-3); font-size:14px; padding:14px 0}
+  .chk{display:flex; gap:8px; align-items:flex-start; font-size:13.5px}
+  .chk input{margin-top:3px}
+  .guion li{margin-bottom:6px}
+  pre.msj{white-space:pre-wrap; background:var(--surface-2); border:1px solid var(--line-soft); border-radius:10px; padding:12px; font-family:var(--body); font-size:13.5px; margin:0}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= entrada ================= -->
+  <section id="v-login">
+    <div class="login">
+      <div class="sigil" style="margin:0 auto">107</div>
+      <h1 style="font-size:22px">Panel del instructor</h1>
+      <p class="sec small">Entrá con tu código de instructor. Si sos el administrador, con el código de administración.</p>
+      <input id="login-cod" class="inp" autocomplete="off" autocapitalize="characters" placeholder="CÓDIGO DE INSTRUCTOR" aria-label="Código de instructor">
+      <label class="chk" style="justify-content:center"><input type="checkbox" id="login-recordar"> Recordarlo en este equipo</label>
+      <div class="err" id="login-err"></div>
+      <button class="btn pri" id="login-go">Entrar</button>
+      <p class="small muted">¿Sos alumno? <a href="./">Andá al simulador</a>.</p>
+    </div>
+  </section>
+
+  <!-- ================= panel ================= -->
+  <section id="v-panel" hidden>
+    <header class="mast">
+      <div class="sigil">107</div>
+      <div class="quien">
+        <h1 id="p-cuenta">Panel</h1>
+        <div class="fila small sec"><span class="badge" id="p-rol">Instructor</span><span id="p-plan"></span></div>
+      </div>
+      <label class="f" id="p-cambiar-wrap" hidden style="min-width:220px"><span>Ver la cuenta de</span><select id="p-cambiar"></select></label>
+      <button class="link" id="p-salir">Salir</button>
+    </header>
+
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-t="clase" aria-selected="true">Clase en vivo</button>
+      <button role="tab" data-t="practicas" aria-selected="false">Prácticas</button>
+      <button role="tab" data-t="alumnos" aria-selected="false">Alumnos</button>
+      <button role="tab" data-t="calidad" aria-selected="false">Calidad</button>
+      <button role="tab" data-t="escenarios" aria-selected="false">Escenarios</button>
+      <button role="tab" data-t="cuenta" aria-selected="false">Mi cuenta</button>
+      <button role="tab" data-t="cuentas" aria-selected="false" data-admin hidden>Clientes</button>
+      <button role="tab" data-t="contactos" aria-selected="false" data-admin hidden>Contactos</button>
+      <button role="tab" data-t="uso" aria-selected="false" data-admin hidden>Uso y costos</button>
+    </nav>
+
+    <!-- ---------- clase en vivo ---------- -->
+    <div class="tab" id="t-clase">
+      <div id="clase-sin-base" class="aviso" hidden>Todavía no está conectada la base de datos, así que no hay clases en vivo ni registro. Es un paso de cinco minutos en Vercel: está en el README, sección «Conectar la base de datos».</div>
+
+      <div id="clase-nueva" class="card" hidden>
+        <h2 style="font-size:18px">Abrir una clase</h2>
+        <p class="sec small" style="margin-top:4px">Te da un código de 6 letras para proyectar. Cada grupo entra con ese código desde su celular, escribe el nombre del grupo y practica. Ves a todos los grupos acá, en vivo.</p>
+        <div class="grid g3" style="margin-top:14px">
+          <label class="f"><span>Nombre de la clase</span><input id="cn-nombre" placeholder="Pre-curso · martes"></label>
+          <label class="f"><span>Dura</span><select id="cn-horas"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3" selected>3 horas</option><option value="4">4 horas</option><option value="6">6 horas</option><option value="12">12 horas</option></select></label>
+          <label class="f"><span>Quién llama</span><select id="cn-perfil"><option value="">Que elija cada grupo</option><option value="guardavidas">Guardavidas</option><option value="lego">Persona sin formación (curso de RCP)</option></select></label>
+        </div>
+        <details style="margin-top:12px"><summary class="small sec">Elegir qué escenarios ven (opcional: si no marcás ninguno, ven todos)</summary>
+          <div id="cn-escenarios" class="grid g2" style="margin-top:10px"></div>
+        </details>
+        <div class="fila" style="margin-top:14px"><button class="btn pri" id="cn-abrir">Abrir la clase</button><span class="err" id="cn-err"></span></div>
+      </div>
+
+      <div id="clase-viva" hidden>
+        <div class="card">
+          <div class="fila"><span class="lbl">Código de la clase</span><span class="sp"></span><span class="small sec" id="cv-restante"></span></div>
+          <div class="codigo-grande num" id="cv-codigo">——————</div>
+          <p class="sec" style="text-align:center">Entrá a <b id="cv-host"></b> y escribí el código, o abrí el link: <button class="link" id="cv-copiar">copiar link para mandar al grupo</button></p>
+          <div class="fila" style="margin-top:12px"><h2 style="font-size:17px" id="cv-nombre"></h2><span class="sp"></span><button class="btn peligro" id="cv-cerrar">Cerrar la clase</button></div>
+        </div>
+        <div class="sect">
+          <div class="fila"><span class="lbl">Grupos</span><span class="sp"></span><span class="small muted" id="cv-act">Se actualiza solo cada 10 segundos</span></div>
+          <div class="tablero" id="cv-grupos"></div>
+          <p class="vacio" id="cv-vacio">Todavía no entró ningún grupo.</p>
+        </div>
+        <div class="sect" id="cv-resumen-wrap" hidden>
+          <span class="lbl">Para el cierre de la clase</span>
+          <div class="grid g3" id="cv-tiles"></div>
+          <div class="card" style="margin-top:12px">
+            <h3 style="font-size:15px">Qué tan seguido se logró cada criterio en esta clase</h3>
+            <p class="small muted" style="margin:2px 0 12px">Porcentaje de llamadas con el criterio logrado. Arriba, lo que más costó: por ahí conviene arrancar el debriefing.</p>
+            <div class="barras" id="cv-barras"></div>
+          </div>
+        </div>
+        <div class="sect" id="cv-guion-wrap" hidden>
+          <span class="lbl">Guion para cantar la evolución</span>
+          <div class="card"><div id="cv-guion"></div></div>
+        </div>
+      </div>
+
+      <div class="sect" id="clase-anteriores-wrap" hidden>
+        <span class="lbl">Clases anteriores</span>
+        <div class="card scroll"><table class="tabla" id="clase-anteriores"></table></div>
+      </div>
+    </div>
+
+    <!-- ---------- prácticas ---------- -->
+    <div class="tab" id="t-practicas" hidden>
+      <div class="fila">
+        <input class="inp" id="pr-buscar" placeholder="Buscar por alumno o grupo" style="max-width:260px">
+        <select class="inp" id="pr-rango" style="max-width:190px"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="400">Todo el registro</option></select>
+        <span class="sp"></span>
+        <button class="btn" id="pr-csv">Descargar planilla (CSV)</button>
+      </div>
+      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="pr-tabla"></table><p class="vacio" id="pr-vacio" hidden>No hay prácticas en este período.</p></div>
+    </div>
+
+    <!-- ---------- alumnos ---------- -->
+    <div class="tab" id="t-alumnos" hidden>
+      <p class="sec small">Agrupa las prácticas por el nombre que escribió el alumno o el grupo. El trazo muestra la evolución del puntaje, de la primera práctica a la última.</p>
+      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="al-tabla"></table><p class="vacio" id="al-vacio" hidden>Todavía no hay prácticas registradas.</p></div>
+    </div>
+
+    <!-- ---------- calidad ---------- -->
+    <div class="tab" id="t-calidad" hidden>
+      <div class="card">
+        <h2 style="font-size:17px">¿Corrige bien la IA?</h2>
+        <p class="sec small" style="margin-top:6px">Cada vez que revisás una práctica a ciegas (marcando cada criterio antes de ver lo que dijo la IA), queda un par «IA vs. instructor». Con esos pares se mide el acuerdo (kappa de Cohen); las revisiones hechas después de mirar a la IA no cuentan, porque salen parecidas a la suya sin querer. La meta del piloto es un kappa de 0,6 o más con al menos 50 prácticas revisadas: recién ahí la devolución automática se puede usar para evaluar, y no sólo para practicar.</p>
+      </div>
+      <div class="grid g3" id="ca-tiles" style="margin-top:12px"></div>
+      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="ca-tabla"></table><p class="vacio" id="ca-vacio" hidden>Todavía no revisaste ninguna práctica. Abrí una desde «Prácticas», marcá cada criterio y guardá.</p></div>
+    </div>
+
+    <!-- ---------- escenarios ---------- -->
+    <div class="tab" id="t-escenarios" hidden>
+      <div class="grid g2">
+        <div class="card">
+          <h2 style="font-size:17px" id="es-titulo">Cargar un escenario para tus alumnos</h2>
+          <p class="sec small" style="margin-top:4px">Lo ven todos los alumnos de tu cuenta, en cualquier celular. La ubicación tiene que ser real: es justamente lo que el alumno tiene que saber transmitir.</p>
+          <div class="grid" style="margin-top:12px">
+            <label class="f"><span>Nombre</span><input id="es-title" placeholder="Río · calambre en la correntada"></label>
+            <div class="grid g2">
+              <label class="f"><span>Quién llama</span><select id="es-perfil"><option value="guardavidas">Guardavidas</option><option value="lego">Persona sin formación</option></select></label>
+              <label class="f"><span>Guía del operador</span><select id="es-guia"></select></label>
+            </div>
+            <div class="grid g2">
+              <label class="f"><span>Familia</span><input id="es-fam" placeholder="Ahogamiento · PCR · Trauma"></label>
+              <label class="f" id="es-victima-wrap" hidden><span>Víctima</span><select id="es-victima"><option value="adulto">Adulto</option><option value="nino">Chico</option></select></label>
+            </div>
+            <label class="f"><span>Bajada de la tarjeta</span><input id="es-card" placeholder="Lo sacaste del agua; respira con dificultad."></label>
+            <label class="f"><span>Situación que ve el alumno</span><textarea id="es-scene" rows="5"></textarea></label>
+            <label class="f"><span>Ubicación real donde está parado</span><textarea id="es-addr" rows="2" placeholder="Calle y altura o referencia, y por dónde entra la ambulancia"></textarea></label>
+            <label class="f"><span>Localidad que conoce el operador</span><input id="es-zona" value="Santa Fe capital"></label>
+            <label class="f"><span>Guion para el instructor (una línea por cambio: «Al minuto: …»)</span><textarea id="es-notas" rows="4"></textarea></label>
+            <div class="fila"><button class="btn pri" id="es-guardar">Guardar escenario</button><button class="link" id="es-nuevo" hidden>Cargar otro nuevo</button><span class="err" id="es-err"></span></div>
+          </div>
+        </div>
+        <div>
+          <span class="lbl">Escenarios de tu cuenta</span>
+          <div class="grid" id="es-lista" style="margin-top:10px"></div>
+          <p class="vacio" id="es-vacio">Todavía no cargaste escenarios propios.</p>
+          <div class="sect">
+            <span class="lbl">Guiones de los escenarios fijos</span>
+            <div class="grid" id="es-fijos" style="margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- cuenta ---------- -->
+    <div class="tab" id="t-cuenta" hidden>
+      <div class="grid g3" id="cu-tiles"></div>
+      <div class="grid g2" style="margin-top:12px">
+        <div class="card">
+          <span class="lbl">Código para tus alumnos</span>
+          <p class="codigo-grande num" style="font-size:40px" id="cu-alumnos">—</p>
+          <p class="sec small" id="cu-alumnos-nota">Sirve siempre (no vence con la clase). Para una clase con varios grupos, mejor abrí una «clase en vivo».</p>
+          <div class="fila" style="margin-top:10px"><button class="btn" id="cu-copiar-alumnos">Copiar link para alumnos</button><button class="link" id="cu-regen-alumnos">Cambiar este código</button></div>
+        </div>
+        <div class="card">
+          <span class="lbl">Tu código de instructor</span>
+          <p class="codigo-grande num" style="font-size:28px" id="cu-inst">••••••••••</p>
+          <p class="sec small">No lo compartas: da acceso a este panel, con las transcripciones de tus alumnos.</p>
+          <div class="fila" style="margin-top:10px"><button class="btn" id="cu-ver-inst">Mostrar</button><button class="link" id="cu-regen-inst">Cambiar este código</button></div>
+        </div>
+      </div>
+      <p class="small muted" style="margin-top:14px">Las prácticas se borran solas a los 13 meses. Si un alumno pide que se borre la suya, abrila desde «Prácticas» y tocá «Borrar». Más en la <a href="privacidad.html">política de privacidad</a>.</p>
+    </div>
+
+    <!-- ---------- clientes (admin) ---------- -->
+    <div class="tab" id="t-cuentas" hidden>
+      <div class="fila"><h2 style="font-size:17px">Clientes</h2><span class="sp"></span><button class="btn pri" id="cl-nueva">Nueva cuenta</button></div>
+      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="cl-tabla"></table></div>
+    </div>
+
+    <!-- ---------- contactos (admin) ---------- -->
+    <div class="tab" id="t-contactos" hidden>
+      <p class="sec small">Lo que llega desde el formulario de <a href="instructores.html">la página para instructores</a>. Cambiá el estado a medida que avanzás; el embudo completo está en la planilla de seguimiento de Drive.</p>
+      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="co-tabla"></table><p class="vacio" id="co-vacio" hidden>Todavía no llegó ningún contacto.</p></div>
+    </div>
+
+    <!-- ---------- uso (admin) ---------- -->
+    <div class="tab" id="t-uso" hidden>
+      <div class="grid g3" id="us-tiles"></div>
+      <div class="card" style="margin-top:12px">
+        <h3 style="font-size:15px">Pedidos al modelo por día, últimos 30 días</h3>
+        <p class="small muted" style="margin:2px 0 12px">Turnos del operador más devoluciones. <span style="color:var(--warn)">⚠</span> marca los días en que algún modelo gratuito se quedó sin cuota y la app tuvo que pasar a otro: si se repite, es la señal para pasar al plan pago.</p>
+        <div class="cols" id="us-cols"></div>
+        <div class="marcas" id="us-marcas"></div>
+      </div>
+      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="us-tabla"></table></div>
+    </div>
+  </section>
+</div>
+
+<!-- detalle de una práctica -->
+<dialog id="dlg">
+  <div class="dlg-cab">
+    <div class="sp"><h2 style="font-size:18px" id="d-titulo">Práctica</h2><div class="small sec" id="d-meta"></div></div>
+    <button class="btn" id="d-cerrar">Cerrar</button>
+  </div>
+  <div class="dlg-cuerpo">
+    <div class="grid g3" id="d-tiles"></div>
+    <div>
+      <span class="lbl">Criterios · la IA y tu revisión</span>
+      <p class="aviso small" id="d-ciega" hidden style="margin:8px 0">Revisión a ciegas: marcá cada criterio leyendo la transcripción, antes de ver lo que dijo la IA. Si la ves primero, tu revisión se parece a la suya sin querer y el acuerdo que mide la pestaña Calidad deja de ser real. <button class="link" id="d-ver-ia">Ver lo que dijo la IA igual</button></p>
+      <div id="d-crit"></div>
+      <label class="f" style="margin-top:10px"><span>Nota para el alumno o para vos</span><textarea id="d-nota" rows="2"></textarea></label>
+      <div class="fila" style="margin-top:10px"><button class="btn pri" id="d-guardar">Guardar mi revisión</button><span class="small" id="d-estado"></span><span class="sp"></span><button class="btn peligro" id="d-borrar">Borrar esta práctica</button></div>
+    </div>
+    <div id="d-devolucion-wrap"><span class="lbl">Devolución de la IA</span><div id="d-devolucion" class="small sec" style="margin-top:6px"></div></div>
+    <div><span class="lbl">Transcripción</span><div class="tr" id="d-tr" style="margin-top:6px"></div></div>
+  </div>
+</dialog>
+
+<!-- alta y edición de clientes -->
+<dialog id="dlg-cuenta">
+  <div class="dlg-cab"><div class="sp"><h2 style="font-size:18px" id="dc-titulo">Nueva cuenta</h2></div><button class="btn" id="dc-cerrar">Cerrar</button></div>
+  <div class="dlg-cuerpo">
+    <div class="grid g2">
+      <label class="f"><span>Nombre (instructor o institución)</span><input id="dc-nombre"></label>
+      <label class="f"><span>Contacto (mail o WhatsApp)</span><input id="dc-contacto"></label>
+      <label class="f"><span>Tipo</span><select id="dc-tipo"><option value="instructor">Instructor independiente</option><option value="institucion">Institución</option><option value="ong">ONG / cortesía</option></select></label>
+      <label class="f"><span>Plan</span><select id="dc-plan"><option value="prueba">Prueba gratuita</option><option value="instructor">Instructor</option><option value="institucion">Institución</option><option value="cortesia">Cortesía</option></select></label>
+      <label class="f"><span>Prácticas por mes (0 = sin tope)</span><input id="dc-cupo" type="number" min="0" value="100"></label>
+      <label class="f"><span>Vence (vacío = no vence)</span><input id="dc-vence" type="date"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="dc-activa" checked> Cuenta activa</label>
+    <label class="f"><span>Notas internas (lo que se acordó, forma de pago…)</span><textarea id="dc-notas" rows="3"></textarea></label>
+    <div class="fila"><button class="btn pri" id="dc-guardar">Guardar</button><span class="err" id="dc-err"></span></div>
+    <div id="dc-bienvenida" hidden>
+      <span class="lbl">Mensaje de bienvenida para mandarle</span>
+      <pre class="msj" id="dc-msj"></pre>
+      <div class="fila" style="margin-top:8px"><button class="btn" id="dc-copiar">Copiar mensaje</button></div>
+    </div>
+  </div>
+</dialog>
+
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const P = { codigo:"", info:null, cuentaId:null, tab:"clase", sala:null, timer:null, practicas:[], contenido:null, escenarios:[] };
+
+  /* ---------------- utilidades ---------------- */
+  // Todo lo que viene de la base (nombres, transcripciones) se pinta con textContent.
+  function h(tag, attrs, ...hijos){
+    const el = document.createElement(tag);
+    for(const [k,v] of Object.entries(attrs||{})){
+      if(v == null || v === false) continue;
+      if(k === "class") el.className = v;
+      else if(k === "text") el.textContent = v;
+      else if(k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    hijos.flat().forEach(c => { if(c == null || c === false) return; el.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c); });
+    return el;
+  }
+  const vaciar = el => { el.textContent = ""; return el; };
+  function mmss(ms){ if(ms == null) return "—"; const s = Math.round(ms/1000); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+  function fecha(ts){
+    const d = new Date(ts);
+    return String(d.getDate()).padStart(2,"0") + "/" + String(d.getMonth()+1).padStart(2,"0") + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+  const DIAS_SEM = ["dom","lun","mar","mié","jue","vie","sáb"];
+  function diaCorto(iso){ const [a,m,d] = iso.split("-").map(Number); const f = new Date(a, m-1, d); return DIAS_SEM[f.getDay()] + " " + String(d).padStart(2,"0") + "/" + String(m).padStart(2,"0"); }
+  function faltan(ms){ const min = Math.max(0, Math.ceil(ms/60000)); const hh = Math.floor(min/60), mm = min % 60; return (hh ? hh + " h" : "") + (hh && mm ? " " : "") + (mm || !hh ? mm + " min" : ""); }
+  // Encabezado de tabla: "texto" o ["texto", "n"] para las columnas de números.
+  function cabecera(cols){ return h("tr", {}, cols.map(c => Array.isArray(c) ? h("th", { class:c[1], text:c[0] }) : h("th", { text:c }))); }
+  function norm(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); }
+  async function copiar(texto, boton){
+    try{ await navigator.clipboard.writeText(texto); if(boton){ const o = boton.textContent; boton.textContent = "¡Copiado!"; setTimeout(()=>boton.textContent = o, 1500); } }
+    catch(e){ prompt("Copiá este texto:", texto); }
+  }
+  const origen = location.origin;
+
+  async function api(accion, body){
+    const r = await fetch("/api/datos", { method:"POST", headers:{ "content-type":"application/json", "x-panel":P.codigo },
+      body: JSON.stringify(Object.assign({ accion }, P.cuentaId ? { cuentaId:P.cuentaId } : {}, body||{})) });
+    const d = await r.json().catch(()=>({ error:"respuesta_ilegible" }));
+    if(!r.ok){ const e = new Error(d.detalle || d.error || ("error " + r.status)); e.code = d.error; e.status = r.status; throw e; }
+    return d;
+  }
+
+  /* Tooltip único para los gráficos. Mejora, no esconde: los valores también están
+     escritos (etiquetas o tabla). */
+  const tip = $("#tip");
+  function mostrarTip(ev, fuerte, resto){
+    vaciar(tip).append(h("b", { text:fuerte }), resto ? h("div", { text:resto }) : "");
+    tip.hidden = false;
+    const x = Math.min(window.innerWidth - 270, ev.clientX + 12), y = ev.clientY + 14;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  function ocultarTip(){ tip.hidden = true; }
+
+  /* ---------------- contenido de la app ----------------
+     Los escenarios fijos y sus guiones viven en index.html (una sola fuente). El panel los
+     lee de ahí, con el mismo recorte balanceado que usan las pruebas. */
+  async function cargarContenido(){
+    try{
+      const html = await (await fetch("index.html", { cache:"no-store" })).text();
+      const js = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+      const bloque = inicio => {
+        const i = js.indexOf(inicio); if(i < 0) throw new Error("no está " + inicio);
+        let j = i, prof = 0, empezo = false, cad = null;
+        for(; j < js.length; j++){
+          const c = js[j];
+          if(cad){ if(c === "\\"){ j++; continue; } if(c === cad) cad = null; continue; }
+          if(c === '"' || c === "'" || c === "`"){ cad = c; continue; }
+          if(c === "/" && js[j+1] === "*"){ j = js.indexOf("*/", j) + 1; continue; }
+          if(c === "/" && js[j+1] === "/"){ j = js.indexOf("\n", j); continue; }
+          if(c === "{" || c === "["){ prof++; empezo = true; }
+          if(c === "}" || c === "]"){ prof--; if(empezo && prof === 0) break; }
+        }
+        return js.slice(i, j+1) + ";";
+      };
+      P.contenido = new Function(bloque("const SCENARIOS = [") + "\nreturn { SCENARIOS };")();
+    }catch(e){ P.contenido = { SCENARIOS: [] }; }
+  }
+
+  /* ---------------- entrada ---------------- */
+  async function entrar(codigo, recordar){
+    P.codigo = codigo;
+    const d = await api("panel");
+    P.info = d;
+    try{
+      if(recordar) localStorage.setItem("sim107_panel", codigo);
+      sessionStorage.setItem("sim107_panel", codigo);
+    }catch(e){}
+    $("#v-login").hidden = true; $("#v-panel").hidden = false;
+    document.querySelectorAll("[data-admin]").forEach(b => b.hidden = !d.esAdmin);
+    $("#p-cambiar-wrap").hidden = !d.esAdmin;
+    pintarCabecera();
+    if(d.esAdmin) cargarSelectorCuentas();
+    await Promise.all([cargarContenido(), cargarEscenarios()]);
+    irA(P.tab);
+  }
+
+  function pintarCabecera(){
+    const c = P.info.cuenta;
+    $("#p-cuenta").textContent = c.nombre;
+    $("#p-rol").textContent = P.info.esAdmin ? "Administrador" : "Instructor";
+    const planes = { prueba:"prueba gratuita", instructor:"plan instructor", institucion:"plan institución", cortesia:"cortesía" };
+    $("#p-plan").textContent = (planes[c.plan] || c.plan) + (c.cupoMensual ? " · " + P.info.usoMes.practicas + " de " + c.cupoMensual + " prácticas este mes" : " · " + P.info.usoMes.practicas + " prácticas este mes") + (c.vence ? " · vence " + c.vence : "");
+  }
+
+  $("#login-go").addEventListener("click", async ()=>{
+    const v = $("#login-cod").value.trim(); if(!v) return;
+    $("#login-err").textContent = "";
+    try{ await entrar(v, $("#login-recordar").checked); }
+    catch(e){
+      $("#login-err").textContent = e.code === "sin_base"
+        ? "Todavía no está conectada la base de datos (sin_base). Seguí el paso «Conectar la base de datos» del README."
+        : e.code === "demasiados_intentos" ? "Muchos intentos seguidos. Esperá diez minutos (demasiados_intentos)."
+        : "Ese código no abre el panel (" + (e.code || e.status) + ").";
+    }
+  });
+  $("#login-cod").addEventListener("keydown", e => { if(e.key === "Enter") $("#login-go").click(); });
+  $("#p-salir").addEventListener("click", ()=>{
+    try{ localStorage.removeItem("sim107_panel"); sessionStorage.removeItem("sim107_panel"); }catch(e){}
+    location.reload();
+  });
+
+  async function cargarSelectorCuentas(){
+    try{
+      const { cuentas } = await api("cuentas");
+      const sel = vaciar($("#p-cambiar"));
+      cuentas.forEach(c => sel.append(h("option", { value:c.id, text:c.nombre + (c.activa ? "" : " (pausada)") })));
+      sel.value = P.cuentaId || "principal";
+    }catch(e){}
+  }
+  $("#p-cambiar").addEventListener("change", async e => {
+    P.cuentaId = e.target.value; P.sala = null;
+    P.info = await api("panel");
+    pintarCabecera();
+    await cargarEscenarios();
+    irA(P.tab);
+  });
+
+  /* ---------------- pestañas ---------------- */
+  $("#tabs").addEventListener("click", e => { const b = e.target.closest("button[data-t]"); if(b) irA(b.dataset.t); });
+  function irA(t){
+    P.tab = t;
+    document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.t === t)));
+    document.querySelectorAll(".tab").forEach(d => d.hidden = d.id !== "t-" + t);
+    clearInterval(P.timer);
+    ({ clase:verClase, practicas:verPracticas, alumnos:verAlumnos, calidad:verCalidad, escenarios:verEscenarios,
+       cuenta:verCuenta, cuentas:verCuentas, contactos:verContactos, uso:verUso }[t] || (()=>{}))();
+  }
+
+  /* =====================================================================
+     CLASE EN VIVO
+     ===================================================================== */
+  async function verClase(){
+    $("#clase-sin-base").hidden = true;
+    let salas = [];
+    try{ salas = (await api("salas")).salas; }
+    catch(e){ if(e.code === "sin_base"){ $("#clase-sin-base").hidden = false; return; } }
+    const abierta = P.sala ? salas.find(s => s.codigo === P.sala && s.abierta) : salas.find(s => s.abierta);
+    pintarAnteriores(salas);
+    if(abierta){ P.sala = abierta.codigo; $("#clase-nueva").hidden = true; $("#clase-viva").hidden = false; await refrescarSala(); P.timer = setInterval(refrescarSala, 10000); }
+    else { P.sala = null; $("#clase-viva").hidden = true; $("#clase-nueva").hidden = false; pintarFormularioClase(); }
+  }
+
+  function pintarFormularioClase(){
+    const hoy = new Date().toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"numeric" });
+    if(!$("#cn-nombre").value) $("#cn-nombre").placeholder = "Clase del " + hoy;
+    const box = vaciar($("#cn-escenarios"));
+    const perfil = $("#cn-perfil").value;
+    const todos = (P.contenido.SCENARIOS || []).concat(P.escenarios || []);
+    todos.filter(s => !perfil || (s.perfil || "guardavidas") === perfil).forEach(s => {
+      box.append(h("label", { class:"chk" }, h("input", { type:"checkbox", value:s.id }), h("span", {}, h("b", { text:s.title }), h("br"), h("span", { class:"muted", text:(s.perfil === "lego" ? "Sin formación" : "Guardavidas") + " · " + s.fam }))));
+    });
+  }
+  $("#cn-perfil").addEventListener("change", pintarFormularioClase);
+
+  $("#cn-abrir").addEventListener("click", async ()=>{
+    $("#cn-err").textContent = "";
+    const escenarios = [...document.querySelectorAll("#cn-escenarios input:checked")].map(i => i.value);
+    try{
+      const { sala } = await api("sala-crear", { nombre: $("#cn-nombre").value.trim() || $("#cn-nombre").placeholder, horas: Number($("#cn-horas").value), perfil: $("#cn-perfil").value || null, escenarios: escenarios.length ? escenarios : null });
+      P.sala = sala.codigo;
+      verClase();
+    }catch(e){ $("#cn-err").textContent = "No se pudo abrir la clase (" + (e.code || e.status) + ")."; }
+  });
+
+  $("#cv-cerrar").addEventListener("click", async ()=>{
+    if(!confirm("¿Cerrar la clase? Los grupos que estén en una llamada pueden terminarla, pero nadie más puede entrar.")) return;
+    await api("sala-cerrar", { codigo:P.sala });
+    P.sala = null; verClase();
+  });
+  $("#cv-copiar").addEventListener("click", e => copiar(origen + "/?sala=" + P.sala, e.target));
+
+  /* Cada consulta del tablero gasta unos diez comandos de la base, y la capa gratuita de
+     Upstash trae 500.000 por mes: cada 10 segundos y sólo mientras la pestaña está a la
+     vista, una clase de tres horas gasta menos de 11.000. */
+  document.addEventListener("visibilitychange", () => { if(!document.hidden && P.tab === "clase" && P.sala) refrescarSala(); });
+  async function refrescarSala(){
+    if(!P.sala || P.tab !== "clase" || document.hidden) return;
+    let d;
+    try{ d = await api("sala-vivo", { codigo:P.sala }); }catch(e){ $("#cv-act").textContent = "No se pudo actualizar (" + (e.code||e.status) + ")"; return; }
+    if(!d.sala.abierta){ clearInterval(P.timer); P.sala = null; verClase(); return; }
+    $("#cv-codigo").textContent = d.sala.codigo;
+    $("#cv-host").textContent = location.host;
+    $("#cv-nombre").textContent = d.sala.nombre + (d.sala.perfil ? " · " + (d.sala.perfil === "lego" ? "personas sin formación" : "guardavidas") : "");
+    const resta = Math.max(0, d.sala.vence - Date.now());
+    $("#cv-restante").textContent = "Cierra sola en " + faltan(resta);
+    $("#cv-act").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR");
+
+    // Tablero: el estado más reciente de cada grupo, y su último puntaje.
+    const box = vaciar($("#cv-grupos"));
+    const grupos = d.grupos.sort((a,b) => a.grupo.localeCompare(b.grupo, "es", { numeric:true }));
+    $("#cv-vacio").hidden = grupos.length > 0;
+    grupos.forEach(g => {
+      const hace = Math.round((Date.now() - g.t)/60000);
+      const tarjeta = h("button", { class:"grupo", type:"button", disabled: g.practicaId ? null : true, onclick: g.practicaId ? () => abrirPractica(g.practicaId) : null },
+        h("div", { class:"fila" }, h("h3", { text:g.grupo }), h("span", { class:"sp" }), g.puntaje != null ? h("span", { class:"pts num", text:String(g.puntaje) }) : ""),
+        h("span", { class:"estado", "data-e":g.estado }, h("i"), g.estado + (hace > 0 ? " · hace " + hace + " min" : " · recién")),
+        h("span", { class:"small muted", text:g.escenario || "" }));
+      box.append(tarjeta);
+    });
+
+    // Resumen para el cierre: promedio, llamadas terminadas y % logrado por criterio.
+    const hechas = d.practicas.filter(p => p.puntaje != null);
+    $("#cv-resumen-wrap").hidden = hechas.length === 0;
+    if(hechas.length){
+      const prom = Math.round(hechas.reduce((a,p)=>a+p.puntaje,0)/hechas.length);
+      const conUbic = hechas.filter(p => p.tUbicacionMs != null);
+      const ubic = conUbic.length ? conUbic.reduce((a,p)=>a+p.tUbicacionMs,0)/conUbic.length : null;
+      vaciar($("#cv-tiles")).append(
+        tile("Llamadas evaluadas", String(hechas.length), grupos.length + " grupos en la clase"),
+        tile("Puntaje promedio", String(prom), "sobre 100"),
+        tile("Tiempo hasta la ubicación", ubic != null ? mmss(ubic) : "—", "promedio, minutos:segundos"));
+      barrasCriterios($("#cv-barras"), hechas);
+    }
+
+    // Guion del escenario más usado en la clase, para cantar la evolución.
+    const usados = {};
+    d.practicas.concat(d.grupos).forEach(p => { const t = p.escenario && (p.escenario.titulo || p.escenario); if(t) usados[t] = (usados[t]||0) + 1; });
+    const titulo = Object.keys(usados).sort((a,b)=>usados[b]-usados[a])[0];
+    const esc = titulo && (P.contenido.SCENARIOS || []).concat(P.escenarios || []).find(s => s.title === titulo);
+    $("#cv-guion-wrap").hidden = !(esc && esc.notasInstructor && esc.notasInstructor.length);
+    if(esc && esc.notasInstructor) vaciar($("#cv-guion")).append(h("h3", { style:"font-size:15px", text:esc.title }), h("ul", { class:"guion" }, esc.notasInstructor.map(n => h("li", { text:n }))));
+  }
+
+  function tile(etiqueta, valor, detalle, medidor){
+    const t = h("div", { class:"tile" }, h("span", { class:"lbl", text:etiqueta }), h("span", { class:"v", text:valor }), detalle ? h("span", { class:"d", text:detalle }) : "");
+    if(medidor != null){
+      const pct = Math.max(0, Math.min(100, medidor));
+      t.append(h("div", { class:"medidor" + (pct >= 100 ? " lleno" : pct >= 80 ? " alto" : ""), role:"img", "aria-label": Math.round(pct) + "% usado" }, h("i", { style:"width:" + pct + "%" })));
+    }
+    return t;
+  }
+
+  /* Barras horizontales, una sola serie: % de llamadas con el criterio logrado. Una sola
+     tinta para todas (no es un ranking de colores), el valor al final de la barra en tinta
+     de texto, y lo que más costó arriba. */
+  function barrasCriterios(box, practicas){
+    vaciar(box);
+    const etiquetas = {}, cuenta = {};
+    practicas.forEach(p => {
+      (p.rubrica || []).forEach(c => { etiquetas[c.id] = c.label; });
+      Object.entries(p.items || {}).forEach(([id, st]) => {
+        const k = cuenta[id] = cuenta[id] || { n:0, ok:0 };
+        k.n++; if(st === "logrado") k.ok++;
+      });
+    });
+    const filas = Object.entries(cuenta).map(([id, k]) => ({ id, label: etiquetas[id] || id, pct: k.n ? Math.round(k.ok/k.n*100) : 0, n:k.n, ok:k.ok }))
+      .sort((a,b) => a.pct - b.pct);
+    filas.forEach(f => {
+      const pista = h("div", { class:"pista" }, h("span", { class:"base" }), h("i", { style:"width:" + f.pct + "%" }));
+      pista.addEventListener("pointermove", ev => mostrarTip(ev, f.pct + "%", f.label + ": logrado en " + f.ok + " de " + f.n + " llamadas"));
+      pista.addEventListener("pointerleave", ocultarTip);
+      box.append(h("div", { class:"barra" }, h("span", { text:f.label }), pista, h("span", { class:"val num", text: f.pct + "% · " + f.ok + " de " + f.n })));
+    });
+  }
+
+  function pintarAnteriores(salas){
+    const cerradas = salas.filter(s => !s.abierta);
+    $("#clase-anteriores-wrap").hidden = !cerradas.length;
+    const t = vaciar($("#clase-anteriores"));
+    t.append(h("tr", {}, h("th", { text:"Clase" }), h("th", { text:"Fecha" }), h("th", { text:"Código" }), h("th", { text:"" })));
+    cerradas.slice(0, 20).forEach(s => t.append(h("tr", {},
+      h("td", { text:s.nombre }), h("td", { text:fecha(s.creada) }), h("td", { class:"num", text:s.codigo }),
+      h("td", {}, h("button", { class:"link", text:"ver sus prácticas", onclick: () => { $("#pr-buscar").value = ""; P.filtroSala = s.codigo; irA("practicas"); } })))));
+  }
+
+  /* =====================================================================
+     PRÁCTICAS
+     ===================================================================== */
+  async function cargarPracticas(dias){
+    const desde = Date.now() - (dias || 400) * 86400000;
+    const { practicas } = await api("practicas", { desde, limite: 500, sala: P.filtroSala || undefined });
+    P.practicas = practicas;
+    return practicas;
+  }
+
+  async function verPracticas(){
+    let lista;
+    try{ lista = await cargarPracticas(Number($("#pr-rango").value)); }
+    catch(e){ pintarSinBase($("#pr-tabla"), e); return; }
+    pintarPracticas(lista);
+  }
+  $("#pr-rango").addEventListener("change", verPracticas);
+  $("#pr-buscar").addEventListener("input", () => pintarPracticas(P.practicas));
+
+  function pintarPracticas(lista){
+    const q = norm($("#pr-buscar").value);
+    const filas = lista.filter(p => !q || norm(p.alias).includes(q) || norm(p.grupo).includes(q));
+    const t = vaciar($("#pr-tabla"));
+    $("#pr-vacio").hidden = filas.length > 0;
+    if(P.filtroSala){
+      t.append(h("caption", { style:"text-align:left; padding-bottom:8px" }, "Sólo la clase " + P.filtroSala + " · ", h("button", { class:"link", text:"ver todas", onclick: () => { P.filtroSala = null; verPracticas(); } })));
+    }
+    t.append(cabecera(["Fecha","Alumno o grupo","Escenario","Quién llama",["IA","n"],["Instructor","n"],["Ubicación","n"],["RCP","n"],""]));
+    filas.forEach(p => t.append(h("tr", { class:"clic", onclick: () => abrirPractica(p.id) },
+      h("td", { class:"num", text:fecha(p.fecha) }), h("td", { text:p.grupo || p.alias }),
+      h("td", { text:(p.escenario && p.escenario.titulo) || "" }), h("td", { text:p.perfil === "lego" ? "Sin formación" : "Guardavidas" }),
+      h("td", { class:"n", text:p.puntaje == null ? (p.error ? "sin devolución" : "—") : String(p.puntaje) }),
+      h("td", { class:"n", text:p.puntajeInstructor == null ? "" : String(p.puntajeInstructor) }),
+      h("td", { class:"n", text:mmss(p.tUbicacionMs) }), h("td", { class:"n", text:p.perfil === "lego" ? mmss(p.tRcpMs) : "" }),
+      h("td", { text:p.revision ? "✓ revisada" : "" }))));
+  }
+
+  function pintarSinBase(tabla, e){
+    vaciar(tabla).append(h("tr", {}, h("td", { text: e.code === "sin_base" ? "Todavía no está conectada la base de datos: no hay registro. Ver README, «Conectar la base de datos»." : "No se pudo cargar (" + (e.code || e.status) + ")." })));
+  }
+
+  // Planilla para abrir en Excel o Google Sheets. Una columna por criterio (la IA), y el
+  // puntaje del instructor si la revisó.
+  $("#pr-csv").addEventListener("click", ()=>{
+    const lista = P.practicas;
+    const ids = []; const etiquetas = {};
+    lista.forEach(p => (p.rubrica || []).forEach(c => { if(!ids.includes(c.id)){ ids.push(c.id); etiquetas[c.id] = c.label; } }));
+    const cab = ["fecha","alumno_o_grupo","clase","escenario","quien_llama","dificultad","duracion_s","puntaje_ia","topeado","puntaje_instructor","revision_a_ciegas","t_ubicacion_s","t_rcp_s","modelo_evaluador"].concat(ids.map(id => "ia_" + id), ids.map(id => "instructor_ciego_" + id));
+    const esc = v => {
+      let s = v == null ? "" : String(v);
+      if(/^[=+\-@]/.test(s)) s = "'" + s;   // que Excel no lo tome como fórmula
+      return /[",;\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    };
+    const filas = lista.map(p => [new Date(p.fecha).toISOString(), p.grupo || p.alias, p.sala || "", p.escenario && p.escenario.titulo, p.perfil, p.dificultad,
+      Math.round((p.duracionMs||0)/1000), p.puntaje, p.topeado ? "si" : "no", p.puntajeInstructor, p.revisionCiega ? "si" : (p.revision ? "no" : ""), p.tUbicacionMs == null ? "" : Math.round(p.tUbicacionMs/1000),
+      p.tRcpMs == null ? "" : Math.round(p.tRcpMs/1000), p.modeloEvaluador].concat(ids.map(id => (p.items || {})[id] || ""), ids.map(id => (p.revisionCiega || {})[id] || "")));
+    const csv = "﻿" + [cab].concat(filas).map(f => f.map(esc).join(",")).join("\n");
+    const a = h("a", { href: URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })), download: "practicas-simulador107-" + new Date().toISOString().slice(0,10) + ".csv" });
+    document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+
+  /* ---------------- detalle y revisión ---------------- */
+  let actual = null;
+  async function abrirPractica(id){
+    let p;
+    try{ p = (await api("practica", { id })).practica; }catch(e){ alert("No se pudo abrir (" + (e.code||e.status) + ")."); return; }
+    actual = p;
+    const ev = p.evaluacion || {};
+    $("#d-titulo").textContent = (p.grupo || p.alias) + " · " + (p.escenario && p.escenario.titulo || "");
+    $("#d-meta").textContent = fecha(p.fecha) + " · " + (p.perfil === "lego" ? "persona sin formación" : "guardavidas") + " · operador " + (p.dificultad || "") + " · duración " + mmss(p.duracionMs) + " · cortó " + (p.cortoPor || "") + (p.modeloEvaluador ? " · evaluó " + p.modeloEvaluador : "");
+    const items = {}; (ev.items || []).forEach(i => { if(i && i.id) items[i.id] = i; });
+    const rev = (p.revision && p.revision.items) || {};
+    const mios = (p.transcripcion || []).filter(l => l.w === "yo");
+    const tu = mios[Number(ev.turno_ubicacion) - 1];
+    // Sin revisión previa, se revisa a ciegas: lo de la IA queda oculto hasta guardar.
+    ciega = !p.revision && Boolean(p.evaluacion);
+    $("#dlg").classList.toggle("ciega", ciega);
+    $("#d-ciega").hidden = !ciega;
+    const tIA = tile("Puntaje de la IA", p.puntaje == null ? "—" : String(p.puntaje), p.topeado ? "topeado: faltó un dato crítico" : ev.titular || "");
+    tIA.classList.add("ia");
+    vaciar($("#d-tiles")).append(
+      tIA,
+      tile("Tu puntaje", p.revision ? String(p.revision.puntaje) : "—", p.revision ? "revisada el " + fecha(p.revision.fecha) : "todavía sin revisar"),
+      tile(p.perfil === "lego" ? "Ubicación · RCP" : "Tiempo hasta la ubicación", (tu ? mmss(tu.t) : "—") + (p.perfil === "lego" ? " · " + mmss(p.tRcpMs) : ""), "minutos:segundos desde que atendió"));
+    const box = vaciar($("#d-crit"));
+    (p.rubrica || []).forEach(c => {
+      const it = items[c.id] || { estado:"falto", comentario:"" };
+      const st = String(it.estado || "falto").toLowerCase().replace(/ó/g,"o");
+      const sel = h("select", { "data-id":c.id, "aria-label":"Tu revisión de " + c.label },
+        h("option", { value:"", text:"Elegí…" }),
+        ["logrado","parcial","falto"].map(v => h("option", { value:v, text: v === "logrado" ? "Logrado" : v === "parcial" ? "A medias" : "Faltó" })));
+      // A ciegas arranca vacío; si ya la revisaste, muestra tu revisión; si no hay
+      // devolución de la IA, no hay nada que sesgar y arranca vacío igual.
+      sel.value = rev[c.id] || "";
+      box.append(h("div", { class:"crit" },
+        h("div", {}, h("div", {}, h("b", { text:c.label + (c.critico ? " (crítico)" : "") })),
+          p.evaluacion ? h("div", { class:"small sec ia" }, h("span", { class:"pip " + st }), " IA: " + (st === "logrado" ? "logrado" : st === "parcial" ? "a medias" : "faltó") + (it.comentario ? " — " + it.comentario : "")) : ""),
+        sel));
+    });
+    $("#d-nota").value = (p.revision && p.revision.nota) || "";
+    $("#d-estado").textContent = "";
+    $("#d-devolucion-wrap").classList.add("ia");
+    vaciar($("#d-devolucion")).append(
+      ev.bien && ev.bien.length ? h("div", {}, h("b", { text:"Lo que hizo bien: " }), ev.bien.join(" · ")) : "",
+      ev.corregir && ev.corregir.length ? h("div", {}, h("b", { text:"Para corregir: " }), ev.corregir.join(" · ")) : "",
+      !p.evaluacion ? h("div", { text:"Esta llamada no tiene devolución automática (" + (p.error || "sin datos") + "). Podés revisarla a mano con la transcripción." }) : "");
+    let n = 0;
+    $("#d-tr").textContent = (p.transcripcion || []).map(l => "[" + mmss(l.t) + "] " + (l.w === "op" ? "OPERADOR" : "ALUMNO #" + (++n)) + ": " + l.x).join("\n") || "(sin transcripción)";
+    $("#dlg").showModal();
+  }
+  let ciega = false;
+  function mostrarIA(){ ciega = false; $("#dlg").classList.remove("ciega"); $("#d-ciega").hidden = true; }
+  $("#d-ver-ia").addEventListener("click", mostrarIA);
+  $("#d-cerrar").addEventListener("click", () => $("#dlg").close());
+  $("#d-guardar").addEventListener("click", async ()=>{
+    const items = {}; let faltan = 0;
+    document.querySelectorAll("#d-crit select").forEach(s => { if(s.value) items[s.dataset.id] = s.value; else faltan++; });
+    if(faltan){ $("#d-estado").textContent = "Te falta marcar " + faltan + (faltan === 1 ? " criterio." : " criterios."); $("#d-estado").className = "small err"; return; }
+    try{
+      const { revision } = await api("revisar", { id:actual.id, items, nota:$("#d-nota").value, ciega });
+      $("#d-estado").textContent = "Guardado: tu puntaje es " + revision.puntaje + "." + (ciega ? " Ahora podés comparar con la IA." : "");
+      $("#d-estado").className = "small ok";
+      mostrarIA();
+      if(P.tab === "practicas") verPracticas();
+    }catch(e){ $("#d-estado").textContent = "No se guardó (" + (e.code||e.status) + ")."; $("#d-estado").className = "small err"; }
+  });
+  $("#d-borrar").addEventListener("click", async ()=>{
+    if(!confirm("¿Borrar esta práctica del registro? No se puede deshacer.")) return;
+    await api("practica-borrar", { id:actual.id });
+    $("#dlg").close();
+    irA(P.tab);
+  });
+
+  /* =====================================================================
+     ALUMNOS
+     ===================================================================== */
+  async function verAlumnos(){
+    let lista;
+    try{ lista = await cargarPracticas(400); }catch(e){ pintarSinBase($("#al-tabla"), e); return; }
+    const por = {};
+    lista.slice().sort((a,b)=>a.fecha-b.fecha).forEach(p => {
+      const k = norm(p.grupo || p.alias) || "(sin nombre)";
+      (por[k] = por[k] || { nombre: p.grupo || p.alias, ps: [] }).ps.push(p);
+    });
+    const t = vaciar($("#al-tabla"));
+    const alumnos = Object.values(por).sort((a,b) => b.ps.length - a.ps.length);
+    $("#al-vacio").hidden = alumnos.length > 0;
+    t.append(cabecera(["Alumno o grupo",["Prácticas","n"],["Primera","n"],["Última","n"],"Evolución del puntaje",["Ubicación (prom.)","n"],""]));
+    alumnos.forEach(a => {
+      const pts = a.ps.filter(p => p.puntaje != null);
+      const ubic = a.ps.filter(p => p.tUbicacionMs != null);
+      t.append(h("tr", {},
+        h("td", { text:a.nombre }), h("td", { class:"n", text:String(a.ps.length) }),
+        h("td", { class:"n", text: pts.length ? String(pts[0].puntaje) : "—" }),
+        h("td", { class:"n", text: pts.length ? String(pts[pts.length-1].puntaje) : "—" }),
+        h("td", {}, sparkline(pts)),
+        h("td", { class:"n", text: ubic.length ? mmss(ubic.reduce((s,p)=>s+p.tUbicacionMs,0)/ubic.length) : "—" }),
+        h("td", {}, h("button", { class:"link", text:"ver", onclick: () => { $("#pr-buscar").value = a.nombre; P.filtroSala = null; irA("practicas"); } }))));
+    });
+  }
+
+  /* Sparkline de una sola serie: sin leyenda (el encabezado de la columna dice qué es),
+     trazo de 2px, punto final de 8px con anillo del color de la superficie. Los valores
+     están también en las columnas «Primera» y «Última». */
+  function sparkline(pts){
+    const NS = "http://www.w3.org/2000/svg";
+    const W = 132, H = 34, pad = 5;
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("width", W); svg.setAttribute("height", H); svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", pts.length ? "Puntajes: " + pts.map(p=>p.puntaje).join(", ") : "sin puntajes");
+    if(pts.length < 2){ const t = document.createElementNS(NS, "text"); t.setAttribute("x", 0); t.setAttribute("y", 22); t.setAttribute("fill", "var(--ink-3)"); t.setAttribute("font-size", "12"); t.textContent = pts.length ? "una sola práctica" : "—"; svg.append(t); return svg; }
+    const x = i => pad + i * (W - 2*pad) / (pts.length - 1);
+    const y = v => H - pad - (v/100) * (H - 2*pad);
+    const base = document.createElementNS(NS, "line");
+    base.setAttribute("x1", pad); base.setAttribute("x2", W - pad); base.setAttribute("y1", H - pad); base.setAttribute("y2", H - pad);
+    base.setAttribute("stroke", "var(--line)"); base.setAttribute("stroke-width", "1");
+    const linea = document.createElementNS(NS, "polyline");
+    linea.setAttribute("points", pts.map((p,i) => x(i) + "," + y(p.puntaje)).join(" "));
+    linea.setAttribute("fill", "none"); linea.setAttribute("stroke", "var(--serie)"); linea.setAttribute("stroke-width", "2");
+    linea.setAttribute("stroke-linejoin", "round"); linea.setAttribute("stroke-linecap", "round");
+    svg.append(base, linea);
+    pts.forEach((p,i) => {
+      // Área de toque generosa (12px de radio) para el tooltip; el punto visible es el final.
+      const hit = document.createElementNS(NS, "circle");
+      hit.setAttribute("cx", x(i)); hit.setAttribute("cy", y(p.puntaje)); hit.setAttribute("r", 12); hit.setAttribute("fill", "transparent");
+      hit.addEventListener("pointermove", ev => mostrarTip(ev, String(p.puntaje), fecha(p.fecha) + " · " + ((p.escenario && p.escenario.titulo) || "")));
+      hit.addEventListener("pointerleave", ocultarTip);
+      svg.append(hit);
+    });
+    const ult = pts[pts.length-1];
+    const dot = document.createElementNS(NS, "circle");
+    dot.setAttribute("cx", x(pts.length-1)); dot.setAttribute("cy", y(ult.puntaje)); dot.setAttribute("r", 4);
+    dot.setAttribute("fill", "var(--serie)"); dot.setAttribute("stroke", "var(--surface)"); dot.setAttribute("stroke-width", "2");
+    dot.style.pointerEvents = "none";
+    svg.append(dot);
+    return svg;
+  }
+
+  /* =====================================================================
+     CALIDAD: acuerdo IA–instructor
+     ===================================================================== */
+  function kappa(pares){
+    const cats = ["logrado","parcial","falto"];
+    const n = pares.length; if(!n) return null;
+    const po = pares.filter(([a,b]) => a === b).length / n;
+    const pe = cats.reduce((s,c) => s + (pares.filter(([a]) => a === c).length/n) * (pares.filter(([,b]) => b === c).length/n), 0);
+    return { n, po, k: pe >= 1 ? (po >= 1 ? 1 : 0) : (po - pe) / (1 - pe) };
+  }
+  // Landis y Koch, 1977.
+  function leerKappa(k){
+    if(k == null) return "—";
+    if(k < 0) return "pobre"; if(k <= .2) return "leve"; if(k <= .4) return "aceptable";
+    if(k <= .6) return "moderado"; if(k <= .8) return "sustancial"; return "casi perfecto";
+  }
+  async function verCalidad(){
+    let lista;
+    try{ lista = await cargarPracticas(400); }catch(e){ pintarSinBase($("#ca-tabla"), e); return; }
+    const todas = lista.filter(p => p.revision);
+    // El acuerdo se mide sólo con las revisiones hechas a ciegas: las otras están
+    // sesgadas hacia lo que dijo la IA.
+    const revisadas = todas.filter(p => p.revisionCiega);
+    $("#ca-vacio").hidden = todas.length > 0;
+    const porCrit = {}, todos = [], etiquetas = {};
+    let difs = [];
+    revisadas.forEach(p => {
+      (p.rubrica || []).forEach(c => etiquetas[c.id] = c.label);
+      Object.entries(p.revisionCiega).forEach(([id, st]) => {
+        const ia = (p.items || {})[id] || "falto";
+        (porCrit[id] = porCrit[id] || []).push([ia, st]); todos.push([ia, st]);
+      });
+      if(p.puntaje != null && p.puntajeInstructor != null) difs.push(p.puntaje - p.puntajeInstructor);
+    });
+    const kg = kappa(todos);
+    const dif = difs.length ? difs.reduce((a,b)=>a+b,0)/difs.length : null;
+    vaciar($("#ca-tiles")).append(
+      tile("Revisadas a ciegas", String(revisadas.length), "meta del piloto: 50" + (todas.length > revisadas.length ? " · " + (todas.length - revisadas.length) + " más sin ciego, que no cuentan" : ""), Math.min(100, revisadas.length/50*100)),
+      tile("Acuerdo general (kappa)", kg ? kg.k.toFixed(2).replace(".", ",") : "—", kg ? leerKappa(kg.k) + " · " + Math.round(kg.po*100) + "% de coincidencia exacta" : "sin pares todavía"),
+      tile("La IA puntúa", dif == null ? "—" : (dif > 0 ? "+" : "") + Math.round(dif), dif == null ? "" : "puntos en promedio respecto de vos (" + (dif > 3 ? "más blanda" : dif < -3 ? "más dura" : "parecido") + ")"));
+    const t = vaciar($("#ca-tabla"));
+    if(!revisadas.length) return;
+    t.append(cabecera(["Criterio",["Pares","n"],["Coinciden","n"],["Kappa","n"],"Lectura"]));
+    Object.entries(porCrit).map(([id, pares]) => ({ id, ...kappa(pares) })).sort((a,b)=>a.k-b.k).forEach(r => t.append(h("tr", {},
+      h("td", { text:etiquetas[r.id] || r.id }), h("td", { class:"n", text:String(r.n) }), h("td", { class:"n", text:Math.round(r.po*100) + "%" }),
+      h("td", { class:"n", text:r.k.toFixed(2).replace(".", ",") }), h("td", { text:leerKappa(r.k) + (r.n < 10 ? " (pocos pares)" : "") }))));
+  }
+
+  /* =====================================================================
+     ESCENARIOS
+     ===================================================================== */
+  const GUIAS_POR_PERFIL = {
+    guardavidas: [["", "Sin guía (sólo lo básico)"], ["ahogamiento", "Ahogamiento (grados de Szpilman)"], ["pcr", "Paro sin ahogamiento"], ["trauma", "Trauma (zambullida, golpe)"]],
+    lego: [["lego-rcp", "RCP guiada, sólo compresiones (adulto)"], ["lego-ahogamiento", "RCP guiada con ventilaciones (chico o ahogado)"]]
+  };
+  let editando = null;
+  function pintarGuias(){
+    const perfil = $("#es-perfil").value;
+    const sel = vaciar($("#es-guia"));
+    GUIAS_POR_PERFIL[perfil].forEach(([v, t]) => sel.append(h("option", { value:v, text:t })));
+    $("#es-victima-wrap").hidden = perfil !== "lego";
+  }
+  $("#es-perfil").addEventListener("change", pintarGuias);
+
+  async function cargarEscenarios(){
+    try{ P.escenarios = (await api("escenarios")).escenarios; }catch(e){ P.escenarios = []; }
+  }
+  async function verEscenarios(){
+    pintarGuias();
+    await cargarEscenarios();
+    const box = vaciar($("#es-lista"));
+    $("#es-vacio").hidden = P.escenarios.length > 0;
+    P.escenarios.forEach(s => box.append(h("div", { class:"card" },
+      h("div", { class:"fila" }, h("b", { text:s.title }), h("span", { class:"sp" }), h("span", { class:"badge", text:s.perfil === "lego" ? "Sin formación" : "Guardavidas" })),
+      h("p", { class:"small sec", text:s.card }),
+      h("div", { class:"fila", style:"margin-top:6px" }, h("button", { class:"link", text:"Editar", onclick: () => editarEscenario(s) }),
+        h("button", { class:"link", text:"Borrar", onclick: async () => { if(confirm("¿Borrar «" + s.title + "»?")){ await api("escenario-borrar", { id:s.id }); verEscenarios(); } } })))));
+    const fijos = vaciar($("#es-fijos"));
+    (P.contenido.SCENARIOS || []).forEach(s => fijos.append(h("details", { class:"card" },
+      h("summary", {}, h("b", { text:s.title }), h("span", { class:"muted small", text:" · " + (s.perfil === "lego" ? "sin formación" : "guardavidas") })),
+      h("p", { class:"small sec", style:"margin-top:8px", text:s.scene }),
+      h("p", { class:"small", style:"margin-top:6px" }, h("b", { text:"Ubicación: " }), s.addr),
+      h("ul", { class:"guion small", style:"margin-top:8px" }, (s.notasInstructor || []).map(n => h("li", { text:n }))))));
+  }
+
+  function editarEscenario(s){
+    editando = s ? s.id : null;
+    $("#es-titulo").textContent = s ? "Editar escenario" : "Cargar un escenario para tus alumnos";
+    $("#es-nuevo").hidden = !s;
+    $("#es-title").value = s ? s.title : ""; $("#es-perfil").value = s ? s.perfil : "guardavidas"; pintarGuias();
+    $("#es-guia").value = s ? (s.guia || "") : ""; $("#es-fam").value = s ? s.fam : ""; $("#es-victima").value = s ? (s.victima || "adulto") : "adulto";
+    $("#es-card").value = s ? s.card : ""; $("#es-scene").value = s ? s.scene : ""; $("#es-addr").value = s ? s.addr : "";
+    $("#es-zona").value = s ? s.zona : "Santa Fe capital"; $("#es-notas").value = s ? (s.notasInstructor || []).join("\n") : "";
+    $("#es-err").textContent = "";
+    window.scrollTo({ top:0, behavior:"smooth" });
+  }
+  $("#es-nuevo").addEventListener("click", () => editarEscenario(null));
+  $("#es-guardar").addEventListener("click", async ()=>{
+    $("#es-err").textContent = "";
+    const previo = editando ? P.escenarios.find(x => x.id === editando) : null;
+    const esc = { id: editando || undefined, creado: previo && previo.creado, title:$("#es-title").value, perfil:$("#es-perfil").value, guia:$("#es-guia").value, fam:$("#es-fam").value,
+      victima:$("#es-victima").value, card:$("#es-card").value, scene:$("#es-scene").value, addr:$("#es-addr").value, zona:$("#es-zona").value, notasInstructor:$("#es-notas").value };
+    try{ await api("escenario-guardar", { escenario:esc }); editarEscenario(null); verEscenarios(); }
+    catch(e){ $("#es-err").textContent = e.message; }
+  });
+
+  /* =====================================================================
+     MI CUENTA
+     ===================================================================== */
+  async function verCuenta(){
+    try{ P.info = await api("panel"); pintarCabecera(); }catch(e){}
+    const c = P.info.cuenta, u = P.info.usoMes;
+    vaciar($("#cu-tiles")).append(
+      tile("Prácticas este mes", c.cupoMensual ? u.practicas + " de " + c.cupoMensual : String(u.practicas), c.cupoMensual ? "cupo mensual" : "sin tope", c.cupoMensual ? u.practicas / c.cupoMensual * 100 : null),
+      tile("Turnos del operador", String(u.turnos), "este mes"),
+      tile("Vencimiento", c.vence || "no vence", c.activa ? "cuenta activa" : "cuenta pausada"));
+    $("#cu-alumnos").textContent = c.codigoAlumnos || "—";
+    $("#cu-alumnos-nota").textContent = P.info.codigoEnv
+      ? "Tus alumnos también pueden entrar con el código que está cargado en Vercel (CODIGO_ACCESO)." + (c.codigoAlumnos ? "" : " Este código propio se crea al guardar la cuenta desde «Clientes».")
+      : "Sirve siempre (no vence con la clase). Para una clase con varios grupos, mejor abrí una «clase en vivo».";
+    $("#cu-inst").textContent = c.codigoInstructor ? "••••••••••" : "—"; $("#cu-ver-inst").textContent = "Mostrar";
+    $("#cu-ver-inst").hidden = !c.codigoInstructor;
+    $("#cu-regen-inst").textContent = c.codigoInstructor ? "Cambiar este código" : "Crear un código de instructor";
+    $("#cu-regen-alumnos").textContent = c.codigoAlumnos ? "Cambiar este código" : "Crear un código de alumnos";
+    $("#cu-copiar-alumnos").hidden = !c.codigoAlumnos;
+  }
+  $("#cu-copiar-alumnos").addEventListener("click", e => { const c = P.info.cuenta.codigoAlumnos; if(c) copiar(origen + "/?c=" + c, e.target); });
+  $("#cu-ver-inst").addEventListener("click", e => {
+    const oculto = e.target.textContent === "Mostrar";
+    $("#cu-inst").textContent = oculto ? (P.info.cuenta.codigoInstructor || "—") : "••••••••••";
+    e.target.textContent = oculto ? "Ocultar" : "Mostrar";
+  });
+  async function regenerar(tipo){
+    const aviso = tipo === "instructor"
+      ? "¿Cambiar tu código de instructor? El viejo deja de funcionar y vas a tener que entrar con el nuevo."
+      : "¿Cambiar el código de alumnos? El viejo deja de funcionar: vas a tener que pasarles el nuevo.";
+    const actual = tipo === "instructor" ? P.info.cuenta.codigoInstructor : P.info.cuenta.codigoAlumnos;
+    if(actual && !confirm(aviso)) return;
+    const { cuenta } = await api("codigo-regenerar", { tipo });
+    if(tipo === "instructor" && !P.info.esAdmin){
+      alert("Tu nuevo código de instructor es:\n\n" + cuenta.codigoInstructor + "\n\nAnotalo antes de cerrar este aviso.");
+      P.codigo = cuenta.codigoInstructor;
+      try{ if(localStorage.getItem("sim107_panel")) localStorage.setItem("sim107_panel", P.codigo); sessionStorage.setItem("sim107_panel", P.codigo); }catch(e){}
+    }
+    verCuenta();
+  }
+  $("#cu-regen-alumnos").addEventListener("click", () => regenerar("alumnos"));
+  $("#cu-regen-inst").addEventListener("click", () => regenerar("instructor"));
+
+  /* =====================================================================
+     CLIENTES (administrador)
+     ===================================================================== */
+  const NOMBRES_PLAN = { prueba:"Prueba", instructor:"Instructor", institucion:"Institución", cortesia:"Cortesía" };
+  async function verCuentas(){
+    const { cuentas } = await api("cuentas");
+    const t = vaciar($("#cl-tabla"));
+    t.append(cabecera(["Cuenta","Plan",["Prácticas del mes","n"],"Vence","Estado",""]));
+    cuentas.forEach(c => t.append(h("tr", {},
+      h("td", {}, h("b", { text:c.nombre }), c.contacto ? h("div", { class:"small muted", text:c.contacto }) : ""),
+      h("td", { text:NOMBRES_PLAN[c.plan] || c.plan }),
+      h("td", { class:"n", text:c.usoMes.practicas + (c.cupoMensual ? " / " + c.cupoMensual : "") }),
+      h("td", { class:"num", text:c.vence ? c.vence.split("-").reverse().join("/") : "—" }),
+      h("td", { text:c.activa ? "activa" : "pausada" }),
+      h("td", {}, h("button", { class:"link", text:"editar", onclick: () => abrirCuenta(c) })))));
+  }
+  let cuentaEditada = null;
+  function abrirCuenta(c){
+    cuentaEditada = c || null;
+    $("#dc-titulo").textContent = c ? "Editar " + c.nombre : "Nueva cuenta";
+    $("#dc-nombre").value = c ? c.nombre : ""; $("#dc-contacto").value = c ? c.contacto : "";
+    $("#dc-tipo").value = c ? c.tipo : "instructor"; $("#dc-plan").value = c ? c.plan : "prueba";
+    $("#dc-cupo").value = c ? c.cupoMensual : 100; $("#dc-vence").value = c && c.vence ? c.vence : "";
+    $("#dc-activa").checked = c ? c.activa : true; $("#dc-notas").value = c ? c.notas : "";
+    $("#dc-err").textContent = "";
+    $("#dc-bienvenida").hidden = !(c && c.codigoAlumnos);
+    if(c && c.codigoAlumnos) $("#dc-msj").textContent = mensajeBienvenida(c);
+    $("#dlg-cuenta").showModal();
+  }
+  function mensajeBienvenida(c){
+    return [
+      "¡Hola! Ya está lista tu cuenta del Simulador 107" + (c.nombre ? " (" + c.nombre + ")" : "") + ".",
+      "",
+      "• Tu panel de instructor: " + origen + "/panel",
+      "  Tu código de instructor: " + c.codigoInstructor + " (es personal, no lo compartas)",
+      "• Tus alumnos entran acá: " + origen + "/?c=" + c.codigoAlumnos,
+      "  o en " + location.host + " con el código " + c.codigoAlumnos,
+      "• Para una clase con varios grupos a la vez, abrí una «clase en vivo» en el panel: te da un código de 6 letras para proyectar y ves a todos los grupos en vivo.",
+      "",
+      "Plan: " + (NOMBRES_PLAN[c.plan] || c.plan) + (c.cupoMensual ? " · " + c.cupoMensual + " prácticas por mes" : " · sin tope de prácticas") + (c.vence ? " · vigente hasta el " + c.vence : ""),
+      "Cómo dar la clase con el simulador: " + origen + "/instructores#guia",
+      "",
+      "Cualquier duda, respondé este mensaje."
+    ].join("\n");
+  }
+  $("#cl-nueva").addEventListener("click", () => abrirCuenta(null));
+  $("#dc-cerrar").addEventListener("click", () => $("#dlg-cuenta").close());
+  $("#dc-copiar").addEventListener("click", e => copiar($("#dc-msj").textContent, e.target));
+  $("#dc-guardar").addEventListener("click", async ()=>{
+    $("#dc-err").textContent = "";
+    const datos = { id: cuentaEditada ? cuentaEditada.id : undefined, nombre:$("#dc-nombre").value, contacto:$("#dc-contacto").value, tipo:$("#dc-tipo").value,
+      plan:$("#dc-plan").value, cupoMensual:Number($("#dc-cupo").value), vence:$("#dc-vence").value || null, activa:$("#dc-activa").checked, notas:$("#dc-notas").value };
+    try{
+      const { cuenta } = await api("cuenta-guardar", { cuenta:datos });
+      cuentaEditada = cuenta;
+      $("#dc-titulo").textContent = "Editar " + cuenta.nombre;
+      $("#dc-bienvenida").hidden = false;
+      $("#dc-msj").textContent = mensajeBienvenida(cuenta);
+      verCuentas(); cargarSelectorCuentas();
+    }catch(e){ $("#dc-err").textContent = e.message; }
+  });
+
+  /* =====================================================================
+     CONTACTOS (administrador)
+     ===================================================================== */
+  const ESTADOS_CONTACTO = [["nuevo","Nuevo"],["contactado","Contactado"],["demo","Demo agendada"],["prueba","En prueba"],["cliente","Cliente"],["descartado","Descartado"]];
+  async function verContactos(){
+    const { contactos } = await api("contactos");
+    const t = vaciar($("#co-tabla"));
+    $("#co-vacio").hidden = contactos.length > 0;
+    if(!contactos.length) return;
+    t.append(h("tr", {}, ["Fecha","Quién","Contacto","Mensaje","Estado"].map(x => h("th", { text:x }))));
+    contactos.forEach(c => {
+      const sel = h("select", { class:"inp", style:"min-width:150px" }, ESTADOS_CONTACTO.map(([v,tx]) => h("option", { value:v, text:tx })));
+      sel.value = c.estado;
+      sel.addEventListener("change", () => api("contacto-estado", { id:c.id, estado:sel.value }));
+      t.append(h("tr", {},
+        h("td", { class:"num", text:fecha(c.fecha) }),
+        h("td", {}, h("b", { text:c.nombre }), h("div", { class:"small muted", text:[c.rol, c.institucion].filter(Boolean).join(" · ") })),
+        h("td", { class:"small" }, c.email ? h("div", {}, h("a", { href:"mailto:" + c.email, text:c.email })) : "", c.telefono ? h("div", { text:c.telefono }) : ""),
+        h("td", { class:"small", text:c.mensaje || "" }),
+        h("td", {}, sel)));
+    });
+  }
+
+  /* =====================================================================
+     USO Y COSTOS (administrador)
+     ===================================================================== */
+  /* Costo estimado si el mismo uso fuera pago, con precios de la API de Gemini de
+     septiembre de 2026 (USD por millón de tokens: Flash-Lite 0,25/1,50; Flash 1,50/9,00)
+     y los tokens medidos por turno. Es una estimación para decidir cuándo conviene pasar
+     al plan pago, no una factura. */
+  const COSTO_TURNO_USD = 0.0014;     // ~5.000 tokens de entrada y ~100 de salida en Flash-Lite
+  const COSTO_DEVOLUCION_USD = 0.018; // ~5.000 de entrada y ~1.200 de salida en Flash
+
+  async function verUso(){
+    const { dias } = await api("uso", { dias: 30 });
+    const orden = dias.slice().reverse();
+    const pedidos = d => (Number(d.turnos)||0) + (Number(d.evaluaciones)||0);
+    const tot = orden.reduce((s,d)=>s+pedidos(d),0);
+    const conCuota = orden.filter(d => Number(d.cuota429) > 0).length;
+    const costo = orden.reduce((s,d)=> s + (Number(d.turnos)||0)*COSTO_TURNO_USD + (Number(d.evaluaciones)||0)*COSTO_DEVOLUCION_USD, 0);
+    vaciar($("#us-tiles")).append(
+      tile("Pedidos al modelo en 30 días", tot.toLocaleString("es-AR"), orden.reduce((s,d)=>s+(Number(d.evaluaciones)||0),0) + " devoluciones"),
+      tile("Días con cuota agotada", String(conCuota), conCuota ? "la app pasó a otro modelo gratuito" : "la capa gratuita alcanzó"),
+      tile("Si fuera pago", "USD " + costo.toFixed(2).replace(".", ","), "estimado para estos 30 días"));
+
+    const max = Math.max(1, ...orden.map(pedidos));
+    const cols = vaciar($("#us-cols")), marcas = vaciar($("#us-marcas"));
+    cols.append(h("span", { class:"guia" }), h("span", { class:"escala", text: max.toLocaleString("es-AR") + " pedidos" }));
+    orden.forEach(d => {
+      const v = pedidos(d);
+      const n429 = Number(d.cuota429) || 0;
+      const c = h("div", { class:"c", style:"height:" + (v/max*100) + "%", tabindex:"0", "aria-label": diaCorto(d.fecha) + ": " + v + " pedidos" });
+      const detalle = diaCorto(d.fecha) + (n429 ? " · " + n429 + (n429 === 1 ? " vez" : " veces") + " sin cuota" : "");
+      c.addEventListener("pointermove", ev => mostrarTip(ev, v + " pedidos", detalle));
+      c.addEventListener("pointerleave", ocultarTip);
+      c.addEventListener("focus", () => { const r = c.getBoundingClientRect(); mostrarTip({ clientX:r.left, clientY:r.top }, v + " pedidos", detalle); });
+      c.addEventListener("blur", ocultarTip);
+      cols.append(c);
+      marcas.append(h("span", { text: Number(d.cuota429) > 0 ? "⚠" : "", title: Number(d.cuota429) > 0 ? "Cuota agotada" : "" }));
+    });
+    let ejes = $("#us-ejes");
+    if(!ejes){ ejes = h("div", { class:"ejes", id:"us-ejes" }); $("#us-marcas").after(ejes); }
+    vaciar(ejes).append(h("span", { text:diaCorto(orden[0].fecha) }), h("span", { text:"hoy" }));
+
+    // Tabla: los mismos números, sin depender del gráfico.
+    const t = vaciar($("#us-tabla"));
+    t.append(cabecera(["Día",["Turnos del operador","n"],["Devoluciones","n"],["Sin cuota","n"],"Modelos que contestaron"]));
+    dias.filter(d => pedidos(d) > 0).forEach(d => {
+      const modelos = Object.keys(d).filter(k => k.startsWith("m:")).map(k => k.slice(2) + " (" + d[k] + ")").join(", ");
+      t.append(h("tr", {}, h("td", { class:"num", text:diaCorto(d.fecha) }), h("td", { class:"n", text:String(Number(d.turnos)||0) }),
+        h("td", { class:"n", text:String(Number(d.evaluaciones)||0) }), h("td", { class:"n", text:Number(d.cuota429) > 0 ? "⚠ " + d.cuota429 : "" }), h("td", { class:"small", text:modelos })));
+    });
+  }
+
+  /* ---------------- arranque ---------------- */
+  (async function(){
+    let guardado = "";
+    try{ guardado = sessionStorage.getItem("sim107_panel") || localStorage.getItem("sim107_panel") || ""; }catch(e){}
+    if(guardado){ try{ await entrar(guardado, false); return; }catch(e){} }
+    $("#login-cod").focus();
+  })();
+})();
+</script>
+</body>
+</html>

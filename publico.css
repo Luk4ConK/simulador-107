@@ -1,0 +1,114 @@
+/* Páginas públicas del Simulador 107: para instructores, fundamentos, términos y
+   privacidad. Los mismos tokens que la app (index.html), con su modo oscuro. */
+:root{
+  --ground:#E7EDEC; --surface:#FFFFFF; --surface-2:#F1F6F5;
+  --ink:#0C1B1E; --ink-2:#4C5E60; --ink-3:#75898A;
+  --line:#CEDAD9; --line-soft:#E0E9E8;
+  --accent:#C8451D; --accent-soft:#FBEAE4;
+  --ok:#1E7A4E; --warn:#A96D0C; --bad:#B0382A;
+  --deep:#08191C; --deep-2:#0F272B; --deep-3:#16363B;
+  --on-deep:#E9F1F0; --on-deep-2:#8FA9A9; --deep-line:#1E4044;
+  --r:14px;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+    --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+    --line:#20373B; --line-soft:#1A2C2F;
+    --accent:#F2703F; --accent-soft:#2A1912;
+    --ok:#48B37C; --warn:#DDA43E; --bad:#E06A5A;
+    --deep:#050E10; --deep-2:#0B1C1F; --deep-3:#12292D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+  --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+  --line:#20373B; --line-soft:#1A2C2F;
+  --accent:#F2703F; --accent-soft:#2A1912;
+  --ok:#48B37C; --warn:#DDA43E; --bad:#E06A5A;
+  --deep:#050E10; --deep-2:#0B1C1F; --deep-3:#12292D;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--ground); color:var(--ink); font-family:var(--body); font-size:16.5px; line-height:1.6; -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display); font-weight:700; letter-spacing:-.018em; margin:0; text-wrap:balance; line-height:1.12}
+p{margin:0}
+a{color:inherit; text-underline-offset:3px}
+button,input,select,textarea{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+[hidden]{display:none !important}
+.lbl{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+.num{font-variant-numeric:tabular-nums}
+.ancho{max-width:1080px; margin:0 auto; padding-inline:16px}
+.angosto{max-width:760px; margin:0 auto; padding-inline:16px}
+
+/* barra superior */
+.barra-sup{display:flex; align-items:center; gap:12px; padding-block:16px}
+.marca{display:flex; align-items:center; gap:10px; text-decoration:none; font-family:var(--display); font-weight:700; font-size:17px; white-space:nowrap}
+.sigil{width:36px;height:36px;flex:none;border-radius:9px;background:var(--accent);display:grid;place-items:center;
+       font-family:var(--display);font-weight:700;font-size:13.5px;color:#fff;letter-spacing:-.03em}
+.barra-sup nav{margin-left:auto; display:flex; gap:16px; flex-wrap:wrap; font-size:14.5px}
+.barra-sup nav a{text-decoration:none; color:var(--ink-2)}
+.barra-sup nav a:hover{color:var(--ink); text-decoration:underline}
+.oscura .barra-sup nav a{color:var(--on-deep-2)}
+.oscura .barra-sup nav a:hover{color:var(--on-deep)}
+
+/* botones */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:12px; padding:13px 20px;
+     font-family:var(--display); font-weight:700; font-size:16px; text-decoration:none; border:1px solid transparent; cursor:pointer}
+.btn.pri{background:var(--accent); color:#fff}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.sec{border-color:var(--line); background:var(--surface); color:var(--ink)}
+.oscura .btn.sec{background:transparent; border-color:var(--deep-line); color:var(--on-deep)}
+
+/* secciones */
+.seccion{padding-block:64px}
+.seccion + .seccion{border-top:1px solid var(--line)}
+.seccion h2{font-size:clamp(26px, 4vw, 36px)}
+.seccion .bajada{color:var(--ink-2); font-size:17.5px; margin-top:12px; max-width:62ch}
+.oscura{background:var(--deep); color:var(--on-deep)}
+.oscura .bajada{color:var(--on-deep-2)}
+.oscura .lbl{color:var(--on-deep-2)}
+
+/* texto largo (fundamentos, términos, privacidad) */
+.doc{padding-block:28px 72px}
+.doc h1{font-size:clamp(30px, 5vw, 42px)}
+.doc .resumen{font-size:18px; color:var(--ink-2); margin-top:14px}
+.doc h2{font-size:24px; margin-top:44px; padding-top:8px}
+.doc h3{font-size:18px; margin-top:26px}
+.doc p,.doc ul,.doc ol{margin-top:12px}
+.doc ul,.doc ol{padding-left:22px}
+.doc li{margin-top:6px}
+.doc .fecha{font-family:var(--mono); font-size:12.5px; color:var(--ink-3); margin-top:10px}
+.doc table{width:100%; border-collapse:collapse; margin-top:14px; font-size:15px}
+.doc th,.doc td{text-align:left; border-bottom:1px solid var(--line); padding:8px 8px 8px 0; vertical-align:top}
+.doc th{font-size:13px; color:var(--ink-2)}
+.doc .indice{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 18px; margin-top:24px}
+.doc .indice ol{margin-top:6px}
+.doc .indice a{text-decoration:none}
+.doc .indice a:hover{text-decoration:underline}
+.decision{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:12px 16px; margin-top:16px}
+.decision b{font-family:var(--display)}
+.cita{font-size:14px; color:var(--ink-2)}
+.refs{font-size:14.5px}
+.refs li{margin-top:9px}
+.refs a{word-break:break-word}
+.aviso{background:var(--accent-soft); border:1px solid var(--accent); border-radius:12px; padding:12px 16px; font-size:15px; margin-top:18px}
+.falta{color:var(--bad); font-style:italic}
+
+/* pie */
+.pie{border-top:1px solid var(--line); padding-block:28px 40px; font-size:14px; color:var(--ink-2)}
+.pie .ancho{display:grid; gap:10px}
+.pie nav{display:flex; gap:16px; flex-wrap:wrap}
+.pie .legal{font-size:13px; color:var(--ink-3)}
+
+/* En el celular, la barra de arriba deja sólo el último enlace de las navegaciones largas. */
+@media (max-width: 640px){ .barra-sup nav.plegable a:not(:last-child){display:none} }
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *{animation:none !important; transition:none !important} }
