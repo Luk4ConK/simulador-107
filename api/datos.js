@@ -319,8 +319,9 @@ async function guardarEscenario(cuentaId, e) {
   };
   if (!esc.title || !esc.scene || !esc.addr) throw problema("faltan_datos", "Faltan el nombre, la situación o la ubicación.");
   if (!esc.card) esc.card = esc.scene.slice(0, 110);
-  const n = Number(await kv("HLEN", P + "esc:" + cuentaId)) || 0;
-  if (n >= 60) throw problema("demasiados", "Ya hay 60 escenarios propios en esta cuenta. Borrá alguno antes de cargar otro.");
+  // El tope es para los nuevos: editar uno que ya existe siempre se puede.
+  const [n, existe] = await kvPipe([["HLEN", P + "esc:" + cuentaId], ["HEXISTS", P + "esc:" + cuentaId, esc.id]]);
+  if ((Number(n) || 0) >= 60 && !Number(existe)) throw problema("demasiados", "Ya hay 60 escenarios propios en esta cuenta. Borrá alguno antes de cargar otro.");
   await kv("HSET", P + "esc:" + cuentaId, esc.id, JSON.stringify(esc));
   return { escenario: esc };
 }

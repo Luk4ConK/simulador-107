@@ -191,6 +191,129 @@ try {
     await page.context().close();
   });
 
+  await prueba("panel: el administrador ve la clase en vivo, revisa una práctica, mide el acuerdo y exporta", async () => {
+    const page = await nuevaPagina();
+    page.on("dialog", d => d.accept());
+    await page.goto(base + "/panel");
+    await page.fill("#login-cod", "no-es-un-codigo");
+    await page.click("#login-go");
+    await page.waitForFunction(() => /no abre el panel/.test(document.querySelector("#login-err").textContent));
+    await page.fill("#login-cod", "ADMIN-DE-PRUEBA-99");
+    await page.click("#login-go");
+    await page.waitForSelector("#v-panel:not([hidden])");
+    assert.equal(await page.locator('#tabs button[data-t="cuentas"]').isVisible(), true, "el administrador ve la pestaña de clientes");
+
+    // Alta de un cliente: sale el mensaje de bienvenida con sus códigos.
+    await page.click('#tabs button[data-t="cuentas"]');
+    await page.waitForFunction(() => /Curso RCP Norte/.test(document.querySelector("#cl-tabla").textContent));
+    await page.click("#cl-nueva");
+    await page.fill("#dc-nombre", "Instituto del Litoral");
+    await page.click("#dc-guardar");
+    await page.waitForSelector("#dc-bienvenida:not([hidden])");
+    const bienvenida = await page.locator("#dc-msj").textContent();
+    assert.match(bienvenida, /\/panel/);
+    assert.match(bienvenida, /INS-[A-Z0-9]{10}/);
+    assert.match(bienvenida, /\/\?c=INS-|\/\?c=[A-Z]{3}-/);
+    await page.click("#dc-cerrar");
+
+    // Mira la cuenta del curso de la prueba anterior.
+    await page.waitForFunction(() => [...document.querySelectorAll("#p-cambiar option")].some(o => o.textContent === "Curso RCP Norte"));
+    await page.selectOption("#p-cambiar", { label: "Curso RCP Norte" });
+    await page.waitForFunction(() => document.querySelector("#p-cuenta").textContent === "Curso RCP Norte");
+
+    // Clase en vivo: la clase sigue abierta y el grupo 3 terminó con 100.
+    await page.click('#tabs button[data-t="clase"]');
+    await page.waitForSelector("#clase-viva:not([hidden])");
+    await page.waitForFunction(() => /Grupo 3/.test(document.querySelector("#cv-grupos").textContent));
+    assert.match(await page.locator("#cv-grupos").innerText(), /terminada/);
+    assert.equal(await page.locator("#cv-barras .barra").count(), 10, "una barra por criterio de la rúbrica lego");
+    assert.match(await page.locator("#cv-guion").innerText(), /Gimnasio|gimnasio/);
+
+    // Prácticas: abrir, marcar que no averiguó la respiración (crítico) y guardar.
+    await page.click('#tabs button[data-t="practicas"]');
+    await page.waitForSelector("#pr-tabla tr.clic");
+    await page.click("#pr-tabla tr.clic");
+    await page.waitForSelector("#dlg[open]");
+    assert.equal(await page.locator("#d-crit select").count(), 10);
+    assert.match(await page.locator("#d-tr").textContent(), /ALUMNO #1: Estoy en el gimnasio/);
+    await page.selectOption('#d-crit select[data-id="respiracion"]', "falto");
+    await page.click("#d-guardar");
+    await page.waitForFunction(() => /tu puntaje es 40/.test(document.querySelector("#d-estado").textContent));
+    await page.click("#d-cerrar");
+    await page.waitForFunction(() => /revisada/.test(document.querySelector("#pr-tabla").textContent));
+
+    // Planilla: una fila por práctica, una columna por criterio.
+    const [descarga] = await Promise.all([page.waitForEvent("download"), page.click("#pr-csv")]);
+    const csv = await new Promise((ok, mal) => { descarga.createReadStream().then(s => { let t = ""; s.on("data", c => t += c); s.on("end", () => ok(t)); s.on("error", mal); }); });
+    assert.match(csv, /ia_respiracion/);
+    assert.match(csv, /Grupo 3/);
+    assert.match(csv, /,40,/, "lleva el puntaje del instructor");
+
+    // Calidad: 10 pares, 9 coinciden.
+    await page.click('#tabs button[data-t="calidad"]');
+    await page.waitForFunction(() => /Prácticas revisadas/.test(document.querySelector("#ca-tiles").textContent));
+    assert.match(await page.locator("#ca-tiles").innerText(), /90% de coincidencia exacta/);
+    assert.ok(await page.locator("#ca-tabla tr").count() > 1);
+
+    // Alumnos: el grupo, con su evolución.
+    await page.click('#tabs button[data-t="alumnos"]');
+    await page.waitForFunction(() => /Grupo 3/.test(document.querySelector("#al-tabla").textContent));
+
+    // Escenario propio: lo ve el alumno de esa cuenta, marcado como de su institución.
+    await page.click('#tabs button[data-t="escenarios"]');
+    await page.waitForSelector("#es-fijos details");
+    await page.fill("#es-title", "Río · calambre en la correntada");
+    await page.fill("#es-scene", "Un nadador se acalambró en la correntada y lo sacaste a la orilla. Respira y tose.");
+    await page.fill("#es-addr", "Playa del Espigón I, frente a la bajada de calle Mitre");
+    await page.fill("#es-notas", "Al minuto: tose y vomita agua.\nA los 3 minutos: está consciente.");
+    await page.click("#es-guardar");
+    await page.waitForFunction(() => /calambre/.test(document.querySelector("#es-lista").textContent));
+
+    // Cerrar la clase y abrir otra desde el panel.
+    await page.click('#tabs button[data-t="clase"]');
+    await page.waitForSelector("#clase-viva:not([hidden])");
+    await page.click("#cv-cerrar");
+    await page.waitForSelector("#clase-nueva:not([hidden])");
+    await page.fill("#cn-nombre", "Clase de repaso");
+    await page.click("#cn-abrir");
+    await page.waitForSelector("#clase-viva:not([hidden])");
+    await page.waitForFunction(() => /^[2-9A-Z]{6}$/.test(document.querySelector("#cv-codigo").textContent));
+    assert.match(await page.locator("#clase-anteriores").innerText(), /RCP sábado/);
+
+    // Uso y contactos (sólo administrador).
+    await api("/api/datos", { accion: "contacto", nombre: "Marta Instructora", email: "marta@example.com", rol: "Instructora de RCP", mensaje: "Quiero probarlo" });
+    await page.click('#tabs button[data-t="contactos"]');
+    await page.waitForFunction(() => /Marta Instructora/.test(document.querySelector("#co-tabla").textContent));
+    await page.click('#tabs button[data-t="uso"]');
+    await page.waitForSelector("#us-cols .c");
+    assert.equal(await page.locator("#us-cols .c").count(), 30);
+    assert.match(await page.locator("#us-tabla").innerText(), /gemini/);
+    await page.context().close();
+
+    // El alumno de esa cuenta ve el escenario nuevo.
+    const cuentas = (await api("/api/datos", { accion: "cuentas" }, { "x-panel": "ADMIN-DE-PRUEBA-99" })).cuentas;
+    const curso = cuentas.find(c => c.nombre === "Curso RCP Norte");
+    const alumno = await nuevaPagina();
+    await alumno.goto(base + "/?c=" + curso.codigoAlumnos);
+    await alumno.waitForSelector("#v-setup:not([hidden])");
+    await alumno.waitForFunction(() => /calambre/.test(document.querySelector("#scenarios").textContent));
+    assert.match(await alumno.locator("#scenarios").textContent(), /De tu institución/);
+    await alumno.context().close();
+
+    // El instructor, con su propio código, ve sólo su cuenta y no las pestañas del administrador.
+    const inst = await nuevaPagina();
+    await inst.goto(base + "/panel");
+    await inst.fill("#login-cod", curso.codigoInstructor);
+    await inst.click("#login-go");
+    await inst.waitForSelector("#v-panel:not([hidden])");
+    assert.equal(await inst.locator('#tabs button[data-t="cuentas"]').isVisible(), false);
+    assert.equal(await inst.locator("#p-cambiar-wrap").isVisible(), false);
+    assert.equal(await inst.locator("#p-cuenta").textContent(), "Curso RCP Norte");
+    await inst.click('#tabs button[data-t="cuenta"]');
+    await inst.waitForFunction(c => document.querySelector("#cu-alumnos").textContent === c, curso.codigoAlumnos);
+    await inst.context().close();
+  });
+
   assert.deepEqual(errores, [], "sin errores de JavaScript en la página");
   // El prompt del operador no se recorta nunca: tiene que quedar lejos del tope del servidor.
   const { gemini } = await import("./servidor.mjs");

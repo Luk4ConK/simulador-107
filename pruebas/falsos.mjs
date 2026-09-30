@@ -52,6 +52,7 @@ export function crearRedis() {
     HGETALL: k => { const e = de(k, "hash"); return e ? [...e.v.entries()].flat() : []; },
     HDEL: (k, ...fs) => { const e = de(k, "hash"); if (!e) return 0; return fs.reduce((n, f) => n + (e.v.delete(f) ? 1 : 0), 0); },
     HLEN: k => { const e = de(k, "hash"); return e ? e.v.size : 0; },
+    HEXISTS: (k, f) => { const e = de(k, "hash"); return e && e.v.has(f) ? 1 : 0; },
     HINCRBY: (k, f, n) => { const e = de(k, "hash", true); const v = (num(e.v.get(f)) || 0) + num(n); e.v.set(f, String(v)); return v; },
     SADD: (k, ...ms) => { const e = de(k, "set", true); let n = 0; ms.forEach(m => { if (!e.v.has(m)) { e.v.add(m); n++; } }); return n; },
     SMEMBERS: k => { const e = de(k, "set"); return e ? [...e.v] : []; },
