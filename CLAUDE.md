@@ -237,6 +237,19 @@ justamente para que la dispare el teclado.
   se creía todavía en interrogatorio y el tope de turnos no arrancaba nunca. Regla general:
   **no atar una transición a que el modelo coopere con una marca** si el mismo hecho se
   puede leer de lo que dijo.
+- **La ubicación no se le cree al modelo: la verifica la app.** Probando ocho perfiles
+  contra producción, con un alumno que contestaba con preguntas, el operador declaró en
+  `[[DATOS:...]]` una ubicación que nunca le dieron y despachó a ningún lado. Ahora
+  `dijoUbicacion()` acepta `ubicacion` sólo si en lo que dijo el alumno hay algo que un
+  móvil pueda buscar: un número que no sea edad ni tiempo, una palabra de
+  `PISTAS_UBICACION` o una palabra de la dirección del escenario (`addr`, `zona`). Si el
+  operador anuncia el móvil sin eso, el anuncio no cuenta (`S.anuncioSinUbicacion`) y el
+  turno siguiente se le hace aclarar que sin dirección no sale nada. Si es exacta o no lo
+  juzga la devolución; esto sólo mira que exista. Los demás datos se le siguen creyendo.
+- **"El móvil está en camino" se le dice al operador recién después del despacho.** Antes
+  `estadoLlamada()` lo decía en todos los turnos, pegado al "no anuncies todavía": dos
+  instrucciones contradictorias que lo empujaban a anunciar sin los datos. Sin despacho,
+  `llegoMovil()` da falso también en guardavidas.
 - **Una grilla larga de extras alarga el interrogatorio, no lo acorta.** La primera
   versión tenía ocho extras y el efecto fue el contrario al buscado: la app le pasaba al
   operador la lista de los que faltaban y él la iba cumpliendo con disciplina, así que
@@ -389,6 +402,16 @@ NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs  # la copia de Claud
 RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107
 ```
 
+En la computadora del titular (Windows) hay una copia local del repositorio. Ahí Playwright
+está instalado sin navegador propio, y las pruebas de navegador usan el Chrome instalado:
+`CHROMIUM="C:/Program Files/Google/Chrome/Application/chrome.exe"`. El Chrome completo
+pide `/favicon.ico` por su cuenta, y `copia-claude.test.mjs` ya lo tiene en cuenta. En un
+clon de Windows hay que poner `git config core.autocrlf false`: con CRLF,
+`herramientas/copia-claude.mjs` no encuentra los textos que reemplaza.
+
+`pruebas/falsos.mjs`: `gemini.operador` reemplaza al operador falso en el medio de una
+prueba (volverlo a `null` al terminar); así se prueba un operador que se porta mal.
+
 `pruebas/falsos.mjs` tiene un Redis en memoria (sólo los comandos que se usan: si agregás
 uno en `api/`, agregalo ahí) y un Gemini falso con cuotas, 404 y un operador que sigue el
 ESTADO DE LA LLAMADA. `ui.test.mjs` recorre guardavidas, lego en una clase, una clase
@@ -452,8 +475,9 @@ se "corrija" de vuelta desde el manual:
    cancelación de eco o una API de voz en tiempo real.
 4. Conseguir el manual de operadores del SIES 107 de Santa Fe para afinar el
    interrogatorio con el protocolo local (existe; no fue accesible desde este entorno).
-5. Botón para borrar un contacto del formulario desde el panel (hoy se borra a mano o
-   vence a los 13 meses).
+5. Hecho en septiembre de 2026: botón para borrar un contacto del formulario desde el
+   panel (pestaña Contactos, sólo administrador; acción `contacto-borrar` de `api/datos.js`).
+   Es para los pedidos de supresión de la Ley 25.326: borra del todo, no archiva.
 6. Voz de mejor calidad vía API de voz (multiplica el costo, cambia mucho la experiencia).
 7. Al pasar a planes pagos: sacar los avisos de etapa piloto de `terminos.html` y
    `privacidad.html` y sumar las condiciones de pago revisadas por un abogado.

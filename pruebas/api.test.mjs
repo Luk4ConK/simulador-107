@@ -294,6 +294,16 @@ test("contacto desde la página: se guarda, frena el spam y lo ve el administrad
     const id = lista.cuerpo.contactos.find(c => c.mensaje === "Quiero probarlo").id;
     const est = await llamar(datos, { accion: "contacto-estado", id, estado: "demo", nota: "Demo el jueves" }, { "x-panel": "ADMIN-SECRETO-1234" });
     assert.equal(est.cuerpo.contacto.estado, "demo");
+    // Pedido de supresión: sólo el administrador lo borra, y se borra del todo.
+    const alta = await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Instructor Gómez", tipo: "instructor", plan: "prueba", cupoMensual: 30 } }, { "x-panel": "ADMIN-SECRETO-1234" });
+    const ajeno = await llamar(datos, { accion: "contacto-borrar", id }, { "x-panel": alta.cuerpo.cuenta.codigoInstructor });
+    assert.equal(ajeno.statusCode, 403, "un instructor no borra contactos");
+    const borrado = await llamar(datos, { accion: "contacto-borrar", id }, { "x-panel": "ADMIN-SECRETO-1234" });
+    assert.equal(borrado.statusCode, 200);
+    const despues = await llamar(datos, { accion: "contactos" }, { "x-panel": "ADMIN-SECRETO-1234" });
+    assert.ok(!despues.cuerpo.contactos.some(c => c.id === id), "ya no aparece en la lista");
+    const otraVez = await llamar(datos, { accion: "contacto-borrar", id }, { "x-panel": "ADMIN-SECRETO-1234" });
+    assert.equal(otraVez.statusCode, 404);
   } finally { quitar(); }
 });
 

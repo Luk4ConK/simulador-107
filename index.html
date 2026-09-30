@@ -1140,7 +1140,7 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               marcado:"", arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
-              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false, sinAvance:0, cerrando:false,
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false, sinAvance:0, cerrando:false, anuncioSinUbicacion:false,
               // Quién llama en el ejercicio, cómo se llama el alumno o el grupo, y a qué
               // cuenta y clase pertenece (lo contesta el servidor al verificar el código).
               perfil:"guardavidas", alias:"", acceso:null, requiere:false,
@@ -1600,7 +1600,8 @@
      porque el operador se queda en línea guiando la RCP hasta que la ambulancia llega. */
   function llegoMovil(){
     if(esLego()) return S.despachado && S.tDespacho > 0 && (Date.now()-S.tDespacho) >= S.arribo;
-    return (Date.now()-S.t0) >= S.arribo;
+    // Sin despacho no hay móvil que llegue, por más que el reloj haya corrido.
+    return S.despachado && (Date.now()-S.t0) >= S.arribo;
   }
   function minutosParaArribo(){
     const base = esLego() ? (S.tDespacho || Date.now()) : S.t0;
@@ -1636,6 +1637,33 @@
     if(/(comprim|empujando|estoy empujando|ya empuj|estoy apretando|apretando el pecho|masaje card|estoy haciendo (la )?rcp|haciendo rcp|ya empec[eé]|ya arranqu[eé])/.test(t)) return true;
     const numeros = t.match(/\b(\d{1,2}|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\b/g) || [];
     return numeros.length >= 4 && numeros.length >= t.split(/\s+/).filter(Boolean).length * 0.6;
+  }
+
+  /* La ubicación no se le cree al modelo sin más. El operador declara con [[DATOS:...]] lo
+     que ya averiguó y casi siempre está bien, pero probando ocho perfiles de alumno contra
+     producción (septiembre de 2026), con uno que contestaba con preguntas declaró una
+     ubicación que nunca le dieron y despachó a ningún lado. Es el dato que más importa y
+     el más fácil de chequear: la app lo acepta sólo si en lo que dijo el alumno hay algo
+     que un móvil pueda buscar (una calle, un número, una referencia, o alguna palabra de
+     la dirección del escenario). Si es exacta o no lo juzga la devolución; acá sólo se
+     mira que exista. */
+  const PISTAS_UBICACION = /\b(calle|avenida|av|bulevar|boulevard|bv|ruta|km|kil[oó]metros?|esquina|entre|frente|enfrente|al lado|altura|n[uú]mero|piso|depto|departamento|barrio|puesto|balneario|playa|costanera|club|plaza|parque|escuela|colegio|laguna|pileta|natatorio|camping|parador|bajada|acceso|port[oó]n|entrada|estaci[oó]n|quinta|gimnasio|edificio|hospital|puente|espig[oó]n|muelle|r[ií]o|comercio|super|supermercado|cancha|estadio|iglesia|terminal|peaje|rotonda|cruce|localidad|ciudad|manzana|lote|pasaje|diagonal)\b/;
+  // Un número cuenta como pista salvo que sea una edad, un tiempo o una cantidad de gente.
+  const NUMEROS_QUE_NO_UBICAN = /\d+\s*(a[ñn]os?|minutos?|min|segundos?|seg|veces|personas|chicos|nenes|v[ií]ctimas|kilos|kg|grados)\b/g;
+  // Palabras de la dirección del escenario que no alcanzan para ubicar a nadie.
+  const GENERICAS_DIRECCION = new Set(["primer","primera","segundo","segunda","puerta","abierta","abierto","cerrada","cerrado","adentro","afuera","arriba","abajo","izquierda","derecha","cuando","siempre","también"]);
+  function palabras(txt){ return String(txt||"").toLowerCase().split(/[^a-záéíóúñü]+/).filter(Boolean); }
+  function dijoUbicacion(){
+    const propias = palabras(((S.scn && S.scn.addr) || "") + " " + ((S.scn && S.scn.zona) || ""))
+      .filter(p => p.length >= 6 && !GENERICAS_DIRECCION.has(p));
+    return S.turns.some(t => {
+      if(t.role !== "user" || /^\[silencio/.test(t.content)) return false;
+      const txt = String(t.content).toLowerCase();
+      if(/\d/.test(txt.replace(NUMEROS_QUE_NO_UBICAN, ""))) return true;
+      if(PISTAS_UBICACION.test(txt)) return true;
+      const dichas = palabras(txt);
+      return propias.some(p => dichas.includes(p));
+    });
   }
 
   function extrasDe(){
@@ -1731,6 +1759,7 @@
       // Si ya anunció el despacho, decirle que no lo anuncie lo deja con una instrucción
       // contradictoria: pasa cuando anuncia por su cuenta sin haber declarado los datos.
       if(S.despachado) L.push("- Ya avisaste que el móvil sale, así que no lo repitas. Te quedan muy pocos turnos: pedí lo que falte de arriba y después te callás.");
+      else if(S.anuncioSinUbicacion) L.push("- Dijiste que el móvil sale, pero NO tenés la ubicación: sin ubicación no sale nada. Aclaralo en una frase (el móvil sale apenas te diga dónde es) y pedísela. No la supongas ni la inventes.");
       else L.push("- NO anuncies todavía que el móvil sale: primero completá lo de arriba.");
     } else {
       L.push("- YA TENÉS TODO LO ESENCIAL. Si todavía no le avisaste que el SEM sale y le diste el tiempo de llegada, hacelo AHORA, en este turno.");
@@ -1744,9 +1773,15 @@
       L.push("- EL MÓVIL YA LLEGÓ. Decile que está llegando y preguntale si lo ve.");
       L.push("- Cuando te lo confirme, pedile que le pase a los paramédicos el último estado, y recién ahí cerrá con [[CERRAR]].");
     } else {
-      if(S.despachado) L.push("- Ya despachaste, así que los signos clínicos ya no te cambian nada: NO preguntes por espuma, tos, pulso, pupilas ni color. Eso lo valora el equipo cuando llegue.");
-      L.push("- El móvil está en camino y le faltan unos "+falta+" minuto(s).");
-      L.push("- Si ya lo anunciaste, no repitas el tiempo salvo que te lo pregunten.");
+      // "Está en camino" sólo después del despacho. Antes se le decía siempre, y chocaba
+      // con el "no anuncies todavía" de arriba: lo empujaba a anunciar sin tener los datos.
+      if(S.despachado){
+        L.push("- Ya despachaste, así que los signos clínicos ya no te cambian nada: NO preguntes por espuma, tos, pulso, pupilas ni color. Eso lo valora el equipo cuando llegue.");
+        L.push("- El móvil está en camino y le faltan unos "+falta+" minuto(s).");
+        L.push("- Si ya lo anunciaste, no repitas el tiempo salvo que te lo pregunten.");
+      } else if(!fEs.length){
+        L.push("- Cuando anuncies que el SEM sale, el tiempo estimado de llegada es de unos "+falta+" minuto(s).");
+      }
       if(!enEspera()) L.push("- Todavía NO cierres: primero terminá de juntar lo que te falta.");
     }
 
@@ -1785,7 +1820,9 @@
       if(S.datos.conciencia && S.datos.respiracion && !S.datos.rcp){
         L.push("- Ya te dijo que no responde y cómo respira: si no respira normalmente, arrancá YA la RCP guiada mientras le seguís pidiendo lo que falta.");
       }
-      L.push(S.despachado ? "- Ya avisaste que la ambulancia sale: no lo repitas." : "- NO avises todavía que la ambulancia sale: primero completá lo de arriba.");
+      L.push(S.despachado ? "- Ya avisaste que la ambulancia sale: no lo repitas."
+        : S.anuncioSinUbicacion ? "- Dijiste que la ambulancia sale, pero NO tenés la dirección: sin dirección no sale nada. Aclaralo en una frase (la ambulancia sale apenas te diga dónde es) y pedísela, sin dejar de guiar la RCP si ya arrancó. No la supongas ni la inventes."
+        : "- NO avises todavía que la ambulancia sale: primero completá lo de arriba.");
     } else if(!S.datos.rcp){
       L.push("- YA TENÉS LO ESENCIAL.");
       if(!S.despachado) L.push("- En ESTE mensaje avisale en una frase corta que la ambulancia ya sale.");
@@ -1968,7 +2005,10 @@
       // listar un dato que ya tenía, no se pierde.
       const teniaAntes = Object.keys(S.datos).length;
       const md = txt.match(/\[\[\s*DATOS\s*:([^\]]*)\]\]/i);
-      if(md) md[1].split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(id=>{ S.datos[id] = true; });
+      if(md) md[1].split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(id=>{
+        if(id === "ubicacion" && !dijoUbicacion()) return; // ver dijoUbicacion()
+        S.datos[id] = true;
+      });
       txt = txt.replace(/\[\[\s*DATOS[^\]]*\]\]/gi,"").trim();
       if(S.datos.rcp && S.tRcp == null) S.tRcp = Date.now()-S.t0;
 
@@ -1979,7 +2019,12 @@
       // El anuncio del despacho se detecta de lo que DIJO, no de lo que declaró tener:
       // el modelo suele anunciar por su cuenta sin mandar la marca de datos, y así el
       // tope nunca arrancaba.
-      if(anuncioDeDespacho(txt) && !S.despachado){ S.despachado = true; S.tDespacho = Date.now(); }
+      // Sin ubicación no sale nada, lo diga o no el operador: si anunció el móvil sin que
+      // se la dieran, el anuncio no cuenta y el próximo turno se le hace aclarar.
+      if(anuncioDeDespacho(txt) && !S.despachado){
+        if(dijoUbicacion()){ S.despachado = true; S.tDespacho = Date.now(); S.datos.ubicacion = true; S.anuncioSinUbicacion = false; }
+        else S.anuncioSinUbicacion = true;
+      }
 
       // Turnos gastados desde que despachó (guardavidas) o desde que arrancó la RCP
       // (lego): es lo que limita cuánto puede seguir preguntando antes de callarse.
@@ -2355,7 +2400,7 @@
     S.hablando=false; S.mudo=false; reinicios=[]; bufFinal=""; bufProv="";
     S.grado=null; S.grados=[]; S.sondeos=0; S.ultimaOp=0;
     S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={}; S.despachado=false;
-    S.sinAvance=0; S.cerrando=false;
+    S.sinAvance=0; S.cerrando=false; S.anuncioSinUbicacion=false;
     S.tDespacho=0; S.tRcp=null; S.primerTurno=true; S.practicaId=null; S.avisoArribo=false;
     // El perfil de la práctica es el del escenario (un escenario de lego es de lego
     // aunque el selector haya quedado en otra cosa).

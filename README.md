@@ -111,7 +111,7 @@ Se entra desde la página principal, en *Soy instructor*, o directo en **https:/
 - **Calidad.** Cuánto coincide la IA con los instructores (kappa de Cohen), con las revisiones a ciegas.
 - **Escenarios.** Escenarios propios de la cuenta, que ven todos sus alumnos en cualquier celular.
 - **Mi cuenta.** Los códigos de alumnos y de instructor, y cómo cambiarlos.
-- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores, y el uso diario con los días en que se agotó la cuota gratuita.
+- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los días en que se agotó la cuota gratuita.
 
 ## Qué le pasás a los alumnos
 

@@ -181,7 +181,9 @@ try {
   });
 
   assert.deepEqual(errores, [], "sin errores de JavaScript");
-  assert.ok(pedidos.every(u => u === "/"), "la copia no le pide nada a ningún servidor: " + pedidos.join(", "));
+  // /favicon.ico no lo pide la página: lo pide solo el Chrome completo (el de Windows, por
+  // ejemplo), no el Chromium de Playwright.
+  assert.ok(pedidos.every(u => u === "/" || u === "/favicon.ico"), "la copia no le pide nada a ningún servidor: " + pedidos.join(", "));
   console.log("\n" + ok + " pruebas de la copia de Claude pasaron.");
 } finally {
   await navegador.close();

@@ -12,7 +12,7 @@ process.env.RAPIDO = "1";
 process.env.CON_BASE = "1";
 process.env.CODIGO_ADMIN = "ADMIN-DE-PRUEBA-99";
 process.env.PUERTO = process.env.PUERTO || "8123";
-const { default: servidor, redis } = await import("./servidor.mjs");
+const { default: servidor, redis, gemini: geminiFalso } = await import("./servidor.mjs");
 const base = "http://localhost:" + process.env.PUERTO;
 
 const require = createRequire(import.meta.url);
@@ -121,6 +121,45 @@ try {
     const criterios = await page.locator("#deb-items .item").count();
     assert.equal(criterios, 10 + 3);
     await page.context().close();
+  });
+
+  await prueba("sin ubicación no hay despacho, aunque el operador diga que la tiene", async () => {
+    // El caso de las pruebas contra producción: un alumno que contesta con preguntas y un
+    // operador que declara todos los datos, ubicación incluida, y anuncia el móvil.
+    const estados = [];
+    geminiFalso.operador = (sistema) => {
+      const estado = sistema.slice(sistema.lastIndexOf("ESTADO DE LA LLAMADA"));
+      estados.push(estado);
+      if (/SE TERMINÓ/.test(estado)) return "Sin la dirección no puedo mandarte el móvil. Averiguala y volvé a llamar al 107.\n[[CERRAR]]";
+      return "El SEM ya está en camino, llega en unos 6 minutos. ¿Algo más?\n[[DATOS:ubicacion,motivo,victimas,estado,acciones,material,acceso]]";
+    };
+    try {
+      const page = await nuevaPagina();
+      await page.goto(base + "/");
+      await page.waitForSelector("#v-gate:not([hidden])");
+      await page.fill("#gate-in", "ADMIN-DE-PRUEBA-99");
+      await page.click("#gate-go");
+      await page.waitForSelector("#v-setup:not([hidden])");
+      await page.click('.card[data-id="ahogamiento-puro"]');
+      await page.click("#btn-brief");
+      await page.click("#btn-call");
+      await marcar(page, "107");
+      await page.waitForSelector("#typer:not([hidden])", { timeout: 10000 });
+      await page.waitForFunction(() => document.querySelectorAll(".msg.op:not(.live)").length >= 1, null, { timeout: 10000 });
+      // Nada que un móvil pueda buscar: la edad no es una dirección.
+      for (const t of ["¿Qué hago?", "Hay un hombre de 40 años que no respira", "¿Ya viene?", "¿Me escuchás?", "¿Qué tengo que hacer?", "Apurate por favor"]) {
+        if ((await decir(page, t)) === false) break;
+      }
+      await page.waitForSelector("#ver-informe:not([hidden])", { timeout: 20000 });
+      const feed = await page.locator("#feed").innerText();
+      assert.match(feed, /no puedo mandarte el móvil/, "cierra abandonando, no despachando");
+      assert.ok(estados.some(e => /NO tenés la ubicación/.test(e)), "la app le hace aclarar que sin ubicación no sale nada");
+      assert.ok(!estados.some(e => /El móvil está en camino y le faltan/.test(e)), "nunca le dice que el móvil está en camino");
+      assert.ok(!estados.some(e => /Datos que YA tenés[^\n]*ubicacion/.test(e)), "la ubicación inventada no entra en la grilla");
+      await page.context().close();
+    } finally {
+      geminiFalso.operador = null;
+    }
   });
 
   await prueba("lego en una clase: entra por link, RCP guiada hasta que llega la ambulancia, y el tablero lo ve", async () => {
@@ -345,6 +384,10 @@ try {
     await api("/api/datos", { accion: "contacto", nombre: "Marta Instructora", email: "marta@example.com", rol: "Instructora de RCP", mensaje: "Quiero probarlo" });
     await page.click('#tabs button[data-t="contactos"]');
     await page.waitForFunction(() => /Marta Instructora/.test(document.querySelector("#co-tabla").textContent));
+    // Pedido de supresión: se borra desde el panel, con confirmación.
+    await page.locator("#co-tabla tr", { hasText: "Marta Instructora" }).locator("button", { hasText: "Borrar" }).click();
+    await page.waitForFunction(() => !/Marta Instructora/.test(document.querySelector("#co-tabla").textContent));
+    assert.ok(!(await api("/api/datos", { accion: "contactos" }, { "x-panel": "ADMIN-DE-PRUEBA-99" })).contactos.some(c => c.nombre === "Marta Instructora"));
     await page.click('#tabs button[data-t="uso"]');
     await page.waitForSelector("#us-cols .c");
     assert.equal(await page.locator("#us-cols .c").count(), 30);
