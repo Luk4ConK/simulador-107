@@ -34,11 +34,19 @@ carpeta «Simulador 107 · Operativa» (no en el repo). Veredicto: viable a esca
 31/03/2027 y decisión con cuatro criterios (kappa ≥ 0,6 con ≥ 50 revisiones a ciegas, 5
 instructores externos activos, 3 compromisos de pago, baja del tiempo hasta la ubicación).
 
-Existe además una copia publicada como artifact de Claude, que se usa para escribir
-guiones gratis (sin gastar API). Ahí el micrófono NO funciona — el contenedor de Claude
-no le pasa el permiso, da `NotAllowedError` — así que esa copia se usa sólo en modo
-texto y no tiene manos libres. Si cambiás escenarios o rúbrica, avisá que conviene
-reflejarlo también en esa copia.
+Existe además una copia publicada como artifact de Claude
+(https://claude.ai/artifact/XcYsqaPVXuPJqJnG8nikGi), que se usa para escribir guiones
+gratis (sin gastar API): el operador y la devolución los hace Claude con la cuenta de
+quien la abre (capacidad `sample`), y el informe se baja con la capacidad `downloads`.
+Ahí el micrófono NO funciona — el contenedor de Claude no le pasa el permiso, da
+`NotAllowedError` — así que esa copia se usa sólo en modo texto y no tiene manos libres,
+ni código de acceso, ni clases en vivo, ni registro. **No se edita a mano**: se arma desde
+`index.html` con `node herramientas/copia-claude.mjs salida.html`, se prueba con
+`NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs` y se publica en esa misma
+dirección con `capabilities: {sample: {}, downloads: true}`. Cada reemplazo del armador
+exige encontrar su texto exactamente una vez: si cambiás `index.html` y alguno deja de
+calzar, el armador se detiene y dice cuál; ajustalo ahí. Si cambiás escenarios, rúbrica o
+el prompt del operador, regenerá y republicá la copia.
 
 ## Archivos
 
@@ -57,6 +65,7 @@ sw.js                 service worker: abre rápido, nunca cachea /api/
 vercel.json           maxDuration de las funciones, direcciones cortas, cabeceras
 icons/                íconos
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
+herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
 README.md             guía de despliegue, escrita para el usuario
 ```
 
@@ -358,6 +367,7 @@ navegador usa el Playwright global y el Chromium del entorno):
 ```
 node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs   # servidor y rúbrica, sin red
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs            # punta a punta en Chromium
+NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs  # la copia de Claude, con un Claude falso
 RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107
 ```
 
