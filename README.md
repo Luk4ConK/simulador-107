@@ -2,6 +2,8 @@
 
 App web donde el alumno llama al sistema de emergencias y habla en voz alta con un operador simulado. Al cortar recibe la devolución sobre qué datos del protocolo pasó y cuáles faltaron.
 
+Sirve para dos públicos: la formación de guardavidas (el operador le pide lo que sólo un entrenado sabe dar) y los cursos de RCP para la comunidad (el operador reconoce el paro y guía la RCP por teléfono). Con la base de datos conectada suma clases en vivo para varios grupos a la vez, registro de prácticas y un panel para los instructores.
+
 Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular como una app más, y la clave de API queda en el servidor: los alumnos nunca la ven ni la pueden copiar.
 
 ---
@@ -39,16 +41,32 @@ En Vercel: *Settings* → *Environment Variables*. Agregá:
 | `GEMINI_API_KEY` | la clave de Google AI Studio | Una de las dos |
 | `ANTHROPIC_API_KEY` | la clave de Claude | Una de las dos |
 | `CODIGO_ACCESO` | una palabra o número que le das a los alumnos, ej. `GV2027` | No, pero conviene |
+| `CODIGO_ADMIN` | tu código de administrador: largo y sólo tuyo. Abre todo el panel | Sí, para usar el panel |
+| `TITULAR_NOMBRE`, `TITULAR_CUIT`, `TITULAR_DOMICILIO` | tus datos como titular del servicio. Salen en los términos y en la privacidad | Sí, antes de mostrar las páginas públicas |
+| `CONTACTO_EMAIL`, `CONTACTO_WHATSAPP` | dónde te escriben los interesados | Al menos uno |
+| `NOMBRE_PRINCIPAL` | el nombre de la cuenta principal, si no es "Sumar Salud" | No |
+| `CODIGO_DEMO` | el código de alumnos de una cuenta "Demo pública" creada en el panel. La página para instructores lo muestra | No |
+| `MOSTRAR_PRECIOS` | `1` muestra los planes en la página para instructores. **Recién al pasar al plan pago de Vercel** | No |
 
-Si cargás las dos, manda Gemini. Para pasarte a Claude, borrá `GEMINI_API_KEY`.
+Si cargás las dos claves, manda Gemini. Para pasarte a Claude, borrá `GEMINI_API_KEY`.
 
 Variables opcionales para ajustar sin tocar código: `MODELO_OPERADOR` y `MODELO_EVALUADOR` (por si querés otro modelo), y `GEMINI_SIN_PENSAR=1` si con Gemini notás que el operador tarda demasiado en contestar.
 
-Si ponés `CODIGO_ACCESO`, la app pide ese código la primera vez y lo recuerda en ese celular. Sin código, cualquiera con el link puede practicar y gastar el crédito de la ONG.
+Si ponés `CODIGO_ACCESO`, la app pide ese código la primera vez y lo recuerda en ese celular. Sin código, cualquiera con el link puede practicar y gastar la cuota.
 
 **Después de agregar variables hay que volver a desplegar** (*Deployments* → los tres puntos del último → *Redeploy*), si no la función sigue sin verlas.
 
-## 4. Comprobar que la clave quedó bien
+## 4. Conectar la base de datos
+
+Sin base de datos el simulador anda igual que siempre, pero no hay clases en vivo, ni registro de prácticas, ni panel. Conectarla lleva cinco minutos y es gratis:
+
+1. En Vercel, en el proyecto: *Storage* → *Create Database* (o *Browse Marketplace*) → **Upstash for Redis** → plan gratuito.
+2. Conectala al proyecto. Vercel carga solo las variables que necesita (`UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`, o sus equivalentes `KV_REST_API_...`).
+3. *Deployments* → *Redeploy*.
+
+La capa gratuita de Upstash trae 500.000 comandos por mes; una clase de tres horas con el tablero abierto gasta menos de 11.000.
+
+## 5. Comprobar que todo quedó bien
 
 Antes de probar la app, abrí en el navegador:
 
@@ -56,13 +74,13 @@ Antes de probar la app, abrí en el navegador:
 https://TU-APP.vercel.app/api/chat?diag=1
 ```
 
-Te devuelve un texto corto que dice si la clave está cargada, qué modelos puede usar tu cuenta, y el resultado de una llamada de prueba. Si `prueba.ok` es `true`, está todo listo. Si dice `claveCargada: false`, falta cargar la variable o falta redeployar después de cargarla.
+Te devuelve un texto corto que dice si la clave está cargada, qué modelos puede usar tu cuenta, el resultado de una llamada de prueba y si la base de datos responde. Si `prueba.ok` es `true`, está todo listo. Si dice `claveCargada: false`, falta cargar la variable o falta redeployar después de cargarla.
 
 Esa dirección no muestra la clave, solo si funciona.
 
-Sobre los modelos: la app prueba varios en orden y se queda con el primero que tu cuenta acepte, así que no tenés que averiguar cuál te toca. Si querés forzar uno de la lista que devuelve el diagnóstico, cargalo en `MODELO_OPERADOR`.
+Sobre los modelos: la app prueba varios en orden y se queda con el primero que tu cuenta acepte, así que no tenés que averiguar cuál te toca. Si un modelo gratuito se queda sin cuota en plena clase, pasa solo al siguiente. Si querés forzar uno de la lista que devuelve el diagnóstico, cargalo en `MODELO_OPERADOR`.
 
-## 5. Probarlo
+## 6. Probarlo
 
 Abrí el link que te da Vercel (algo como `simulador-107.vercel.app`) desde el celular, en Chrome. La primera vez que toques *Llamar al 107* el navegador pide el micrófono: aceptá.
 
@@ -70,23 +88,41 @@ Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pan
 
 ---
 
+## El panel del instructor
+
+Está en la dirección del simulador más `/panel`. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
+
+- **Clase en vivo.** Abrís una clase y te da un código de seis letras para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima y, al final, qué criterio costó más en toda la clase.
+- **Prácticas.** Cada llamada queda con su transcripción. Podés revisarla criterio por criterio (a ciegas: lo que dijo la IA se ve recién después de marcar lo tuyo), borrarla o descargar todo en una planilla.
+- **Alumnos.** La evolución del puntaje de cada grupo o alumno.
+- **Calidad.** Cuánto coincide la IA con los instructores (kappa de Cohen), con las revisiones a ciegas.
+- **Escenarios.** Escenarios propios de la cuenta, que ven todos sus alumnos en cualquier celular.
+- **Mi cuenta.** Los códigos de alumnos y de instructor, y cómo cambiarlos.
+- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores, y el uso diario con los días en que se agotó la cuota gratuita.
+
 ## Qué le pasás a los alumnos
 
-El link y el código de acceso. Nada más. No necesitan cuenta, ni instalar nada, ni que vos estés presente.
+Para una clase: el código de la clase en vivo (o el link que copia el panel). Para practicar por su cuenta: el link y el código de alumnos de tu cuenta. Nada más. No necesitan cuenta ni instalar nada.
+
+Antes de practicar conviene leerles el aviso: es una simulación, usen el nombre del grupo y datos inventados, y la conversación queda guardada para que la revises (se borra sola a los 13 meses).
+
+## Quién llama: guardavidas o persona sin formación
+
+En la pantalla de inicio cada alumno elige si practica como guardavidas o como persona sin formación; en una clase en vivo lo fija el instructor. Como persona sin formación, el operador ayuda a reconocer el paro, pide el altavoz y guía la RCP hasta que llega la ambulancia (sólo compresiones en adultos, con ventilaciones en chicos y ahogados). La devolución mide cuánto tardó en empezar a comprimir.
 
 ## Cargar escenarios sin tocar código
 
-En la pantalla de inicio hay una tarjeta **"+ Cargar un escenario propio"**. Completás nombre, situación que ve el alumno, ubicación real y localidad, y queda guardado en ese navegador, listo para practicar. Se puede editar y borrar.
+Desde el panel, en *Escenarios*: quedan guardados en la base y los ven todos los alumnos de la cuenta.
 
-Sirve para probar un guion nuevo en el momento. Ojo: queda **solo en ese celular o esa computadora** — no lo ven los alumnos. Cuando un escenario ya esté aceitado, tocá *Exportar mis escenarios*, y pegá lo que sale dentro de la lista `SCENARIOS` en `index.html`. Ahí sí lo ve todo el mundo.
+En la pantalla de inicio del simulador sigue la tarjeta **"+ Cargar un escenario propio"**, que guarda el escenario sólo en ese navegador: sirve para probar un guion al momento. Cuando uno ya esté aceitado para todos los que usen el simulador, tocá *Exportar mis escenarios* y pegá lo que sale dentro de la lista `SCENARIOS` en `index.html`.
 
 ## Cuánto cuesta
 
-Cada llamada practicada usa dos modelos: uno rápido y barato para la conversación (`claude-haiku-4-5`) y uno más criterioso para la devolución final (`claude-sonnet-5`).
+Hoy corre en la capa gratuita de Gemini, de Vercel y de Upstash: **cero pesos**. La capa gratuita de Gemini tiene topes por modelo, por minuto y por día; la app los reparte entre varios modelos para aguantar 8 grupos a la vez.
 
-Una práctica completa de 6 a 8 intercambios sale alrededor de **3 centavos de dólar**. Un curso de 15 alumnos haciendo 3 prácticas cada uno: menos de 2 dólares. Vercel, en plan gratuito, aguanta este uso de sobra.
+Si fuera pago: unos **USD 0,036 por práctica** con Gemini (unos $67 con IVA, a septiembre de 2026), más USD 20 por mes de Vercel Pro, que es obligatorio el día que se le cobra a alguien, porque el plan gratuito de Vercel no admite uso comercial. Con Claude cuesta más por práctica, aunque el código usa caché del prompt para bajarlo.
 
-Conviene igual poner un límite de gasto mensual en el panel de la API, por las dudas.
+El detalle, el plan de negocio, el paso a planes pagos y la operativa están en el Drive del titular, carpeta **«Simulador 107 · Operativa»**.
 
 ---
 
@@ -94,26 +130,48 @@ Conviene igual poner un límite de gasto mensual en el panel de la API, por las 
 
 Todo el contenido vive en `index.html`, arriba del todo del `<script>`:
 
-- **`SCENARIOS`** — los escenarios. Copiá uno y cambiale el texto: `title` (nombre), `card` (la bajada de la tarjeta), `scene` (lo que el alumno "ve"), `addr` (la dirección real donde está parado) y `zona` (la localidad que conoce el operador).
-- **`CHECKS`** — los criterios de la rúbrica. Si agregás o sacás uno, se actualizan solos la pantalla de devolución y el informe descargable.
-- **`instrucciones()`** — cómo se comporta el operador: el orden del interrogatorio, cuándo repregunta, cuándo da RCP guiada, cuándo cierra. Es el archivo donde afinar el realismo.
-- **`DIFF_TXT`** y el bloque `tone` dentro de `instrucciones()` — los tres niveles de operador.
-- **`APERTURA`** — la frase con la que atiende.
+- **`SCENARIOS`**: los escenarios fijos, con su `perfil` (guardavidas o lego), la `guia` que usa el operador y `notasInstructor`, el guion que muestra el panel.
+- **`CHECKS`** y **`CHECKS_LEGO`**: los criterios de la rúbrica para cada perfil. Cada guía suma los suyos en `GUIAS`.
+- **`GUIAS`**: lo que cambia de un tipo de escenario a otro (ahogamiento, paro, trauma, y las dos de RCP guiada).
+- **`instrucciones()`**: cómo se comporta el operador. Es el lugar donde afinar el realismo.
+- **`APERTURA`**: la frase con la que atiende.
+
+Si cambiás escenarios o rúbrica, conviene reflejarlo también en la copia del simulador publicada como artifact de Claude, la que se usa para escribir guiones.
 
 ## Archivos
 
 ```
-index.html               la app entera (pantallas, voz, rúbrica)
-api/chat.js              la función del servidor: guarda la clave y habla con la API
+index.html               la app de los alumnos (pantallas, voz, rúbrica)
+panel.html               el panel del instructor y del administrador
+instructores.html        la presentación para instructores, con formulario de contacto
+fundamentos.html         por qué el simulador hace lo que hace, con las fuentes
+terminos.html            términos de uso
+privacidad.html          política de privacidad
+publico.css, publico.js  estilo y datos del titular de las páginas públicas
+api/chat.js              el operador y la devolución: guarda la clave y habla con la IA
+api/datos.js             clases, registro, panel y contactos
 manifest.webmanifest     datos para que se instale como app
 sw.js                    hace que abra rápido; nunca cachea la conversación
-vercel.json              permite que la evaluación tarde hasta 60 s
+vercel.json              tiempos de las funciones y direcciones cortas (/panel, /instructores…)
 icons/                   íconos de la app
+pruebas/                 pruebas automáticas (no se publican)
 ```
+
+## Pruebas (para quien programe)
+
+No hace falta instalar nada del proyecto; sólo Node 20 o más:
+
+```
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs
+NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs      # necesita Playwright
+CON_BASE=1 node pruebas/servidor.mjs                    # la app entera en http://localhost:8107, con IA y base de mentira
+```
+
+Las primeras prueban el servidor y la rúbrica sin red; la tercera recorre la app, el panel y las páginas públicas en un navegador real. Correlas antes de subir un cambio: Vercel publica cada push solo.
 
 ## Cosas que conviene saber
 
 - **El operador siempre necesita internet.** La app se abre offline, pero sin señal no hay conversación ni devolución.
-- **El reconocimiento de voz es el del navegador.** Anda muy bien en Chrome de Android. En iPhone funciona pero es más quisquilloso. Si falla, la app pasa sola a modo texto y el ejercicio se puede terminar igual.
-- **La voz del operador es la del sistema operativo.** Suena a navegador. Si más adelante quieren que suene a operador de radio de verdad, el paso siguiente es una API de voz, que multiplica el costo por unas diez veces pero cambia bastante la experiencia.
-- **No guarda nada.** Cada práctica vive en el celular del alumno hasta que descarga el informe. Si quieren registro por alumno (quién practicó, cuántas veces, cómo evolucionó), eso es una base de datos y es el próximo paso natural.
+- **El reconocimiento de voz es el del navegador.** Anda muy bien en Chrome de Android. En iPhone funciona pero es más quisquilloso. Si falla, la app pasa sola a modo texto y el ejercicio se puede terminar igual. En Chrome, el audio lo transcribe Google; el simulador recibe sólo el texto y no guarda audio.
+- **La voz del operador es la del sistema operativo.** Suena a navegador. Si más adelante quieren que suene a operador de radio de verdad, el paso siguiente es una API de voz, que multiplica el costo pero cambia bastante la experiencia.
+- **Qué se guarda.** Con la base conectada, cada práctica queda con su transcripción y su devolución durante 13 meses, para que el instructor la revise. En la capa gratuita de Gemini, Google puede usar las conversaciones para mejorar sus productos: por eso se practica con nombres de grupo y datos inventados.
