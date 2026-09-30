@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador 107 · para instructores</title>
+<meta name="description" content="Tus alumnos llaman al 107 en voz alta y un operador simulado con IA les pregunta como en una llamada real. Al cortar, cada uno recibe una devolución criterio por criterio. Para cursos de RCP y de guardavidas.">
+<meta property="og:title" content="Simulador 107 · que la llamada también se practique">
+<meta property="og:description" content="Un simulador por voz de la llamada al sistema de emergencias, para cursos de RCP y de guardavidas.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#08191C">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="publico.css">
+<style>
+  .hero{padding-block:8px 72px}
+  .hero-grid{display:grid; gap:40px; grid-template-columns:1.15fr .85fr; align-items:center; margin-top:36px}
+  .hero h1{font-size:clamp(34px, 5.4vw, 58px); letter-spacing:-.025em}
+  .hero h1 em{font-style:normal; color:var(--accent)}
+  .hero .bajada{font-size:18.5px; margin-top:18px}
+  .hero .acciones{display:flex; gap:12px; flex-wrap:wrap; margin-top:28px}
+  .hero .demo-nota{margin-top:14px; font-size:14px; color:var(--on-deep-2)}
+  .hero .demo-nota b{font-family:var(--mono); color:var(--on-deep); letter-spacing:.08em}
+
+  /* el teléfono de muestra */
+  .fono{background:var(--deep-2); border:1px solid var(--deep-line); border-radius:26px; padding:16px; max-width:380px; justify-self:center; width:100%;
+        box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+  .fono .cab{display:flex; align-items:center; gap:10px; padding:4px 4px 12px; border-bottom:1px solid var(--deep-line)}
+  .fono .punto{width:10px; height:10px; border-radius:50%; background:var(--accent); animation:latido 1.6s infinite}
+  @keyframes latido{0%,100%{opacity:1}50%{opacity:.35}}
+  .fono .cab b{font-family:var(--display); font-size:15px}
+  .fono .cab span{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--on-deep-2)}
+  .msj{margin-top:12px; font-size:14.5px; line-height:1.45; max-width:88%}
+  .msj .quien{display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--on-deep-2); margin-bottom:3px}
+  .msj p{background:var(--deep-3); border-radius:12px 12px 12px 4px; padding:9px 12px}
+  .msj.yo{margin-left:auto}
+  .msj.yo .quien{text-align:right}
+  .msj.yo p{background:var(--accent); color:#fff; border-radius:12px 12px 4px 12px}
+  .devo{margin-top:14px; background:var(--surface); color:var(--ink); border-radius:14px; padding:12px 14px; display:grid; grid-template-columns:auto 1fr; gap:4px 14px; align-items:center}
+  .devo .pts{grid-row:span 3; font-family:var(--display); font-weight:700; font-size:40px; line-height:1}
+  .devo .pts small{font-size:14px; color:var(--ink-3); font-weight:600}
+  .devo .l{font-size:13px}
+  .devo .l i{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle}
+
+  .cifras{display:grid; gap:14px; grid-template-columns:repeat(3,1fr); margin-top:32px}
+  .cifra{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px}
+  .cifra .v{font-family:var(--display); font-weight:700; font-size:44px; letter-spacing:-.02em; line-height:1}
+  .cifra p{margin-top:10px; color:var(--ink-2); font-size:15.5px}
+  .cifra .cita{margin-top:10px}
+
+  .pasos{display:grid; gap:14px; grid-template-columns:repeat(3,1fr); margin-top:32px; counter-reset:paso}
+  .paso{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px; counter-increment:paso}
+  .paso::before{content:counter(paso); display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:var(--accent-soft);
+                color:var(--accent); font-family:var(--display); font-weight:700; margin-bottom:12px}
+  .paso h3{font-size:19px}
+  .paso p{margin-top:8px; color:var(--ink-2); font-size:15.5px}
+
+  .modos{display:grid; gap:14px; grid-template-columns:1fr 1fr; margin-top:32px}
+  .modo{border:1px solid var(--line); border-radius:var(--r); padding:22px; background:var(--surface)}
+  .modo h3{font-size:21px}
+  .modo .lbl{display:block; margin-bottom:8px}
+  .modo ul{margin:12px 0 0; padding-left:20px; color:var(--ink-2); font-size:15.5px}
+  .modo li{margin-top:6px}
+
+  .panel-grid{display:grid; gap:40px; grid-template-columns:1fr 1fr; align-items:center; margin-top:32px}
+  .lista-check{list-style:none; padding:0; margin:0; display:grid; gap:12px}
+  .lista-check li{padding-left:30px; position:relative; font-size:16px}
+  .lista-check li::before{content:""; position:absolute; left:0; top:5px; width:18px; height:18px; border-radius:5px; background:var(--accent-soft); border:1px solid var(--accent)}
+  .lista-check li b{font-family:var(--display)}
+  .tablero{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px}
+  .tablero .codigo{font-family:var(--mono); font-size:44px; letter-spacing:.14em; text-align:center; padding:6px 0 12px}
+  .tablero .grupos{display:grid; grid-template-columns:repeat(2,1fr); gap:8px}
+  .tablero .g{border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:13.5px; display:flex; align-items:center; gap:8px}
+  .tablero .g b{font-family:var(--display)}
+  .tablero .g .p{margin-left:auto; font-weight:600; font-size:17px}
+  .tablero .g i{width:8px; height:8px; border-radius:50%; flex:none}
+
+  .guia{counter-reset:etapa; list-style:none; padding:0; margin:28px 0 0; display:grid; gap:14px}
+  .guia li{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px 18px 64px; position:relative; counter-increment:etapa}
+  .guia li::before{content:counter(etapa); position:absolute; left:18px; top:18px; width:32px; height:32px; border-radius:50%; background:var(--ink); color:var(--ground);
+                   display:grid; place-items:center; font-family:var(--display); font-weight:700}
+  .guia h3{font-size:18px}
+  .guia p{margin-top:6px; color:var(--ink-2); font-size:15.5px}
+  .guia .t{font-family:var(--mono); font-size:12px; color:var(--ink-3); margin-left:6px; font-weight:400}
+
+  .no-es{display:grid; gap:12px; grid-template-columns:repeat(2,1fr); margin-top:28px}
+  .no-es div{border:1px dashed var(--line); border-radius:var(--r); padding:16px 18px; font-size:15.5px; color:var(--ink-2)}
+  .no-es b{color:var(--ink); font-family:var(--display)}
+
+  .planes{display:grid; gap:14px; grid-template-columns:repeat(3,1fr); margin-top:32px}
+  .plan{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:22px; display:flex; flex-direction:column; gap:10px}
+  .plan.destacado{border-color:var(--accent); box-shadow:inset 0 3px 0 var(--accent)}
+  .plan h3{font-size:20px}
+  .plan .precio{font-family:var(--display); font-weight:700; font-size:34px; letter-spacing:-.02em}
+  .plan .precio small{font-size:15px; color:var(--ink-3); font-weight:600}
+  .plan ul{margin:0; padding-left:20px; color:var(--ink-2); font-size:15px}
+  .plan .btn{margin-top:auto}
+  .piloto{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:24px; margin-top:28px; display:grid; gap:10px; max-width:760px}
+
+  .contacto-grid{display:grid; gap:40px; grid-template-columns:.9fr 1.1fr; margin-top:8px}
+  form.contacto{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:22px; display:grid; gap:14px}
+  .campo{display:grid; gap:6px; font-size:14px; color:var(--ink-2)}
+  .campo input,.campo select,.campo textarea{width:100%; padding:12px; font-size:16px; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:10px}
+  .campo textarea{resize:vertical}
+  .dos{display:grid; gap:14px; grid-template-columns:1fr 1fr}
+  .trampa{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden}
+  .estado-form{font-size:15px; min-height:22px}
+  .estado-form.ok{color:var(--ok)} .estado-form.mal{color:var(--bad)}
+
+  @media (max-width: 860px){
+    .hero-grid,.panel-grid,.contacto-grid{grid-template-columns:1fr}
+    .cifras,.pasos,.planes{grid-template-columns:1fr}
+    .modos,.no-es{grid-template-columns:1fr}
+    .seccion{padding-block:48px}
+  }
+  @media (max-width: 480px){ .dos{grid-template-columns:1fr} .tablero .codigo{font-size:34px} }
+</style>
+</head>
+<body>
+
+<header class="oscura hero">
+  <div class="ancho">
+    <div class="barra-sup">
+      <a class="marca" href="instructores.html"><span class="sigil">107</span>Simulador 107</a>
+      <nav class="plegable"><a href="#como">Cómo funciona</a><a href="#guia">Guía de clase</a><a href="fundamentos.html">Fundamentos</a><a href="panel.html">Entrar al panel</a></nav>
+    </div>
+    <div class="hero-grid">
+      <div>
+        <span class="lbl">Para instructores de RCP y de guardavidas</span>
+        <h1 style="margin-top:14px">Que tus alumnos <em>hagan</em> la llamada al 107, no que digan «llamo al 107».</h1>
+        <p class="bajada">Un simulador por voz. El alumno marca el 107 en su celular y habla con un operador simulado con inteligencia artificial, que sólo sabe lo que el alumno le dice. Al cortar recibe una devolución: qué datos transmitió, cuáles faltaron y cuánto tardó en dar la ubicación.</p>
+        <div class="acciones">
+          <a class="btn pri" href="#contacto">Quiero usarlo en mis cursos</a>
+          <a class="btn sec" href="./" data-demo data-demo-link hidden>Probar la demo</a>
+          <a class="btn sec" href="#como">Ver cómo funciona</a>
+        </div>
+        <p class="demo-nota" data-demo hidden>Demo abierta: entrá con el código <b data-demo-codigo></b>. No uses datos personales reales: es una práctica.</p>
+      </div>
+      <div class="fono" aria-label="Ejemplo de una llamada en el simulador">
+        <div class="cab"><span class="punto"></span><b>107 · Emergencias</b><span class="num">01:12</span></div>
+        <div class="msj"><span class="quien">Operador</span><p>107, emergencias. ¿Cuál es su emergencia?</p></div>
+        <div class="msj yo"><span class="quien">Alumno</span><p>Soy guardavidas del balneario de la Costanera Este, puesto 2. Saqué a un hombre del agua: no responde y no respira.</p></div>
+        <div class="msj"><span class="quien">Operador</span><p>¿Ya están haciendo RCP? ¿Tienen un DEA ahí?</p></div>
+        <div class="msj yo"><span class="quien">Alumno</span><p>Sí, estoy comprimiendo; mi compañero trae el DEA. La ambulancia entra por la bajada frente al camping.</p></div>
+        <div class="devo">
+          <div class="pts num">82<small>/100</small></div>
+          <div class="l"><i style="background:var(--ok)"></i>Ubicación y acceso: a los 0:06</div>
+          <div class="l"><i style="background:var(--ok)"></i>Conciencia, respiración, RCP y DEA</div>
+          <div class="l"><i style="background:var(--warn)"></i>Faltó: cuánto tiempo estuvo sumergido</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="seccion">
+    <div class="ancho">
+      <span class="lbl">El eslabón que no se practica</span>
+      <h2 style="margin-top:10px">En los cursos se practica la RCP con maniquí. La llamada, casi nunca.</h2>
+      <p class="bajada">Llamar es el primer eslabón de la cadena de supervivencia, y el que decide cuánto tarda la ambulancia y si llega al lugar correcto. Pero en la mayoría de las prácticas se resuelve con una frase dicha al aire. Lo que no se practica, bajo presión se olvida: la dirección exacta, por dónde entrar, quién espera al móvil.</p>
+      <div class="cifras">
+        <div class="cifra"><div class="v num">72 s</div><p>tardó en promedio la central en ubicar el lugar cuando quien llamaba lo describía de palabra, en un estudio con llamadas simuladas. Con geolocalización, 35 s.</p><p class="cita">Ecker y col., Resuscitation 2020</p></div>
+        <div class="cifra"><div class="v num">1,2 km</div><p>fue el error promedio de la ubicación descripta de palabra en ese mismo estudio. Una dirección bien dada es lo que más le sirve a la ambulancia.</p><p class="cita">Ecker y col., Resuscitation 2020</p></div>
+        <div class="cifra"><div class="v num">5,5</div><p>puntos de probabilidad de sobrevivir se pierden por cada minuto de paro sin RCP ni desfibrilación. Cada segundo de la llamada cuenta.</p><p class="cita">Larsen y col., Ann Emerg Med 1993</p></div>
+      </div>
+      <p style="margin-top:18px"><a href="fundamentos.html">Todas las fuentes y cómo se usaron →</a></p>
+    </div>
+  </section>
+
+  <section class="seccion" id="como">
+    <div class="ancho">
+      <span class="lbl">Cómo funciona</span>
+      <h2 style="margin-top:10px">Una llamada de verdad, con devolución inmediata</h2>
+      <div class="pasos">
+        <div class="paso"><h3>Marca el número</h3><p>El alumno lee la situación y marca en un teclado de teléfono. Si marca otro número, la app le explica cuál corresponde y lo deja volver a marcar: saber a quién llamar es parte del ejercicio.</p></div>
+        <div class="paso"><h3>Habla, con las manos libres</h3><p>El operador atiende y pregunta como en una llamada real. Es ciego a la escena: si el alumno no dice dónde está, el operador no lo sabe. El turno se cierra solo cuando el alumno deja de hablar.</p></div>
+        <div class="paso"><h3>Recibe su devolución</h3><p>Al cortar, cada criterio aparece como logrado, a medias o faltante, con la frase que lo justifica. El puntaje lo calcula la app con pesos fijos: sin la ubicación, la llamada no pasa de 40 aunque todo lo demás esté bien.</p></div>
+      </div>
+      <p class="bajada" style="margin-top:22px">Funciona en el navegador del celular, sin instalar nada. Para hablar conviene Chrome en Android; si el navegador no reconoce la voz, se puede practicar escribiendo.</p>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <div class="ancho">
+      <span class="lbl">Dos modos</span>
+      <h2 style="margin-top:10px">El operador cambia según quién llama</h2>
+      <div class="modos">
+        <div class="modo">
+          <span class="lbl">Formación de guardavidas</span>
+          <h3>Un profesional que informa</h3>
+          <ul>
+            <li>Cuando el alumno se identifica como guardavidas, el operador le pide lo que sólo un entrenado puede dar: cuánto estuvo sumergida la víctima, los signos para clasificar el ahogamiento, si ya está comprimiendo, si colocó el DEA.</li>
+            <li>No le dicta maniobras: se supone que las sabe. Pregunta, despacha y corta, como un despachador real.</li>
+            <li>Escenarios de ahogamiento, paro sin ahogamiento, dos víctimas y zambullida con posible lesión cervical.</li>
+          </ul>
+        </div>
+        <div class="modo">
+          <span class="lbl">Cursos de RCP para la comunidad</span>
+          <h3>RCP guiada por teléfono</h3>
+          <ul>
+            <li>El operador ayuda a reconocer el paro (incluida la respiración agónica, que engaña) y guía las compresiones hasta que llega la ambulancia.</li>
+            <li>Sólo compresiones en adultos; con ventilaciones en chicos y en ahogados, como recomiendan AHA y ERC en sus guías 2025.</li>
+            <li>La devolución mide cuánto tardó en empezar la RCP: la meta internacional es la primera compresión guiada antes de los 150 segundos.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <div class="ancho">
+      <span class="lbl">La clase</span>
+      <h2 style="margin-top:10px">Ocho grupos llamando a la vez, y vos viendo a todos</h2>
+      <div class="panel-grid">
+        <ul class="lista-check">
+          <li><b>Clase en vivo.</b> Abrís la clase desde tu panel y proyectás un código de seis letras. Cada grupo entra con su celular y escribe su nombre: no hacen falta cuentas ni mails.</li>
+          <li><b>Tablero.</b> Ves quién está llamando, quién terminó y con cuánto, y el guion del escenario para ir cantando la evolución de la víctima.</li>
+          <li><b>Resumen para el cierre.</b> Qué criterio costó más en toda la clase, para arrancar el debriefing por ahí.</li>
+          <li><b>Registro.</b> Cada práctica queda con su transcripción. Podés revisarla, corregir la nota de la IA y seguir la evolución de cada alumno.</li>
+          <li><b>Tus escenarios.</b> Cargás los tuyos con las direcciones reales de tu zona, y los ven todos tus alumnos.</li>
+        </ul>
+        <div class="tablero" aria-label="Ejemplo del tablero de una clase en vivo">
+          <div class="lbl">Código de la clase</div>
+          <div class="codigo num">K7P4MT</div>
+          <div class="grupos">
+            <div class="g"><i style="background:var(--ok)"></i><b>Grupo 1</b><span class="p num">91</span></div>
+            <div class="g"><i style="background:var(--accent)"></i><b>Grupo 2</b><span style="margin-left:auto; color:var(--ink-3)">en llamada</span></div>
+            <div class="g"><i style="background:var(--ok)"></i><b>Grupo 3</b><span class="p num">76</span></div>
+            <div class="g"><i style="background:var(--ok)"></i><b>Grupo 4</b><span class="p num">40</span></div>
+            <div class="g"><i style="background:var(--warn)"></i><b>Grupo 5</b><span style="margin-left:auto; color:var(--ink-3)">evaluando</span></div>
+            <div class="g"><i style="background:var(--accent)"></i><b>Grupo 6</b><span style="margin-left:auto; color:var(--ink-3)">en llamada</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="guia">
+    <div class="angosto">
+      <span class="lbl">Guía para dar la clase</span>
+      <h2 style="margin-top:10px">Cómo usarlo en una clase de 45 minutos</h2>
+      <p class="bajada">El simulador no reemplaza la práctica con maniquí: la completa. Lo que mejor funciona es que la llamada se haga al mismo tiempo que la reanimación, como pasa de verdad.</p>
+      <ol class="guia">
+        <li><h3>Antes de la clase <span class="t">10 min</span></h3><p>Probá una llamada desde tu celular para darle permiso al micrófono. Abrí la clase en el panel y proyectá el código. Si el aula es chica o hay eco (un natatorio), conviene un auricular con micrófono por grupo, o usar el modo con botón.</p></li>
+        <li><h3>Grupos de tres, con roles <span class="t">2 min</span></h3><p>Uno llama, otro comprime en el maniquí y el tercero observa con la lista de criterios. El que llama tiene el teléfono en altavoz y no lo mira: tiene las manos ocupadas.</p></li>
+        <li><h3>La llamada <span class="t">3 a 5 min</span></h3><p>Mientras llaman, vos cantás en voz alta cómo evoluciona la víctima, con el guion del escenario que te muestra el panel. El operador no lo sabe: si el alumno no lo transmite, no existe.</p></li>
+        <li><h3>Devolución de cada grupo <span class="t">2 min</span></h3><p>Leen juntos la devolución. El observador suma lo que vio y la app no puede ver: si la RCP se cortó mientras hablaban, si alguien se quedó mirando el teléfono.</p></li>
+        <li><h3>Rotar y repetir <span class="t">2 rondas más</span></h3><p>Cada uno pasa por los tres roles. Repetir enseguida, con la corrección fresca, es lo que fija la conducta: es la lógica de la práctica deliberada.</p></li>
+        <li><h3>Cierre con toda la clase <span class="t">10 min</span></h3><p>Con el resumen del panel a la vista, un debriefing en tres tiempos: cómo se sintieron, qué pasó y por qué (empezando por el criterio que más costó), y qué se llevan para la próxima vez.</p></li>
+      </ol>
+      <p style="margin-top:16px; color:var(--ink-2)">La base de esta guía (simulación con devolución, práctica deliberada, debriefing estructurado) está en <a href="fundamentos.html#aprendizaje">los fundamentos</a>.</p>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <div class="ancho">
+      <span class="lbl">Con los pies en la tierra</span>
+      <h2 style="margin-top:10px">Lo que el simulador no es</h2>
+      <div class="no-es">
+        <div><b>No es una certificación.</b> No mide compresiones ni habilita a nada: entrena la llamada.</div>
+        <div><b>No reemplaza al instructor.</b> La devolución automática es una ayuda para practicar. Para usarla como evaluación, primero hay que medir cuánto coincide con los instructores, y el panel está hecho para eso.</div>
+        <div><b>No es el protocolo oficial de ninguna central.</b> El operador sigue las recomendaciones internacionales (AHA, ERC) y lo que los instructores corrigieron en el aula.</div>
+        <div><b>No es para emergencias reales.</b> Ante una emergencia de verdad, llamá al 107 (o al número de tu jurisdicción) desde un teléfono.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="planes">
+    <div class="ancho">
+      <span class="lbl">Cómo sumarte</span>
+      <div data-sin-precios>
+        <h2 style="margin-top:10px">Etapa piloto</h2>
+        <div class="piloto">
+          <p>El simulador se usa en la formación de guardavidas de la Asociación Civil Sumar Salud (Santa Fe), donde nació. Estamos sumando a un grupo chico de instructores de RCP y de guardavidas para usarlo en sus cursos <b>sin costo</b> durante el piloto, a cambio de una sola cosa: que revisen algunas prácticas desde el panel, para medir qué tan bien corrige la inteligencia artificial.</p>
+          <p>Si das cursos y te interesa, dejanos tus datos y te escribimos.</p>
+          <div><a class="btn pri" href="#contacto">Sumarme al piloto</a></div>
+        </div>
+      </div>
+      <div data-precios hidden>
+        <h2 style="margin-top:10px">Planes</h2>
+        <p class="bajada">Precios finales en pesos (factura C). Se actualizan cada tres meses.</p>
+        <div class="planes" id="planes-lista"></div>
+        <p style="margin-top:16px; color:var(--ink-2)">¿Sos una organización sin fines de lucro que enseña RCP gratis a la comunidad? Escribinos: guardamos cupos sin cargo.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="contacto">
+    <div class="ancho contacto-grid">
+      <div>
+        <span class="lbl">Contacto</span>
+        <h2 style="margin-top:10px">Contanos qué cursos das</h2>
+        <p class="bajada">Te respondemos con una demo para tu próxima clase. Usamos estos datos sólo para responderte (<a href="privacidad.html">privacidad</a>).</p>
+        <p style="margin-top:18px; display:grid; gap:6px" data-si-contacto hidden><a data-contacto="email" hidden></a><a data-contacto="whatsapp" hidden target="_blank" rel="noopener"></a></p>
+      </div>
+      <form class="contacto" id="form-contacto" novalidate>
+        <div class="dos">
+          <label class="campo"><span>Nombre y apellido *</span><input name="nombre" required autocomplete="name" maxlength="80"></label>
+          <label class="campo"><span>Qué hacés</span><select name="rol"><option>Instructor/a de RCP</option><option>Instructor/a de guardavidas</option><option>Institución educativa</option><option>Organización o empresa</option><option>Otro</option></select></label>
+        </div>
+        <label class="campo"><span>Institución o escuela (si corresponde)</span><input name="institucion" autocomplete="organization" maxlength="120"></label>
+        <div class="dos">
+          <label class="campo"><span>Mail</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>
+          <label class="campo"><span>WhatsApp</span><input name="telefono" type="tel" autocomplete="tel" maxlength="40"></label>
+        </div>
+        <label class="campo"><span>Mensaje</span><textarea name="mensaje" rows="4" maxlength="1200" placeholder="Qué cursos das, cuántos alumnos por clase, dónde…"></textarea></label>
+        <label class="trampa" aria-hidden="true">No completar<input name="web" tabindex="-1" autocomplete="off"></label>
+        <button class="btn pri" type="submit">Enviar</button>
+        <p class="estado-form" id="form-estado" role="status"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="ancho">
+    <nav><a href="./">Simulador</a><a href="fundamentos.html">Fundamentos y fuentes</a><a href="terminos.html">Términos</a><a href="privacidad.html">Privacidad</a><a href="panel.html">Panel del instructor</a></nav>
+    <p>Simulación educativa: no llama a ningún número real. Ante una emergencia de verdad, llamá al 107 desde un teléfono.</p>
+    <p class="legal">Simulador 107 nació en la formación de guardavidas de la Asociación Civil Sumar Salud (Santa Fe, Argentina). Titular del servicio: <span data-titular="nombre"></span>. © <span data-anio></span>.</p>
+  </div>
+</footer>
+
+<script src="publico.js"></script>
+<script>
+(function(){
+  "use strict";
+  /* Planes: se muestran sólo con MOSTRAR_PRECIOS=1 en Vercel, que se activa al pasar al
+     plan pago de Vercel (el gratuito no admite uso comercial). Los precios se editan acá.
+     El razonamiento de cada número está en la planilla de precios del Drive. */
+  const PLANES = [
+    { nombre:"Prueba", precio:"Gratis", periodo:"30 días", items:["Hasta 30 prácticas", "Clases en vivo y panel completo", "Sin tarjeta"], boton:"Pedir la prueba" },
+    { nombre:"Instructor", precio:"$ 29.000", periodo:"por mes", destacado:true, items:["Hasta 150 prácticas por mes", "Clases en vivo ilimitadas", "Escenarios propios", "Registro y revisión de prácticas"], boton:"Quiero este plan" },
+    { nombre:"Institución", precio:"$ 89.000", periodo:"por mes", items:["Hasta 600 prácticas por mes", "Un panel para todo el equipo docente", "Escenarios de tu institución", "Acompañamiento para la primera clase"], boton:"Hablemos" }
+  ];
+  const lista = document.getElementById("planes-lista");
+  PLANES.forEach(p => {
+    const d = document.createElement("div");
+    d.className = "plan" + (p.destacado ? " destacado" : "");
+    const h = document.createElement("h3"); h.textContent = p.nombre;
+    const pr = document.createElement("div"); pr.className = "precio num"; pr.textContent = p.precio + " ";
+    const sm = document.createElement("small"); sm.textContent = p.periodo; pr.append(sm);
+    const ul = document.createElement("ul"); p.items.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.append(li); });
+    const a = document.createElement("a"); a.className = "btn " + (p.destacado ? "pri" : "sec"); a.href = "#contacto"; a.textContent = p.boton;
+    a.addEventListener("click", () => { const m = document.querySelector("#form-contacto [name=mensaje]"); if(!m.value) m.value = "Me interesa el plan " + p.nombre + ". "; });
+    d.append(h, pr, ul, a);
+    lista.append(d);
+  });
+
+  // Formulario de contacto: va a la base del panel (pestaña Contactos del administrador).
+  const form = document.getElementById("form-contacto"), estado = document.getElementById("form-estado");
+  let contactoDirecto = "";
+  document.addEventListener("info-publica", e => {
+    const c = (e.detail && e.detail.contacto) || {};
+    contactoDirecto = c.email ? "escribinos a " + c.email : c.whatsapp ? "escribinos por WhatsApp al " + c.whatsapp : "";
+  });
+  form.addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const datos = Object.fromEntries(new FormData(form).entries());
+    datos.accion = "contacto"; datos.origen = "instructores";
+    if(!datos.nombre.trim() || (!datos.email.trim() && !datos.telefono.trim())){
+      estado.className = "estado-form mal";
+      estado.textContent = "Dejanos tu nombre y un mail o un WhatsApp para poder responderte.";
+      return;
+    }
+    const boton = form.querySelector("button"); boton.disabled = true;
+    estado.className = "estado-form"; estado.textContent = "Enviando…";
+    try{
+      const r = await fetch("/api/datos", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(datos) });
+      const d = await r.json().catch(() => ({}));
+      if(!r.ok) throw Object.assign(new Error(d.detalle || "error"), { code: d.error || r.status });
+      form.reset();
+      estado.className = "estado-form ok";
+      estado.textContent = "¡Listo, " + datos.nombre.trim().split(" ")[0] + "! Te escribimos en estos días.";
+    }catch(e){
+      estado.className = "estado-form mal";
+      estado.textContent = "No se pudo enviar (" + e.code + ")." + (contactoDirecto ? " Mientras tanto, " + contactoDirecto + "." : " Probá de nuevo en un rato.");
+    }finally{ boton.disabled = false; }
+  });
+})();
+</script>
+</body>
+</html>

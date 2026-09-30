@@ -314,6 +314,34 @@ try {
     await inst.context().close();
   });
 
+  await prueba("páginas públicas: presentación con formulario, fundamentos con la rúbrica real, términos y privacidad", async () => {
+    const page = await nuevaPagina();
+    await page.goto(base + "/instructores");
+    await page.waitForSelector("#planes-lista .plan", { state: "attached" });
+    assert.equal(await page.locator("[data-sin-precios]").isVisible(), true, "sin MOSTRAR_PRECIOS se ve la etapa piloto");
+    await page.fill("#form-contacto [name=nombre]", "Laura Instructora");
+    await page.click("#form-contacto button[type=submit]");
+    await page.waitForFunction(() => /mail o un WhatsApp/.test(document.querySelector("#form-estado").textContent));
+    await page.fill("#form-contacto [name=email]", "laura@example.com");
+    await page.click("#form-contacto button[type=submit]");
+    await page.waitForFunction(() => /Listo, Laura/.test(document.querySelector("#form-estado").textContent));
+    const leads = (await api("/api/datos", { accion: "contactos" }, { "x-panel": "ADMIN-DE-PRUEBA-99" })).contactos;
+    assert.ok(leads.some(l => l.nombre === "Laura Instructora" && l.origen === "instructores"));
+
+    await page.goto(base + "/fundamentos");
+    await page.waitForSelector("table.rub");
+    assert.equal(await page.locator("table.rub").count(), 2, "una tabla por perfil");
+    assert.match(await page.locator("#tablas-rubrica").innerText(), /Ubicación exacta/);
+    assert.ok(await page.locator(".refs li").count() >= 25);
+    for (const p of ["terminos", "privacidad"]) {
+      await page.goto(base + "/" + p);
+      await page.waitForFunction(() => document.querySelector("[data-titular]").textContent.length > 0);
+      // Sin TITULAR_NOMBRE en el entorno, la página lo dice en vez de inventarlo.
+      assert.match(await page.locator("[data-titular=nombre]").first().textContent(), /falta cargar TITULAR_NOMBRE/);
+    }
+    await page.context().close();
+  });
+
   assert.deepEqual(errores, [], "sin errores de JavaScript en la página");
   // El prompt del operador no se recorta nunca: tiene que quedar lejos del tope del servidor.
   const { gemini } = await import("./servidor.mjs");

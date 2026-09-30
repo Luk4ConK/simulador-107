@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fundamentos · Simulador 107</title>
+<meta name="description" content="Por qué el Simulador 107 hace lo que hace: cada decisión del operador y de la devolución, con la evidencia que la respalda y sus fuentes.">
+<meta name="theme-color" content="#08191C">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="publico.css">
+<style>
+  .rub td.n,.rub th.n{text-align:right; font-variant-numeric:tabular-nums}
+  .rub .crit{font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--accent)}
+  sup a{text-decoration:none; font-size:12px; color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="angosto">
+  <div class="barra-sup">
+    <a class="marca" href="instructores.html"><span class="sigil">107</span>Simulador 107</a>
+    <nav><a href="instructores.html">Para instructores</a><a href="./">Simulador</a></nav>
+  </div>
+</div>
+
+<main class="angosto doc">
+  <span class="lbl">Fundamentos y fuentes</span>
+  <h1 style="margin-top:10px">Por qué el simulador hace lo que hace</h1>
+  <p class="resumen">Cada comportamiento del operador y cada criterio de la devolución responden a una razón. Acá están esas razones, con la evidencia que las respalda y las correcciones que hicieron los instructores en el aula. Está escrito para instructores: sin jerga innecesaria, pero sin redondear lo que dicen los trabajos.</p>
+  <p class="fecha">Revisado el 30/09/2026 · guías vigentes: AHA 2025, ERC 2025 y la actualización AHA/AAP 2024 sobre ahogamiento</p>
+
+  <nav class="indice" aria-label="Contenido">
+    <span class="lbl">Contenido</span>
+    <ol>
+      <li><a href="#llamada">Por qué entrenar la llamada</a></li>
+      <li><a href="#guardavidas">Qué le pregunta el operador a un guardavidas</a></li>
+      <li><a href="#lego">RCP guiada por teléfono, para quien no es guardavidas</a></li>
+      <li><a href="#rubrica">La devolución: criterios y pesos</a></li>
+      <li><a href="#aprendizaje">Cómo se aprende con esto</a></li>
+      <li><a href="#ia">La inteligencia artificial y sus límites</a></li>
+      <li><a href="#aula">Correcciones del aula sobre la bibliografía</a></li>
+      <li><a href="#normas">Marco normativo en Argentina</a></li>
+      <li><a href="#referencias">Referencias</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="llamada">1. Por qué entrenar la llamada</h2>
+  <p>Llamar al sistema de emergencias es el primer eslabón de la cadena de supervivencia y el menos practicado. En la mayoría de los cursos se resuelve diciendo «llamo al 107», y la conducta que se entrena es otra: pedir ayuda sin decir dónde, o demorar la llamada.</p>
+  <ul>
+    <li><b>El tiempo pesa.</b> En un modelo con 1.667 paros extrahospitalarios, la supervivencia cayó 2,3 puntos por cada minuto hasta la RCP, 1,1 por minuto hasta la desfibrilación y 2,1 por minuto hasta el soporte avanzado: sin ningún tratamiento, 5,5 puntos por minuto<sup><a href="#r1">1</a></sup>. Los intervalos del colapso a la RCP y a la desfibrilación predicen la supervivencia<sup><a href="#r2">2</a></sup>. (La cifra de «7 a 10% por minuto» que circula no sale del resumen de estos trabajos.)</li>
+    <li><b>La ubicación dicha de palabra falla.</b> En 54 llamadas simuladas por un paro, cuando quien llamaba describía el lugar de palabra, la central tardó 71,7 segundos en ubicarlo (34,7 con geolocalización automática), el error promedio fue de 1.173 metros y la primera compresión llegó a los 122,6 segundos (83,0 con geolocalización)<sup><a href="#r3">3</a></sup>.</li>
+    <li><b>Demorar la llamada cuesta vidas, y la demora se puede corregir.</b> En 3.746 paros en Japón que un ciudadano presenció o encontró, llamar después de los 5 minutos se asoció de forma independiente con menor supervivencia al año; la causa más frecuente de demora fue llamar primero a otras personas. Los autores concluyen que la enseñanza del soporte vital básico tiene que reducir esas demoras<sup><a href="#r4">4</a></sup>.</li>
+  </ul>
+  <div class="decision"><b>Decisión:</b> la ubicación exacta y cómo llegar es el criterio de más peso y es crítico: sin ella, la llamada no pasa de 40 puntos aunque todo lo demás esté bien. Por dónde entra el móvil y quién lo espera cuenta al mismo nivel, porque es lo que de verdad le sirve a la ambulancia. La devolución mide en qué segundo el alumno dio la ubicación.</div>
+
+  <h2 id="guardavidas">2. Qué le pregunta el operador a un guardavidas</h2>
+  <p>Un guardavidas no es un testigo cualquiera: puede dar información que un lego no sabe dar. Cuando el alumno se identifica como guardavidas, el operador cambia de registro y le pide eso.</p>
+  <h3>Tiempo de sumersión</h3>
+  <p>Una revisión sistemática con metaanálisis encontró que la duración de la sumersión es el predictor más fuerte del resultado: las sumersiones de hasta 5–6 minutos se asociaron con buen resultado (riesgo relativo 2,90) y las de más de 25 minutos fueron invariablemente fatales. También se asoció a mejor resultado una respuesta más corta del sistema de emergencias (RR 2,84). El agua salada mostró un resultado apenas mejor que la dulce (RR 1,16), y no hubo diferencias por edad, temperatura del agua ni por si el hecho fue presenciado<sup><a href="#r5">5</a></sup>.</p>
+  <h3>Signos para clasificar el ahogamiento</h3>
+  <p>La clasificación de Szpilman, construida con 1.831 casos de rescate en Río de Janeiro, ordena al ahogado en seis grados según signos que se ven en la escena (tos, auscultación, edema pulmonar, presión, paro respiratorio o cardiorrespiratorio). La mortalidad fue de 0% en el grado 1, 0,6% en el 2, 5,2% en el 3, 19,4% en el 4, 44% en el 5 y 93% en el 6<sup><a href="#r6">6</a></sup><sup><a href="#r7">7</a></sup>. Al operador le sirve el grado, o los signos para deducirlo, porque le cambia qué recurso manda.</p>
+  <h3>Primero la ventilación</h3>
+  <p>El ahogamiento suele ir del paro respiratorio por hipoxia al paro cardíaco, y es difícil distinguirlos porque el pulso cuesta palparlo en diez segundos: la reanimación tiene que ocuparse de la respiración tanto como de la circulación<sup><a href="#r8">8</a></sup>. La ERC 2025 indica empezar con 5 ventilaciones y reservar la RCP sólo con compresiones para quien no quiere o no puede ventilar<sup><a href="#r9">9</a></sup>.</p>
+  <h3>Columna cervical</h3>
+  <p>En 2.244 víctimas de sumersión, sólo 11 (0,5%) tuvieron lesión cervical, y todas con un mecanismo de alto impacto (zambullida, choque de vehículo, caída de altura) y signos de lesión; ninguna en las 880 sumersiones de bajo impacto. No se justifica inmovilizar sólo porque la víctima estuvo en el agua<sup><a href="#r10">10</a></sup>. Por eso el escenario de zambullida usa una guía propia, que pregunta por el mecanismo y por si mueve y siente brazos y piernas.</p>
+  <div class="decision"><b>Decisión:</b> el operador es despachador, no instructor. A un guardavidas no le dicta maniobras ni le marca el ritmo: pregunta si ya las está haciendo y con qué material cuenta, con el DEA como prioridad, y sólo indica algo si se lo piden o si escucha una maniobra peligrosa. Una vez despachado el móvil y averiguado lo esencial, corta: tiene otras llamadas.</div>
+
+  <h2 id="lego">3. RCP guiada por teléfono, para quien no es guardavidas</h2>
+  <p>En los cursos de RCP para la comunidad, quien llama no sabe el protocolo ni sabe nombrar lo que ve. Ahí el operador hace lo que las guías le piden a un despachador: reconocer el paro y guiar la reanimación hasta que llega la ayuda.</p>
+  <ul>
+    <li><b>Reconocer el paro, sin dejarse engañar por la respiración agónica.</b> Aparece en el 30 a 60% de los paros, sobre todo al principio, y quien llama la describe como que «boquea», «respira apenas», «ronca» o «gorgotea». La ERC 2025 pide llamar sin demora, con el teléfono en altavoz, y que el despachador ayude a identificar si la respiración es normal<sup><a href="#r11">11</a></sup>.</li>
+    <li><b>Adultos: sólo compresiones.</b> La AHA 2025 recomienda que el despachador guíe RCP sólo con compresiones en el adulto<sup><a href="#r12">12</a></sup>.</li>
+    <li><b>Chicos y ahogados: con ventilaciones.</b> Para chicos, AHA y ERC recomiendan RCP con ventilaciones; a un lego sin entrenamiento pediátrico, la ERC le indica 5 ventilaciones iniciales y después 30:2, y sólo compresiones si no puede o no quiere ventilar<sup><a href="#r13">13</a></sup><sup><a href="#r14">14</a></sup>. En el ahogamiento, ventilaciones y compresiones a todas las edades<sup><a href="#r8">8</a></sup>.</li>
+    <li><b>Metas de tiempo.</b> Para la RCP guiada por teléfono, la AHA fija como metas reconocer el paro en menos de 90 segundos (mediana) y que la primera compresión guiada llegue antes de los 150 segundos<sup><a href="#r15">15</a></sup><sup><a href="#r16">16</a></sup>. Cuando las instrucciones llegaron a quien podía y quería hacerlas, el 97,9% empezó a comprimir<sup><a href="#r16">16</a></sup>.</li>
+  </ul>
+  <div class="decision"><b>Decisión:</b> en este modo el operador se queda en línea alentando las compresiones hasta que llega la ambulancia, y la devolución informa en qué segundo empezó la RCP para compararlo con la meta de 150 segundos. La rúbrica es otra: suma poner el altavoz, pedir el DEA, pedir ayuda a los de alrededor y no cortar.</div>
+
+  <h2 id="rubrica">4. La devolución: criterios y pesos</h2>
+  <p>La devolución no la inventa la inteligencia artificial. Hay una rúbrica escrita, criterio por criterio, con lo que cuenta como logrado y lo que cuenta como a medias. La IA sólo decide, en cada criterio, si se logró, se logró a medias o faltó, citando lo que dijo el alumno; <b>el puntaje lo calcula la app</b> con los pesos de la tabla. Se hizo así porque un modelo al que se le pide un número del 0 al 100 es blando: una llamada mala sacaba un número aprobatorio.</p>
+  <p>Logrado suma el peso entero; a medias, la mitad. Si falta un criterio crítico (sin ese dato no sale el móvil), el puntaje queda topeado en 40. Cada guía de escenario suma sus criterios propios y los pesos se normalizan a 100.</p>
+  <div id="tablas-rubrica"><p class="cita">Cargando la rúbrica tal como la aplica hoy el simulador…</p></div>
+
+  <h2 id="aprendizaje">5. Cómo se aprende con esto</h2>
+  <ul>
+    <li><b>Simulación con devolución.</b> Un metaanálisis de 609 estudios con 35.226 participantes encontró que la simulación con tecnología, comparada con no intervenir, tiene efectos grandes en conocimientos, habilidades y conductas, y moderados en los resultados en pacientes<sup><a href="#r17">17</a></sup>.</li>
+    <li><b>Práctica deliberada y repetición inmediata.</b> La destreza experta se construye con práctica enfocada en una tarea concreta, con devolución inmediata y repetición<sup><a href="#r18">18</a></sup>. En reanimación, practicar en ciclos cortos de «probá de nuevo» con corrección directa mejoró los tiempos críticos<sup><a href="#r19">19</a></sup>.</li>
+    <li><b>Debriefing.</b> Frente a no hacer nada, la simulación con debriefing mejora el aprendizaje<sup><a href="#r20">20</a></sup>. El modelo PEARLS combina autoevaluación, discusión guiada y devolución directa según el momento<sup><a href="#r21">21</a></sup>; en eso se apoya la guía de clase.</li>
+    <li><b>Las habilidades se pierden.</b> La AHA recomienda práctica espaciada, devolución y debriefing para frenar el deterioro de lo aprendido<sup><a href="#r22">22</a></sup>; la ERC 2025 dedica un capítulo entero a la enseñanza<sup><a href="#r23">23</a></sup>.</li>
+  </ul>
+  <div class="decision"><b>Decisión:</b> devolución apenas termina la llamada, criterio por criterio y con la frase que la justifica; repetir es un toque; y el panel del instructor junta lo que más costó en la clase para el debriefing. La escena no cambia en la pantalla: la evolución de la víctima la canta el instructor, porque el guardavidas tiene las manos en la víctima y no mira el teléfono.</div>
+
+  <h2 id="ia">6. La inteligencia artificial y sus límites</h2>
+  <ul>
+    <li><b>Como complemento sí, como reemplazo no.</b> Un metaanálisis de 12 ensayos no encontró diferencias significativas en habilidades entre el entrenamiento asistido por modelos de lenguaje y el tradicional, con más satisfacción; sugiere usar la IA para la práctica estandarizada e intensiva y a los docentes para el juicio y la corrección personalizada<sup><a href="#r24">24</a></sup>. En enfermería, la simulación con IA mejoró conocimientos y autoeficacia, con una «brecha de autenticidad» que la hace complemento y no reemplazo<sup><a href="#r25">25</a></sup>.</li>
+    <li><b>La corrección automática hay que validarla.</b> En la evaluación de competencias clínicas con IA, el acuerdo con evaluadores humanos es dispar: en algunos estudios moderado a fuerte, en otros con puntajes inflados<sup><a href="#r26">26</a></sup>.</li>
+    <li><b>En la central real, todavía no.</b> La ERC 2025 considera prometedora la IA para reconocer el paro en la llamada, pero no lista para el uso clínico de rutina<sup><a href="#r27">27</a></sup>. Este simulador no atiende emergencias: entrena a quien llama.</li>
+  </ul>
+  <div class="decision"><b>Decisión:</b> el operador es ciego a la escena (sólo sabe lo que el alumno le dice, para que nadie apruebe sin transmitir); las transiciones importantes de la llamada las decide la app y no el modelo; y el panel mide el acuerdo entre la IA y los instructores con el kappa de Cohen<sup><a href="#r28">28</a></sup>. La meta del piloto es un kappa de 0,6 o más (acuerdo sustancial según Landis y Koch<sup><a href="#r29">29</a></sup>) con al menos 50 prácticas revisadas. Hasta entonces, la devolución automática es para practicar, no para calificar.</div>
+
+  <h2 id="aula">7. Correcciones del aula sobre la bibliografía</h2>
+  <p>Cuando el aula y el manual no coinciden, gana el aula. Queda anotado para que nadie lo «corrija» de vuelta desde el libro:</p>
+  <ul>
+    <li><b>El guardavidas no administra oxígeno.</b> En Argentina no está en su alcance: el oxígeno que aparece en la tabla de grados lo pone el sistema de emergencias cuando llega. El operador no lo pregunta ni lo indica.</li>
+    <li><b>Relación compresiones–ventilaciones.</b> Un manual de soporte vital básico para guardavidas usado en la formación indica 15:2 en todas las edades con dos socorristas en ahogamiento. Los instructores corrigieron que <b>15:2 se reserva a chicos y lactantes con dos rescatistas; en adultos es 30:2</b>.</li>
+  </ul>
+
+  <h2 id="normas">8. Marco normativo en Argentina</h2>
+  <ul>
+    <li><b>Ley 26.835 (2012)</b>: la enseñanza de la RCP es obligatoria en los niveles medio y superior.</li>
+    <li><b>Ley 27.159 (2015) y Decreto 402/2022</b>: Sistema de Prevención Integral de Muerte Súbita. Los espacios con más de mil personas por día tienen que contar con DEA; un «espacio cardioasistido» exige personal capacitado con actualización según estándares internacionales y un vínculo con el sistema de emergencias.</li>
+    <li><b>Ley 27.155 (2015) y Decreto 260/2021</b>: ejercicio profesional de los guardavidas, con actualización anual obligatoria y una prueba anual de suficiencia.</li>
+  </ul>
+  <p>En la ciudad de Santa Fe, el 107 lo atiende la central del Sistema Integrado de Emergencias Sanitarias (SIES) de la provincia. El operador del simulador sigue recomendaciones internacionales y lo que corrigieron los instructores: no reproduce el protocolo interno de ninguna central.</p>
+
+  <h2 id="referencias">Referencias</h2>
+  <p class="cita">Datos bibliográficos verificados en PubMed. Los enlaces llevan al DOI de cada trabajo.</p>
+  <ol class="refs">
+    <li id="r1">Larsen MP, Eisenberg MS, Cummins RO, Hallstrom AP. Predicting survival from out-of-hospital cardiac arrest: a graphic model. Ann Emerg Med. 1993;22(11):1652-8. <a href="https://doi.org/10.1016/s0196-0644(05)81302-2">doi:10.1016/s0196-0644(05)81302-2</a></li>
+    <li id="r2">Valenzuela TD, Roe DJ, Cretin S, Spaite DW, Larsen MP. Estimating effectiveness of cardiac arrest interventions: a logistic regression survival model. Circulation. 1997;96(10):3308-13. <a href="https://doi.org/10.1161/01.cir.96.10.3308">doi:10.1161/01.cir.96.10.3308</a></li>
+    <li id="r3">Ecker H, Lindacher F, Dressen J, et al. Accuracy of automatic geolocalization of smartphone location during emergency calls: a pilot study. Resuscitation. 2020;146:5-12. <a href="https://doi.org/10.1016/j.resuscitation.2019.10.030">doi:10.1016/j.resuscitation.2019.10.030</a></li>
+    <li id="r4">Takei Y, Inaba H, Yachida T, et al. Analysis of reasons for emergency call delays in Japan in relation to location: high incidence of correctable causes and the impact of delays on patient outcomes. Resuscitation. 2010;81(11):1492-8. <a href="https://doi.org/10.1016/j.resuscitation.2010.05.022">doi:10.1016/j.resuscitation.2010.05.022</a></li>
+    <li id="r5">Quan L, Bierens JJ, Lis R, et al. Predicting outcome of drowning at the scene: a systematic review and meta-analyses. Resuscitation. 2016;104:63-75. <a href="https://doi.org/10.1016/j.resuscitation.2016.04.006">doi:10.1016/j.resuscitation.2016.04.006</a></li>
+    <li id="r6">Szpilman D. Near-drowning and drowning classification: a proposal to stratify mortality based on the analysis of 1,831 cases. Chest. 1997;112(3):660-5. <a href="https://doi.org/10.1378/chest.112.3.660">doi:10.1378/chest.112.3.660</a></li>
+    <li id="r7">Szpilman D, Bierens JJ, Handley AJ, Orlowski JP. Drowning. N Engl J Med. 2012;366(22):2102-10. <a href="https://doi.org/10.1056/NEJMra1013317">doi:10.1056/NEJMra1013317</a></li>
+    <li id="r8">Dezfulian C, McCallin TE, Bierens J, et al. 2024 American Heart Association and American Academy of Pediatrics focused update on special circumstances: resuscitation following drowning. Circulation. 2024;150(23):e501-e516. <a href="https://doi.org/10.1161/CIR.0000000000001274">doi:10.1161/CIR.0000000000001274</a></li>
+    <li id="r9">Lott C, Karageorgos V, Abelairas-Gomez C, et al. European Resuscitation Council Guidelines 2025: special circumstances in resuscitation. Resuscitation. 2025;215 Suppl 1:110753. <a href="https://doi.org/10.1016/j.resuscitation.2025.110753">doi:10.1016/j.resuscitation.2025.110753</a></li>
+    <li id="r10">Watson RS, Cummings P, Quan L, Bratton S, Weiss NS. Cervical spine injuries among submersion victims. J Trauma. 2001;51(4):658-62. <a href="https://doi.org/10.1097/00005373-200110000-00006">doi:10.1097/00005373-200110000-00006</a></li>
+    <li id="r11">Smyth MA, van Goor S, Hansen CM, et al. European Resuscitation Council Guidelines 2025: adult basic life support. Resuscitation. 2025;215 Suppl 1:110771. <a href="https://doi.org/10.1016/j.resuscitation.2025.110771">doi:10.1016/j.resuscitation.2025.110771</a></li>
+    <li id="r12">Kleinman ME, Buick JE, Huber N, et al. Part 7: Adult basic life support: 2025 American Heart Association Guidelines for Cardiopulmonary Resuscitation and Emergency Cardiovascular Care. Circulation. 2025;152(16 Suppl 2):S448-S478. <a href="https://doi.org/10.1161/CIR.0000000000001369">doi:10.1161/CIR.0000000000001369</a></li>
+    <li id="r13">Joyner BL, Dewan M, Bavare A, et al. Part 6: Pediatric basic life support: 2025 American Heart Association and American Academy of Pediatrics Guidelines for Cardiopulmonary Resuscitation and Emergency Cardiovascular Care. Circulation. 2025;152(16 Suppl 2):S424-S447. <a href="https://doi.org/10.1161/CIR.0000000000001370">doi:10.1161/CIR.0000000000001370</a></li>
+    <li id="r14">Djakow J, Turner NM, Skellett S, et al. European Resuscitation Council Guidelines 2025: paediatric life support. Resuscitation. 2025;215 Suppl 1:110767. <a href="https://doi.org/10.1016/j.resuscitation.2025.110767">doi:10.1016/j.resuscitation.2025.110767</a></li>
+    <li id="r15">Kurz MC, Bobrow BJ, Buckingham J, et al. Telecommunicator cardiopulmonary resuscitation: a policy statement from the American Heart Association. Circulation. 2020;141(12):e686-e700. <a href="https://doi.org/10.1161/CIR.0000000000000744">doi:10.1161/CIR.0000000000000744</a></li>
+    <li id="r16">Coute RA, Strickland JD, Hudson JL, et al. Telecommunicator cardiopulmonary resuscitation performance metrics and barriers to implementation in Birmingham, Alabama. Resusc Plus. 2026;28:101236. <a href="https://doi.org/10.1016/j.resplu.2026.101236">doi:10.1016/j.resplu.2026.101236</a></li>
+    <li id="r17">Cook DA, Hatala R, Brydges R, et al. Technology-enhanced simulation for health professions education: a systematic review and meta-analysis. JAMA. 2011;306(9):978-88. <a href="https://doi.org/10.1001/jama.2011.1234">doi:10.1001/jama.2011.1234</a></li>
+    <li id="r18">Ericsson KA. Deliberate practice and the acquisition and maintenance of expert performance in medicine and related domains. Acad Med. 2004;79(10 Suppl):S70-81. <a href="https://doi.org/10.1097/00001888-200410001-00022">doi:10.1097/00001888-200410001-00022</a></li>
+    <li id="r19">Hunt EA, Duval-Arnould JM, Nelson-McMillan KL, et al. Pediatric resident resuscitation skills improve after "rapid cycle deliberate practice" training. Resuscitation. 2014;85(7):945-51. <a href="https://doi.org/10.1016/j.resuscitation.2014.02.025">doi:10.1016/j.resuscitation.2014.02.025</a></li>
+    <li id="r20">Cheng A, Eppich W, Grant V, et al. Debriefing for technology-enhanced simulation: a systematic review and meta-analysis. Med Educ. 2014;48(7):657-66. <a href="https://doi.org/10.1111/medu.12432">doi:10.1111/medu.12432</a></li>
+    <li id="r21">Eppich W, Cheng A. Promoting Excellence and Reflective Learning in Simulation (PEARLS): development and rationale for a blended approach to health care simulation debriefing. Simul Healthc. 2015;10(2):106-15. <a href="https://doi.org/10.1097/SIH.0000000000000072">doi:10.1097/SIH.0000000000000072</a></li>
+    <li id="r22">Cheng A, Nadkarni VM, Mancini MB, et al. Resuscitation education science: educational strategies to improve outcomes from cardiac arrest: a scientific statement from the American Heart Association. Circulation. 2018;138(6):e82-e122. <a href="https://doi.org/10.1161/CIR.0000000000000583">doi:10.1161/CIR.0000000000000583</a></li>
+    <li id="r23">Nabecker S, de Raad T, Abelairas-Gomez C, et al. European Resuscitation Council Guidelines 2025: education for resuscitation. Resuscitation. 2025;215 Suppl 1:110739. <a href="https://doi.org/10.1016/j.resuscitation.2025.110739">doi:10.1016/j.resuscitation.2025.110739</a></li>
+    <li id="r24">Che S, Zhao H, Lu T, et al. Comparison of artificial intelligence assisted training and traditional learning paths in clinical simulation skills training: meta-analysis of randomized controlled trials. Front Med (Lausanne). 2026;13:1915528. <a href="https://doi.org/10.3389/fmed.2026.1915528">doi:10.3389/fmed.2026.1915528</a></li>
+    <li id="r25">Jiang H, Wang Z, Shen W, et al. AI-powered simulation for nursing education: mixed methods systematic review. J Med Internet Res. 2026;28:e95167. <a href="https://doi.org/10.2196/95167">doi:10.2196/95167</a></li>
+    <li id="r26">Zhang WS, Daniels BB, Mita C, et al. AI for clinical competency assessment: scoping review of methods and applications. JMIR Med Educ. 2026;12:e92826. <a href="https://doi.org/10.2196/92826">doi:10.2196/92826</a></li>
+    <li id="r27">Semeraro F, Schnaubelt S, Olasveengen TM, et al. European Resuscitation Council Guidelines 2025: systems saving lives. Resuscitation. 2025;215 Suppl 1:110821. <a href="https://doi.org/10.1016/j.resuscitation.2025.110821">doi:10.1016/j.resuscitation.2025.110821</a></li>
+    <li id="r28">Cohen J. A coefficient of agreement for nominal scales. Educ Psychol Meas. 1960;20(1):37-46. <a href="https://doi.org/10.1177/001316446002000104">doi:10.1177/001316446002000104</a></li>
+    <li id="r29">Landis JR, Koch GG. The measurement of observer agreement for categorical data. Biometrics. 1977;33(1):159-74. <a href="https://pubmed.ncbi.nlm.nih.gov/843571/">PubMed 843571</a></li>
+  </ol>
+  <p class="cita" style="margin-top:18px">Además, para el marco general: Greif R, Lauridsen KG, Djärv T, et al. European Resuscitation Council Guidelines 2025: executive summary. Resuscitation. 2025;215 Suppl 1:110770 (<a href="https://doi.org/10.1016/j.resuscitation.2025.110770">doi</a>); y Del Rios M, Bartos JA, Panchal AR, et al. Part 1: Executive summary: 2025 AHA Guidelines for CPR and ECC. Circulation. 2025;152(16 Suppl 2):S284-S312 (<a href="https://doi.org/10.1161/CIR.0000000000001372">doi</a>). La base de conocimiento del operador está destilada de estas fuentes con palabras propias: no se copian textos de manuales.</p>
+</main>
+
+<footer class="pie">
+  <div class="ancho">
+    <nav><a href="./">Simulador</a><a href="instructores.html">Para instructores</a><a href="terminos.html">Términos</a><a href="privacidad.html">Privacidad</a></nav>
+    <p>Simulación educativa: no llama a ningún número real. Ante una emergencia de verdad, llamá al 107 desde un teléfono.</p>
+    <p class="legal">Titular del servicio: <span data-titular="nombre"></span>. © <span data-anio></span>.</p>
+  </div>
+</footer>
+
+<script src="publico.js"></script>
+<script>
+/* La rúbrica se lee de index.html, que es la única fuente: así esta tabla nunca queda
+   desactualizada respecto de lo que aplica el simulador. */
+(async function(){
+  const caja = document.getElementById("tablas-rubrica");
+  try{
+    const html = await (await fetch("index.html", { cache:"no-store" })).text();
+    const js = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+    const bloque = inicio => {
+      const i = js.indexOf(inicio); if(i < 0) throw new Error("falta " + inicio);
+      let j = i, prof = 0, empezo = false, cad = null;
+      for(; j < js.length; j++){
+        const c = js[j];
+        if(cad){ if(c === "\\"){ j++; continue; } if(c === cad) cad = null; continue; }
+        if(c === '"' || c === "'" || c === "`"){ cad = c; continue; }
+        if(c === "/" && js[j+1] === "*"){ j = js.indexOf("*/", j) + 1; continue; }
+        if(c === "/" && js[j+1] === "/"){ j = js.indexOf("\n", j); continue; }
+        if(c === "{" || c === "["){ prof++; empezo = true; }
+        if(c === "}" || c === "]"){ prof--; if(empezo && prof === 0) break; }
+      }
+      return js.slice(i, j+1) + ";";
+    };
+    // La misma función que usa la app para armar la rúbrica de cada escenario.
+    const M = new Function(bloque("const SCENARIOS = [") + bloque("const CHECKS = [") + bloque("const CHECKS_LEGO = [") + bloque("const GUIAS = {")
+      + bloque("function rubrica(scn){") + "return { SCENARIOS, rubrica };")();
+    const TITULOS = { "guardavidas|ahogamiento":"Ahogamiento", "guardavidas|pcr":"Paro sin ahogamiento", "guardavidas|trauma":"Trauma",
+      "guardavidas|":"Sin guía", "lego|lego-rcp":"Adulto", "lego|lego-ahogamiento":"Chico o ahogado", "lego|":"Sin guía" };
+    const grupos = {};
+    M.SCENARIOS.forEach(sc => {
+      const k = sc.perfil + "|" + (sc.guia || "");
+      (grupos[k] = grupos[k] || { clave:k, perfil:sc.perfil, escenarios:[], rub:M.rubrica(sc) }).escenarios.push(sc.title);
+    });
+    const el = (tag, props, ...hijos) => { const e = document.createElement(tag); Object.assign(e, props || {}); hijos.forEach(x => e.append(x)); return e; };
+    caja.textContent = "";
+    [["guardavidas", "Formación de guardavidas"], ["lego", "Persona sin formación (cursos de RCP)"]].forEach(([perfil, titulo]) => {
+      const cols = Object.values(grupos).filter(g => g.perfil === perfil);
+      if(!cols.length) return;
+      cols.forEach(g => g.total = g.rub.reduce((a, c) => a + c.peso, 0));
+      const filas = [];
+      cols.forEach(g => g.rub.forEach(c => { if(!filas.some(f => f.id === c.id)) filas.push(c); }));
+      const t = el("table", { className:"rub" });
+      t.append(el("caption", { textContent:titulo, style:"text-align:left; font-family:var(--display); font-weight:700; font-size:17px; padding:18px 0 6px" }));
+      const cab = el("tr", {}, el("th", { textContent:"Criterio" }));
+      cols.forEach(g => cab.append(el("th", { className:"n", textContent:TITULOS[g.clave] || g.clave, title:g.escenarios.join(" · ") })));
+      t.append(cab);
+      filas.forEach(c => {
+        const critico = cols.some(g => g.rub.some(x => x.id === c.id && x.critico));
+        const td = el("td", {}, c.label + " ");
+        if(critico) td.append(el("span", { className:"crit", textContent:"CRÍTICO" }));
+        td.append(el("div", { className:"cita", textContent:"Logrado: " + c.logrado }));
+        const tr = el("tr", {}, td);
+        cols.forEach(g => {
+          const x = g.rub.find(y => y.id === c.id);
+          tr.append(el("td", { className:"n", textContent: x ? String(Math.round(x.peso / g.total * 100)) : "—" }));
+        });
+        t.append(tr);
+      });
+      caja.append(t, el("p", { className:"cita", textContent:"Puntos sobre 100 en cada tipo de escenario (algunas guías ajustan la redacción de un criterio: se muestra la del primer tipo). " + cols.map(g => (TITULOS[g.clave] || g.clave) + ": " + g.escenarios.join(", ")).join(". ") + "." }));
+    });
+  }catch(e){
+    caja.innerHTML = "";
+    const p = document.createElement("p"); p.className = "cita";
+    p.textContent = "No se pudo leer la rúbrica en este momento (" + e.message + "). Está en el código del simulador, en CHECKS y CHECKS_LEGO.";
+    caja.append(p);
+  }
+})();
+</script>
+</body>
+</html>

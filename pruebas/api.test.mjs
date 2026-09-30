@@ -15,7 +15,7 @@ async function cargar() {
 
 function entorno(vars) {
   const claves = ["GEMINI_API_KEY", "ANTHROPIC_API_KEY", "CODIGO_ACCESO", "CODIGO_ADMIN", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN",
-    "KV_REST_API_URL", "KV_REST_API_TOKEN", "MODELO_OPERADOR", "MODELO_EVALUADOR", "NOMBRE_PRINCIPAL", "MOSTRAR_PRECIOS", "TITULAR_NOMBRE"];
+    "KV_REST_API_URL", "KV_REST_API_TOKEN", "MODELO_OPERADOR", "MODELO_EVALUADOR", "NOMBRE_PRINCIPAL", "MOSTRAR_PRECIOS", "TITULAR_NOMBRE", "CODIGO_DEMO", "CONTACTO_EMAIL"];
   claves.forEach(k => delete process.env[k]);
   Object.assign(process.env, { GEMINI_API_KEY: "clave-falsa" }, vars || {});
 }
@@ -318,5 +318,51 @@ test("información pública para las páginas", async () => {
     const r = await llamar(datos, null, {}, "GET", { info: "1" });
     assert.equal(r.cuerpo.precios, true);
     assert.equal(r.cuerpo.titular.nombre, "Nombre de prueba");
+  } finally { quitar(); }
+});
+
+test("página pública: datos del titular y demo sólo si es un código de alumnos", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99", TITULAR_NOMBRE: "Titular de Prueba", CONTACTO_EMAIL: "hola@ejemplo.com", MOSTRAR_PRECIOS: "1" });
+  const redis = crearRedis(), gemini = crearGemini();
+  const quitar = instalarFetch({ redis, gemini });
+  try {
+    const { datos } = await cargar();
+    const demo = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Demo pública", plan: "prueba", cupoMensual: 50 } }, { "x-panel": "ADMIN-99" })).cuerpo.cuenta;
+    const info = async () => (await llamar(datos, null, {}, "GET", { info: "1" })).cuerpo;
+    let i = await info();
+    assert.equal(i.titular.nombre, "Titular de Prueba");
+    assert.equal(i.contacto.email, "hola@ejemplo.com");
+    assert.equal(i.precios, true);
+    assert.equal(i.demo, null, "sin CODIGO_DEMO no hay demo");
+    process.env.CODIGO_DEMO = demo.codigoAlumnos;
+    assert.equal((await info()).demo, demo.codigoAlumnos);
+    // Si por error cargan el de administración o uno de instructor, no se publica.
+    process.env.CODIGO_DEMO = "ADMIN-99";
+    assert.equal((await info()).demo, null);
+    process.env.CODIGO_DEMO = demo.codigoInstructor;
+    assert.equal((await info()).demo, null);
+  } finally { quitar(); }
+});
+
+test("contacto: pide nombre y un medio, frena robots y abusos, y el administrador lo ve", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const redis = crearRedis(), gemini = crearGemini();
+  const quitar = instalarFetch({ redis, gemini });
+  try {
+    const { datos } = await cargar();
+    let r = await llamar(datos, { accion: "contacto", nombre: "Ana" });
+    assert.equal(r.statusCode, 400);
+    assert.equal(r.cuerpo.error, "faltan_datos");
+    r = await llamar(datos, { accion: "contacto", nombre: "Robot", email: "x@y.z", web: "http://spam" });
+    assert.equal(r.statusCode, 200);
+    r = await llamar(datos, { accion: "contacto", nombre: "Ana Pérez", telefono: "342 555 0000", rol: "Instructor/a de RCP", mensaje: "Hola" });
+    assert.equal(r.statusCode, 200);
+    const lista = (await llamar(datos, { accion: "contactos" }, { "x-panel": "ADMIN-99" })).cuerpo.contactos;
+    assert.equal(lista.length, 1, "el del robot no se guarda");
+    assert.equal(lista[0].nombre, "Ana Pérez");
+    assert.equal(lista[0].estado, "nuevo");
+    for (let k = 0; k < 4; k++) await llamar(datos, { accion: "contacto", nombre: "Ana", email: "a@b.c" });
+    r = await llamar(datos, { accion: "contacto", nombre: "Ana", email: "a@b.c" });
+    assert.equal(r.statusCode, 429, "más de 5 por hora desde la misma conexión");
   } finally { quitar(); }
 });

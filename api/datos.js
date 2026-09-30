@@ -12,7 +12,7 @@
 //
 // Variables de entorno que lee además de la base: CODIGO_ADMIN, CODIGO_ACCESO,
 // NOMBRE_PRINCIPAL, MOSTRAR_PRECIOS, TITULAR_NOMBRE, TITULAR_CUIT, TITULAR_DOMICILIO,
-// CONTACTO_EMAIL, CONTACTO_WHATSAPP.
+// CONTACTO_EMAIL, CONTACTO_WHATSAPP, CODIGO_DEMO.
 //
 // No importa nada de otros archivos del proyecto a propósito (ver api/chat.js).
 
@@ -20,7 +20,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    if (req.query && req.query.info) return res.status(200).json(infoPublica());
+    if (req.query && req.query.info) return res.status(200).json(await infoPublica());
     return res.status(200).json({ registro: Boolean(kvConfig()) });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "metodo_no_permitido" });
@@ -107,14 +107,28 @@ function problema(codigo, detalle, estado) { const e = new Error(detalle); e.cod
    Público
    ====================================================================== */
 
-function infoPublica() {
+async function infoPublica() {
   const env = k => (process.env[k] || "").trim();
   return {
     registro: Boolean(kvConfig()),
     precios: env("MOSTRAR_PRECIOS") === "1",
     titular: { nombre: env("TITULAR_NOMBRE"), cuit: env("TITULAR_CUIT"), domicilio: env("TITULAR_DOMICILIO") },
-    contacto: { email: env("CONTACTO_EMAIL"), whatsapp: env("CONTACTO_WHATSAPP") }
+    contacto: { email: env("CONTACTO_EMAIL"), whatsapp: env("CONTACTO_WHATSAPP") },
+    demo: await codigoDemo(env("CODIGO_DEMO"))
   };
+}
+
+// El código de la demo pública sale en la página para instructores. Sólo se publica si
+// es un código de ALUMNOS de alguna cuenta (la cuenta "Demo", con su cupo mensual como
+// freno): si por error se cargó el de administración o uno de instructor, no se muestra.
+async function codigoDemo(bruto) {
+  const c = normCodigo(bruto);
+  if (!c || !kvConfig()) return null;
+  if (iguales(c, normCodigo(process.env.CODIGO_ADMIN))) return null;
+  try {
+    const [alumnos, instructor] = await kvPipe([["GET", P + "cod:" + c], ["GET", P + "codi:" + c]]);
+    return alumnos && !instructor ? String(bruto).trim() : null;
+  } catch (e) { return null; }
 }
 
 async function guardarContacto(b, ip) {
