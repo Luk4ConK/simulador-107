@@ -228,6 +228,20 @@ try {
     await activar.goto(base + "/activar");
     await activar.waitForSelector("#listo:not([hidden])");
     assert.equal(await activar.locator(".fila.lista").count(), 3);
+
+    // El recuadro para la web de Sumar Salud lleva a esta dirección y deja entrar con el código.
+    const fuente = await activar.locator("#bloque-codigo").inputValue();
+    assert.ok(fuente.includes('action="' + base + '/"') && fuente.includes('name="c"'), "el formulario apunta a la app");
+    assert.ok(fuente.includes('href="' + base + '/panel"'), "el botón del instructor lleva al panel");
+    assert.ok(!/<script/i.test(fuente), "el recuadro no necesita JavaScript");
+    await activar.fill("#bloque-vista #sim107-codigo", " " + sala.codigo.toLowerCase());
+    const [desdeLaWeb] = await Promise.all([activar.context().waitForEvent("page"), activar.click("#bloque-vista button[type=submit]")]);
+    desdeLaWeb.on("pageerror", e => errores.push(e.message));
+    await desdeLaWeb.waitForSelector("#v-setup:not([hidden])");
+    assert.match(await desdeLaWeb.locator("#cuenta-info").innerText(), /Jueves/);
+    assert.equal(new URL(desdeLaWeb.url()).search, "", "el código no queda a la vista en la dirección");
+    await activar.click("#copiar");
+    await activar.waitForFunction(() => document.querySelector("#copiado").textContent !== "");
     for (const p of [page, alumno, activar]) await p.context().close();
   });
 

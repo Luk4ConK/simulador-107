@@ -34,6 +34,10 @@ práctica libre ("Practicar sin código") sólo aparece si el servidor no pide c
 GET de `/api/chat` dice qué está activado (`registro`, `admin`, `clave`, nunca los
 valores) y `/activar` (activar.html) lo muestra como lista de control con los pasos y los
 enlaces directos a Vercel, para que el dueño no dependa de nadie para activar el panel.
+Al final, `/activar` arma el recuadro para pegar en la web institucional (dos puertas: un
+formulario GET que manda `?c=CÓDIGO` y un enlace a `/panel`). Va sin JavaScript, con estilos
+en línea y `target="_blank"` (en una web que lo mete en un iframe, el micrófono no andaría),
+y toma la dirección de `location.origin`: con un dominio propio se copia de nuevo desde ahí.
 
 **Septiembre de 2026: se armó el producto completo** (en la rama
 `claude/simulador-107-producto-rllxr2`; producción se actualiza recién cuando se une a la

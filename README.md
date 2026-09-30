@@ -15,6 +15,8 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 
 Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. **https://simulador-107.vercel.app/activar** revisa sola cuáles faltan y tiene los pasos con los enlaces directos.
 
+**Desde la web de Sumar Salud.** Al final de esa misma página hay un recuadro listo para pegar en la web de Sumar Salud (en WordPress, con un bloque *HTML personalizado*): el alumno escribe ahí el código de la clase y entra directo a practicar, y el instructor tiene su botón al panel. Así todos entran siempre desde la web de Sumar Salud. Ahí mismo están los pasos para que el simulador tenga una dirección propia, como *simulador.sumarsalud.org*, si la querés.
+
 ---
 
 ## 1. Sacar la clave de API
