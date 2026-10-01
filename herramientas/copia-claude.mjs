@@ -38,16 +38,13 @@ function cambiar(viejo, nuevo) {
 // a otras páginas para que no quede ninguno roto.
 cambiar(
   `      <p class="pie">¿Querés usarlo con tus alumnos? <a href="instructores">Conocé el simulador</a><br>
-        <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a></p>\n`,
+        <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a><br>
+        Simulador 107 es un producto de Kalu Lab.</p>\n`,
   ``
 );
 cambiar(
   `El panel todavía no está activado. <a href="activar">Ver qué falta</a>.`,
   `El panel no existe en la copia de Claude.`
-);
-cambiar(
-  `        <img class="escudo" src="icons/sumarsalud-guardavidas.png" width="84" height="84" alt="Escudo de Sumar Salud: capacitación y entrenamiento de guardavidas">\n`,
-  ``
 );
 cambiar(
   `<p class="sub">Practicá la llamada al sistema de emergencias hablando en voz alta con un operador simulado. Al cortar recibís la devolución sobre qué datos pasaste y cuáles faltaron.</p>`,
@@ -83,13 +80,25 @@ cambiar(`manos:true, pausa:1500`, `manos:false, pausa:1500`);
 /* ---------------- servidor → Claude ---------------- */
 
 cambiar(
-`  async function api(payload){
-    const r = await fetch("/api/chat", {
-      method:"POST",
-      headers:{"content-type":"application/json", "x-codigo":S.codigo},
-      body: JSON.stringify(payload)
-    });
-    const data = await r.json().catch(()=>({error:"respuesta_ilegible"}));
+`  // Con tope de tiempo: si la conexión del celular se queda colgada sin fallar, el pedido
+  // no terminaba nunca y el alumno quedaba en "Revisando la llamada…" sin botón para
+  // salir. 75 s es más que los 60 s que Vercel le da a la función.
+  async function api(payload){
+    const ctl = typeof AbortController === "function" ? new AbortController() : null;
+    const reloj = ctl ? setTimeout(()=>ctl.abort(), 75000) : null;
+    let r, data;
+    try{
+      r = await fetch("/api/chat", {
+        method:"POST",
+        headers:{"content-type":"application/json", "x-codigo":S.codigo},
+        body: JSON.stringify(payload),
+        signal: ctl ? ctl.signal : undefined
+      });
+      data = await r.json().catch(()=>({error:"respuesta_ilegible"}));
+    }catch(err){
+      if(err && err.name === "AbortError"){ const e = new Error("sin_respuesta"); e.code = "sin_respuesta"; throw e; }
+      throw err;
+    }finally{ if(reloj) clearTimeout(reloj); }
     if(!r.ok){ const e = new Error(data.detalle||data.error||"error"); e.code = data.error; e.status = r.status; e.data = data; throw e; }
     return data;
   }`,

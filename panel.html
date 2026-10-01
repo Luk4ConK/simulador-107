@@ -225,7 +225,7 @@
 
       <div id="clase-nueva" class="card" hidden>
         <h2 style="font-size:18px">Abrir una clase</h2>
-        <p class="sec small" style="margin-top:4px">Te da un código de 6 letras para proyectar. Cada grupo entra con ese código desde su celular, escribe el nombre del grupo y practica. Ves a todos los grupos acá, en vivo.</p>
+        <p class="sec small" style="margin-top:4px">Te da un código de 6 caracteres (letras y números, sin 0, O, 1 ni I) para proyectar. Cada grupo entra con ese código desde su celular, escribe el nombre del grupo y practica. Ves a todos los grupos acá, en vivo.</p>
         <div class="grid g3" style="margin-top:14px">
           <label class="f"><span>Nombre de la clase</span><input id="cn-nombre" placeholder="Pre-curso · martes"></label>
           <label class="f"><span>Dura</span><select id="cn-horas"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3" selected>3 horas</option><option value="4">4 horas</option><option value="6">6 horas</option><option value="12">12 horas</option></select></label>
@@ -241,8 +241,8 @@
         <div class="card">
           <div class="fila"><span class="lbl">Código de la clase</span><span class="sp"></span><span class="small sec" id="cv-restante"></span></div>
           <div class="codigo-grande num" id="cv-codigo">——————</div>
-          <p class="sec" style="text-align:center">Entrá a <b id="cv-host"></b> y escribí el código, o abrí el link: <button class="link" id="cv-copiar">copiar link para mandar al grupo</button></p>
-          <div class="fila" style="margin-top:12px"><h2 style="font-size:17px" id="cv-nombre"></h2><span class="sp"></span><button class="btn peligro" id="cv-cerrar">Cerrar la clase</button></div>
+          <p class="sec" style="text-align:center" id="cv-entrar">Entrá a <b id="cv-host"></b> y escribí el código, o abrí el link: <button class="link" id="cv-copiar">copiar link para mandar al grupo</button></p>
+          <div class="fila" style="margin-top:12px"><h2 style="font-size:17px" id="cv-nombre"></h2><span class="sp"></span><button class="btn" id="cv-volver" hidden>Volver · abrir otra clase</button><button class="btn peligro" id="cv-cerrar">Cerrar la clase</button></div>
         </div>
         <div class="sect">
           <div class="fila"><span class="lbl">Grupos</span><span class="sp"></span><span class="small muted" id="cv-act">Se actualiza solo cada 10 segundos</span></div>
@@ -278,7 +278,7 @@
         <span class="sp"></span>
         <button class="btn" id="pr-csv">Descargar planilla (CSV)</button>
       </div>
-      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="pr-tabla"></table><p class="vacio" id="pr-vacio" hidden>No hay prácticas en este período.</p></div>
+      <div class="card scroll" style="margin-top:12px"><table class="tabla" id="pr-tabla"></table><p class="vacio" id="pr-vacio" hidden>No hay prácticas en este período.</p><p class="small muted" id="pr-tope" hidden></p></div>
     </div>
 
     <!-- ---------- alumnos ---------- -->
@@ -311,7 +311,7 @@
             </div>
             <div class="grid g2">
               <label class="f"><span>Familia</span><input id="es-fam" placeholder="Ahogamiento · PCR · Trauma"></label>
-              <label class="f" id="es-victima-wrap" hidden><span>Víctima</span><select id="es-victima"><option value="adulto">Adulto</option><option value="nino">Chico</option></select></label>
+              <label class="f" id="es-victima-wrap" hidden><span>Víctima</span><select id="es-victima"><option value="adulto">Adulto</option><option value="nino">Chico (1 año o más)</option><option value="lactante">Bebé (menos de 1 año)</option></select></label>
             </div>
             <label class="f"><span>Bajada de la tarjeta</span><input id="es-card" placeholder="Lo sacaste del agua; respira con dificultad."></label>
             <label class="f"><span>Situación que ve el alumno</span><textarea id="es-scene" rows="5"></textarea></label>
@@ -370,7 +370,7 @@
       <div class="grid g3" id="us-tiles"></div>
       <div class="card" style="margin-top:12px">
         <h3 style="font-size:15px">Pedidos al modelo por día, últimos 30 días</h3>
-        <p class="small muted" style="margin:2px 0 12px">Turnos del operador más devoluciones. <span style="color:var(--warn)">⚠</span> marca los días en que algún modelo gratuito se quedó sin cuota y la app tuvo que pasar a otro: si se repite, es la señal para pasar al plan pago.</p>
+        <p class="small muted" style="margin:2px 0 12px">Turnos del operador más devoluciones. <span style="color:var(--warn)">⚠</span> marca los días en que algún modelo gratuito se quedó sin cuota y la app pasó a otro, o en que algún pedido se quedó sin respuesta. Los pedidos sin respuesta son los que el alumno vio como «servicio saturado»: si aparecen más de dos días por mes, es la señal para pasar al plan pago.</p>
         <div class="cols" id="us-cols"></div>
         <div class="marcas" id="us-marcas"></div>
       </div>
@@ -408,7 +408,7 @@
       <label class="f"><span>Contacto (mail o WhatsApp)</span><input id="dc-contacto"></label>
       <label class="f"><span>Tipo</span><select id="dc-tipo"><option value="instructor">Instructor independiente</option><option value="institucion">Institución</option><option value="ong">ONG / cortesía</option></select></label>
       <label class="f"><span>Plan</span><select id="dc-plan"><option value="prueba">Prueba gratuita</option><option value="instructor">Instructor</option><option value="institucion">Institución</option><option value="cortesia">Cortesía</option></select></label>
-      <label class="f"><span>Prácticas por mes (0 = sin tope)</span><input id="dc-cupo" type="number" min="0" value="100"></label>
+      <label class="f"><span>Prácticas por mes (0 = sin tope)</span><input id="dc-cupo" type="number" min="0" value="30"></label>
       <label class="f"><span>Vence (vacío = no vence)</span><input id="dc-vence" type="date"></label>
     </div>
     <label class="chk"><input type="checkbox" id="dc-activa" checked> Cuenta activa</label>
@@ -428,7 +428,9 @@
 (function(){
   "use strict";
   const $ = s => document.querySelector(s);
-  const P = { codigo:"", info:null, cuentaId:null, tab:"clase", sala:null, timer:null, practicas:[], contenido:null, escenarios:[] };
+  // salaVista: una clase cerrada que se está mirando (su resumen), que tiene prioridad
+  // sobre la clase abierta. filtroSala: la clase de la que se listan las prácticas.
+  const P = { codigo:"", info:null, cuentaId:null, tab:"clase", sala:null, salaVista:null, filtroSala:null, timer:null, practicas:[], truncado:false, contenido:null, escenarios:[] };
 
   /* ---------------- utilidades ---------------- */
   // Todo lo que viene de la base (nombres, transcripciones) se pinta con textContent.
@@ -560,7 +562,8 @@
     }catch(e){}
   }
   $("#p-cambiar").addEventListener("change", async e => {
-    P.cuentaId = e.target.value; P.sala = null;
+    // Las clases de la cuenta anterior no son de ésta: mirarlas daría «sin_sala».
+    P.cuentaId = e.target.value; P.sala = null; P.salaVista = null; P.filtroSala = null;
     P.info = await api("panel");
     pintarCabecera();
     await cargarEscenarios();
@@ -586,10 +589,23 @@
     let salas = [];
     try{ salas = (await api("salas")).salas; }
     catch(e){ if(e.code === "sin_base"){ $("#clase-sin-base").hidden = false; return; } }
-    const abierta = P.sala ? salas.find(s => s.codigo === P.sala && s.abierta) : salas.find(s => s.abierta);
     pintarAnteriores(salas);
-    if(abierta){ P.sala = abierta.codigo; $("#clase-nueva").hidden = true; $("#clase-viva").hidden = false; await refrescarSala(); P.timer = setInterval(refrescarSala, 10000); }
-    else { P.sala = null; $("#clase-viva").hidden = true; $("#clase-nueva").hidden = false; pintarFormularioClase(); }
+    // Primero, una clase cerrada que se pidió ver (o la que se acaba de cerrar): queda a la
+    // vista con su resumen, que es lo que se usa en el debriefing. Si no, la clase abierta,
+    // y si no hay ninguna, el formulario para abrir otra.
+    const vista = P.salaVista && salas.find(s => s.codigo === P.salaVista);
+    const abierta = P.sala ? salas.find(s => s.codigo === P.sala && s.abierta) : salas.find(s => s.abierta);
+    const mostrar = vista || abierta;
+    if(mostrar){
+      P.sala = mostrar.codigo; $("#clase-nueva").hidden = true; $("#clase-viva").hidden = false;
+      const sigue = await refrescarSala();
+      // Se limpia justo antes de crear el intervalo, después de los await: si corren dos
+      // verClase a la vez (cerrar y abrir otra, doble clic en la pestaña), el primero ya
+      // creó el suyo y, sin esto, quedaba huérfano consultando la base por duplicado.
+      clearInterval(P.timer);
+      if(sigue !== false) P.timer = setInterval(refrescarSala, 10000);
+    }
+    else { clearInterval(P.timer); P.sala = null; P.salaVista = null; $("#clase-viva").hidden = true; $("#clase-nueva").hidden = false; pintarFormularioClase(); }
   }
 
   function pintarFormularioClase(){
@@ -609,37 +625,66 @@
     const escenarios = [...document.querySelectorAll("#cn-escenarios input:checked")].map(i => i.value);
     try{
       const { sala } = await api("sala-crear", { nombre: $("#cn-nombre").value.trim() || $("#cn-nombre").placeholder, horas: Number($("#cn-horas").value), perfil: $("#cn-perfil").value || null, escenarios: escenarios.length ? escenarios : null });
-      P.sala = sala.codigo;
+      P.sala = sala.codigo; P.salaVista = null;
       verClase();
     }catch(e){ $("#cn-err").textContent = "No se pudo abrir la clase (" + (e.code || e.status) + ")."; }
   });
 
   $("#cv-cerrar").addEventListener("click", async ()=>{
-    if(!confirm("¿Cerrar la clase? Los grupos que estén en una llamada pueden terminarla, pero nadie más puede entrar.")) return;
-    await api("sala-cerrar", { codigo:P.sala });
-    P.sala = null; verClase();
+    if(!confirm("¿Cerrar la clase? Las llamadas que están en curso pueden terminar y recibir su devolución; nadie más puede entrar con ese código. El resumen de la clase queda a la vista.")) return;
+    try{ await api("sala-cerrar", { codigo:P.sala }); }
+    catch(e){ alert("No se pudo cerrar la clase (" + (e.code || e.status) + "). Probá de nuevo."); return; }
+    // Antes volvía derecho al formulario y el resumen desaparecía justo cuando hacía falta
+    // para el debriefing. Ahora la clase queda a la vista, cerrada, hasta tocar «Volver».
+    clearInterval(P.timer); P.salaVista = P.sala; verClase();
   });
+  $("#cv-volver").addEventListener("click", () => { clearInterval(P.timer); P.salaVista = null; P.sala = null; verClase(); });
   $("#cv-copiar").addEventListener("click", e => copiar(origen + "/?sala=" + P.sala, e.target));
 
   /* Cada consulta del tablero gasta unos diez comandos de la base, y la capa gratuita de
      Upstash trae 500.000 por mes: cada 10 segundos y sólo mientras la pestaña está a la
      vista, una clase de tres horas gasta menos de 11.000. */
   document.addEventListener("visibilitychange", () => { if(!document.hidden && P.tab === "clase" && P.sala) refrescarSala(); });
+
+  /* Una clase cerrada sigue a la vista con su resumen. Las llamadas que estaban en curso
+     pueden terminar y mandar su devolución después del cierre, así que el tablero se sigue
+     actualizando mientras algún grupo figure en llamada o esperando la devolución, hasta
+     45 minutos después del cierre: el grupo que cerró la pestaña a mitad de una llamada
+     queda "en llamada" para siempre, y sin el tope se consultaría la base sin fin. */
+  const ESPERA_TRAS_CIERRE = 45 * 60000;
+  // Devuelve false cuando ya no hace falta seguir actualizando.
   async function refrescarSala(){
     if(!P.sala || P.tab !== "clase" || document.hidden) return;
     let d;
     try{ d = await api("sala-vivo", { codigo:P.sala }); }catch(e){ $("#cv-act").textContent = "No se pudo actualizar (" + (e.code||e.status) + ")"; return; }
-    if(!d.sala.abierta){ clearInterval(P.timer); P.sala = null; verClase(); return; }
+    // Si mientras tanto se pasó a mirar otra clase, esta respuesta ya no sirve.
+    if(d.sala.codigo !== P.sala) return;
+    const cerrada = !d.sala.abierta;
+    // Se cerró mientras se la miraba (desde otro equipo o porque se cumplió la duración):
+    // queda a la vista como cerrada, y verClase suma la clase a la lista de anteriores.
+    if(cerrada && P.salaVista !== d.sala.codigo){ clearInterval(P.timer); P.salaVista = d.sala.codigo; verClase(); return false; }
     $("#cv-codigo").textContent = d.sala.codigo;
     $("#cv-host").textContent = location.host;
     $("#cv-nombre").textContent = d.sala.nombre + (d.sala.perfil ? " · " + (d.sala.perfil === "lego" ? "personas sin formación" : "guardavidas") : "");
+    // Los tres se asignan en cada vuelta: así una clase abierta después de mirar una
+    // cerrada vuelve a tener su botón de cerrar y su link.
+    $("#cv-cerrar").hidden = cerrada; $("#cv-volver").hidden = !cerrada; $("#cv-entrar").hidden = cerrada;
     const resta = Math.max(0, d.sala.vence - Date.now());
-    $("#cv-restante").textContent = "Cierra sola en " + faltan(resta);
-    $("#cv-act").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR");
+    $("#cv-restante").textContent = cerrada ? "Clase cerrada" : "Cierra sola en " + faltan(resta);
 
     // Tablero: el estado más reciente de cada grupo, y su último puntaje.
     const box = vaciar($("#cv-grupos"));
     const grupos = d.grupos.sort((a,b) => a.grupo.localeCompare(b.grupo, "es", { numeric:true }));
+    const pendientes = grupos.filter(g => g.estado === "en llamada" || g.estado === "evaluando").length;
+    const sigue = !cerrada || (pendientes > 0 && Date.now() - d.sala.vence < ESPERA_TRAS_CIERRE);
+    if(!sigue) clearInterval(P.timer);
+    $("#cv-act").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR")
+      + (!cerrada ? "" : sigue ? " · esperando la devolución de " + pendientes + (pendientes === 1 ? " grupo" : " grupos") : " · la clase está cerrada: ya no se actualiza");
+    // El estado de cada grupo se guarda tres días; las prácticas, mucho más. En una clase
+    // vieja el tablero queda vacío pero el resumen sigue.
+    $("#cv-vacio").textContent = !cerrada ? "Todavía no entró ningún grupo."
+      : d.practicas.length ? "El estado de cada grupo se guarda tres días; las prácticas de esta clase siguen en el resumen de abajo."
+      : "En esta clase no quedó ninguna práctica registrada.";
     $("#cv-vacio").hidden = grupos.length > 0;
     grupos.forEach(g => {
       const hace = Math.round((Date.now() - g.t)/60000);
@@ -657,20 +702,34 @@
       const prom = Math.round(hechas.reduce((a,p)=>a+p.puntaje,0)/hechas.length);
       const conUbic = hechas.filter(p => p.tUbicacionMs != null);
       const ubic = conUbic.length ? conUbic.reduce((a,p)=>a+p.tUbicacionMs,0)/conUbic.length : null;
+      // Los grupos se cuentan también por sus prácticas: en una clase vieja ya no hay estados.
+      const nGrupos = new Set(grupos.map(g => norm(g.grupo)).concat(d.practicas.map(p => norm(p.grupo || p.alias)))).size;
       vaciar($("#cv-tiles")).append(
-        tile("Llamadas evaluadas", String(hechas.length), grupos.length + " grupos en la clase"),
+        tile("Llamadas evaluadas", String(hechas.length), nGrupos + (nGrupos === 1 ? " grupo" : " grupos") + " en la clase"),
         tile("Puntaje promedio", String(prom), "sobre 100"),
         tile("Tiempo hasta la ubicación", ubic != null ? mmss(ubic) : "—", "promedio, minutos:segundos"));
       barrasCriterios($("#cv-barras"), hechas);
     }
 
-    // Guion del escenario más usado en la clase, para cantar la evolución.
-    const usados = {};
-    d.practicas.concat(d.grupos).forEach(p => { const t = p.escenario && (p.escenario.titulo || p.escenario); if(t) usados[t] = (usados[t]||0) + 1; });
-    const titulo = Object.keys(usados).sort((a,b)=>usados[b]-usados[a])[0];
-    const esc = titulo && (P.contenido.SCENARIOS || []).concat(P.escenarios || []).find(s => s.title === titulo);
-    $("#cv-guion-wrap").hidden = !(esc && esc.notasInstructor && esc.notasInstructor.length);
-    if(esc && esc.notasInstructor) vaciar($("#cv-guion")).append(h("h3", { style:"font-size:15px", text:esc.title }), h("ul", { class:"guion" }, esc.notasInstructor.map(n => h("li", { text:n }))));
+    // Un guion por cada escenario que tienen ahora los grupos (su último estado), primero
+    // los que están por llamar o llamando. Antes salía uno solo, el del escenario más usado
+    // contando las prácticas ya hechas: con rotación, el de la ronda anterior le ganaba al
+    // que se estaba llamando y el instructor cantaba la evolución equivocada. Con la clase
+    // cerrada, sólo los de los grupos que todavía están en una llamada.
+    const todos = (P.contenido.SCENARIOS || []).concat(P.escenarios || []);
+    const activo = g => g.estado === "en llamada" || (!cerrada && g.estado === "conectado");
+    const porTitulo = new Map();
+    grupos.forEach(g => { if(g.escenario){ if(!porTitulo.has(g.escenario)) porTitulo.set(g.escenario, []); porTitulo.get(g.escenario).push(g); } });
+    const escs = [...porTitulo.entries()]
+      .map(([t, gs]) => ({ esc: todos.find(s => s.title === t), gs, vivos: gs.filter(activo).length }))
+      .filter(x => x.esc && x.esc.notasInstructor && x.esc.notasInstructor.length && (!cerrada || x.vivos > 0))
+      .sort((a, b) => b.vivos - a.vivos);
+    $("#cv-guion-wrap").hidden = !escs.length;
+    const gb = vaciar($("#cv-guion"));
+    escs.forEach(({ esc, gs }, i) => gb.append(
+      h("h3", { style:"font-size:15px" + (i ? "; margin-top:14px" : ""), text: esc.title + " · " + gs.map(g => g.grupo + (activo(g) ? "" : " (" + g.estado + ")")).join(", ") }),
+      h("ul", { class:"guion" }, esc.notasInstructor.map(n => h("li", { text:n })))));
+    return sigue;
   }
 
   function tile(etiqueta, valor, detalle, medidor){
@@ -712,44 +771,83 @@
     t.append(h("tr", {}, h("th", { text:"Clase" }), h("th", { text:"Fecha" }), h("th", { text:"Código" }), h("th", { text:"" })));
     cerradas.slice(0, 20).forEach(s => t.append(h("tr", {},
       h("td", { text:s.nombre }), h("td", { text:fecha(s.creada) }), h("td", { class:"num", text:s.codigo }),
-      h("td", {}, h("button", { class:"link", text:"ver sus prácticas", onclick: () => { $("#pr-buscar").value = ""; P.filtroSala = s.codigo; irA("practicas"); } })))));
+      h("td", {},
+        // El resumen por criterio de una clase anterior, el mismo que se ve en vivo.
+        h("button", { class:"link", text:"ver resumen", onclick: () => { clearInterval(P.timer); P.salaVista = s.codigo; verClase().then(() => $("#clase-viva").scrollIntoView({ block:"start" })); } }),
+        " · ",
+        h("button", { class:"link", text:"ver sus prácticas", onclick: () => { $("#pr-buscar").value = ""; P.filtroSala = s.codigo; irA("practicas"); } })))));
   }
 
   /* =====================================================================
      PRÁCTICAS
      ===================================================================== */
-  async function cargarPracticas(dias){
-    const desde = Date.now() - (dias || 400) * 86400000;
-    const { practicas } = await api("practicas", { desde, limite: 500, sala: P.filtroSala || undefined });
-    P.practicas = practicas;
-    return practicas;
+  /* El servidor da las prácticas de a 500, de la más nueva a la más vieja. Se piden
+     páginas hasta juntar todo el período: con un solo pedido, Alumnos y Calidad veían sólo
+     las 500 más recientes sin avisar, y las revisiones a ciegas viejas se iban cayendo del
+     conteo contra la meta del piloto. Las de una clase salen de la lista de esa clase (la
+     misma del tablero): el servidor filtra por clase después del tope de 500 y del
+     período, y una clase vieja salía vacía o incompleta. */
+  const POR_PAGINA = 500, MAX_PAGINAS = 10;
+  async function cargarPracticas(dias, sala){
+    let lista = [];
+    P.truncado = false;
+    if(sala){
+      lista = (await api("sala-vivo", { codigo:sala })).practicas.sort((a,b) => b.fecha - a.fecha);
+    } else {
+      const desde = Date.now() - (dias || 400) * 86400000;
+      let hasta;
+      for(let i = 0; i < MAX_PAGINAS; i++){
+        const { practicas } = await api("practicas", { desde, hasta, limite: POR_PAGINA });
+        lista = lista.concat(practicas);
+        if(practicas.length < POR_PAGINA) break;
+        hasta = Math.min(...practicas.map(p => p.fecha)) - 1;
+        P.truncado = i === MAX_PAGINAS - 1;
+      }
+    }
+    P.practicas = lista;
+    return lista;
   }
 
   async function verPracticas(){
     let lista;
-    try{ lista = await cargarPracticas(Number($("#pr-rango").value)); }
+    try{ lista = await cargarPracticas(Number($("#pr-rango").value), P.filtroSala); }
     catch(e){ pintarSinBase($("#pr-tabla"), e); return; }
     pintarPracticas(lista);
   }
   $("#pr-rango").addEventListener("change", verPracticas);
   $("#pr-buscar").addEventListener("input", () => pintarPracticas(P.practicas));
 
-  function pintarPracticas(lista){
+  // La misma búsqueda para la tabla y para la planilla.
+  function filtrarBusqueda(lista){
     const q = norm($("#pr-buscar").value);
-    const filas = lista.filter(p => !q || norm(p.alias).includes(q) || norm(p.grupo).includes(q));
+    return lista.filter(p => !q || norm(p.alias).includes(q) || norm(p.grupo).includes(q));
+  }
+
+  function pintarPracticas(lista){
+    const filas = filtrarBusqueda(lista);
     const t = vaciar($("#pr-tabla"));
     $("#pr-vacio").hidden = filas.length > 0;
+    $("#pr-tope").hidden = !P.truncado;
+    $("#pr-tope").textContent = "Se muestran las " + (POR_PAGINA * MAX_PAGINAS).toLocaleString("es-AR") + " prácticas más recientes del período. Para ver las anteriores, elegí un período más corto.";
     if(P.filtroSala){
       t.append(h("caption", { style:"text-align:left; padding-bottom:8px" }, "Sólo la clase " + P.filtroSala + " · ", h("button", { class:"link", text:"ver todas", onclick: () => { P.filtroSala = null; verPracticas(); } })));
     }
     t.append(cabecera(["Fecha","Alumno o grupo","Escenario","Quién llama",["IA","n"],["Instructor","n"],["Ubicación","n"],["RCP","n"],""]));
-    filas.forEach(p => t.append(h("tr", { class:"clic", onclick: () => abrirPractica(p.id) },
-      h("td", { class:"num", text:fecha(p.fecha) }), h("td", { text:p.grupo || p.alias }),
-      h("td", { text:(p.escenario && p.escenario.titulo) || "" }), h("td", { text:p.perfil === "lego" ? "Sin formación" : "Guardavidas" }),
-      h("td", { class:"n", text:p.puntaje == null ? (p.error ? "sin devolución" : "—") : String(p.puntaje) }),
-      h("td", { class:"n", text:p.puntajeInstructor == null ? "" : String(p.puntajeInstructor) }),
-      h("td", { class:"n", text:mmss(p.tUbicacionMs) }), h("td", { class:"n", text:p.perfil === "lego" ? mmss(p.tRcpMs) : "" }),
-      h("td", { text:p.revision ? "✓ revisada" : "" }))));
+    filas.forEach(p => {
+      // A ciegas también en la tabla: el puntaje de la IA (un 40 delata que faltó un dato
+      // crítico) y el tiempo hasta la ubicación (sale del turno que la IA juzgó como el de
+      // la ubicación) se ven recién después de revisarla. «sin devolución» se sigue
+      // viendo: ahí no hay juicio que sesgue, y dice cuáles hay que revisar a mano.
+      const ciegaFila = !p.revision && p.puntaje != null;
+      const oculto = "Se ve después de tu revisión a ciegas";
+      t.append(h("tr", { class:"clic", onclick: () => abrirPractica(p.id) },
+        h("td", { class:"num", text:fecha(p.fecha) }), h("td", { text:p.grupo || p.alias }),
+        h("td", { text:(p.escenario && p.escenario.titulo) || "" }), h("td", { text:p.perfil === "lego" ? "Sin formación" : "Guardavidas" }),
+        h("td", { class:"n", text: ciegaFila ? "oculto" : p.puntaje == null ? (p.error ? "sin devolución" : "—") : String(p.puntaje), title: ciegaFila ? oculto : null }),
+        h("td", { class:"n", text:p.puntajeInstructor == null ? "" : String(p.puntajeInstructor) }),
+        h("td", { class:"n", text: ciegaFila ? "oculto" : mmss(p.tUbicacionMs), title: ciegaFila ? oculto : null }), h("td", { class:"n", text:p.perfil === "lego" ? mmss(p.tRcpMs) : "" }),
+        h("td", { text:p.revision ? "✓ revisada" : "" })));
+    });
   }
 
   function pintarSinBase(tabla, e){
@@ -757,9 +855,10 @@
   }
 
   // Planilla para abrir en Excel o Google Sheets. Una columna por criterio (la IA), y el
-  // puntaje del instructor si la revisó.
+  // puntaje del instructor si la revisó. Lleva las mismas filas que la tabla: si hay algo
+  // en la búsqueda (el «ver» de Alumnos la llena con el nombre), sólo esas.
   $("#pr-csv").addEventListener("click", ()=>{
-    const lista = P.practicas;
+    const lista = filtrarBusqueda(P.practicas);
     const ids = []; const etiquetas = {};
     lista.forEach(p => (p.rubrica || []).forEach(c => { if(!ids.includes(c.id)){ ids.push(c.id); etiquetas[c.id] = c.label; } }));
     const cab = ["fecha","alumno_o_grupo","clase","escenario","quien_llama","dificultad","duracion_s","puntaje_ia","topeado","puntaje_instructor","revision_a_ciegas","t_ubicacion_s","t_rcp_s","modelo_evaluador"].concat(ids.map(id => "ia_" + id), ids.map(id => "instructor_ciego_" + id));
@@ -784,7 +883,7 @@
     actual = p;
     const ev = p.evaluacion || {};
     $("#d-titulo").textContent = (p.grupo || p.alias) + " · " + (p.escenario && p.escenario.titulo || "");
-    $("#d-meta").textContent = fecha(p.fecha) + " · " + (p.perfil === "lego" ? "persona sin formación" : "guardavidas") + " · operador " + (p.dificultad || "") + " · duración " + mmss(p.duracionMs) + " · cortó " + (p.cortoPor || "") + (p.modeloEvaluador ? " · evaluó " + p.modeloEvaluador : "");
+    $("#d-meta").textContent = fecha(p.fecha) + " · " + (p.perfil === "lego" ? "persona sin formación" : "guardavidas") + " · operador " + (p.dificultad || "") + " · duración " + mmss(p.duracionMs) + (p.cortoPor === "tiempo" ? " · terminó por tiempo" : " · cortó " + (p.cortoPor || "")) + (p.modeloEvaluador ? " · evaluó " + p.modeloEvaluador : "");
     const items = {}; (ev.items || []).forEach(i => { if(i && i.id) items[i.id] = i; });
     const rev = (p.revision && p.revision.items) || {};
     const mios = (p.transcripcion || []).filter(l => l.w === "yo");
@@ -795,10 +894,16 @@
     $("#d-ciega").hidden = !ciega;
     const tIA = tile("Puntaje de la IA", p.puntaje == null ? "—" : String(p.puntaje), p.topeado ? "topeado: faltó un dato crítico" : ev.titular || "");
     tIA.classList.add("ia");
+    // El tiempo hasta la ubicación sale del turno que la IA juzgó como el de la ubicación:
+    // también se oculta a ciegas, porque un «—» le diría al revisor que para la IA nunca la
+    // dio (y es el criterio crítico). El de la RCP lo mide la app en la llamada, no la IA.
+    const tUb = tile("Tiempo hasta la ubicación", tu ? mmss(tu.t) : "—", "minutos:segundos desde que atendió");
+    tUb.classList.add("ia");
     vaciar($("#d-tiles")).append(
       tIA,
       tile("Tu puntaje", p.revision ? String(p.revision.puntaje) : "—", p.revision ? "revisada el " + fecha(p.revision.fecha) : "todavía sin revisar"),
-      tile(p.perfil === "lego" ? "Ubicación · RCP" : "Tiempo hasta la ubicación", (tu ? mmss(tu.t) : "—") + (p.perfil === "lego" ? " · " + mmss(p.tRcpMs) : ""), "minutos:segundos desde que atendió"));
+      tUb,
+      p.perfil === "lego" ? tile("Empezó la RCP", mmss(p.tRcpMs), "minutos:segundos desde que atendió") : "");
     const box = vaciar($("#d-crit"));
     (p.rubrica || []).forEach(c => {
       const it = items[c.id] || { estado:"falto", comentario:"" };
@@ -1080,12 +1185,19 @@
       h("td", {}, h("button", { class:"link", text:"editar", onclick: () => abrirCuenta(c) })))));
   }
   let cuentaEditada = null;
+  // Una fecha contada desde hoy en la hora argentina, la misma que usa el servidor para
+  // los vencimientos (hoyAR en api/): con la UTC, una cuenta dada de alta después de las
+  // 21 h vencía un día más tarde.
+  function fechaAR(dias){ return new Date(Date.now() - 3*3600000 + dias*86400000).toISOString().slice(0,10); }
+  // La prueba gratuita es de 30 prácticas por mes y vence a los 30 días (lo que dice el
+  // manual operativo). Antes arrancaba con 100 y sin vencimiento si no se corregía a mano.
+  const PRUEBA = { cupo:30, dias:30 };
   function abrirCuenta(c){
     cuentaEditada = c || null;
     $("#dc-titulo").textContent = c ? "Editar " + c.nombre : "Nueva cuenta";
     $("#dc-nombre").value = c ? c.nombre : ""; $("#dc-contacto").value = c ? c.contacto : "";
     $("#dc-tipo").value = c ? c.tipo : "instructor"; $("#dc-plan").value = c ? c.plan : "prueba";
-    $("#dc-cupo").value = c ? c.cupoMensual : 100; $("#dc-vence").value = c && c.vence ? c.vence : "";
+    $("#dc-cupo").value = c ? c.cupoMensual : PRUEBA.cupo; $("#dc-vence").value = c ? (c.vence || "") : fechaAR(PRUEBA.dias);
     $("#dc-activa").checked = c ? c.activa : true; $("#dc-notas").value = c ? c.notas : "";
     $("#dc-err").textContent = "";
     $("#dc-bienvenida").hidden = !(c && c.codigoAlumnos);
@@ -1100,7 +1212,7 @@
       "  Tu código de instructor: " + c.codigoInstructor + " (es personal, no lo compartas)",
       "• Tus alumnos entran acá: " + origen + "/?c=" + c.codigoAlumnos,
       "  o en " + location.host + " con el código " + c.codigoAlumnos,
-      "• Para una clase con varios grupos a la vez, abrí una «clase en vivo» en el panel: te da un código de 6 letras para proyectar y ves a todos los grupos en vivo.",
+      "• Para una clase con varios grupos a la vez, abrí una «clase en vivo» en el panel: te da un código de 6 caracteres (letras y números) para proyectar y ves a todos los grupos en vivo.",
       "",
       "Plan: " + (NOMBRES_PLAN[c.plan] || c.plan) + (c.cupoMensual ? " · " + c.cupoMensual + " prácticas por mes" : " · sin tope de prácticas") + (c.vence ? " · vigente hasta el " + c.vence : ""),
       "Cómo dar la clase con el simulador: " + origen + "/instructores#guia",
@@ -1109,6 +1221,11 @@
     ].join("\n");
   }
   $("#cl-nueva").addEventListener("click", () => abrirCuenta(null));
+  // Volver a elegir la prueba en una cuenta nueva repone sus valores; en una que ya
+  // existe no se toca nada, para no pisarle lo que se acordó.
+  $("#dc-plan").addEventListener("change", e => {
+    if(!cuentaEditada && e.target.value === "prueba"){ $("#dc-cupo").value = PRUEBA.cupo; $("#dc-vence").value = fechaAR(PRUEBA.dias); }
+  });
   $("#dc-cerrar").addEventListener("click", () => $("#dlg-cuenta").close());
   $("#dc-copiar").addEventListener("click", e => copiar($("#dc-msj").textContent, e.target));
   $("#dc-guardar").addEventListener("click", async ()=>{
@@ -1173,10 +1290,15 @@
     const pedidos = d => (Number(d.turnos)||0) + (Number(d.evaluaciones)||0);
     const tot = orden.reduce((s,d)=>s+pedidos(d),0);
     const conCuota = orden.filter(d => Number(d.cuota429) > 0).length;
+    // Los pedidos que ningún modelo contestó (api/chat.js, contarFalla). Antes no se
+    // contaban: el día más saturado podía salir vacío y sin marca.
+    const sinResp = d => Number(d.sinRespuesta) || 0;
+    const totSin = orden.reduce((s,d)=>s+sinResp(d),0);
     const costo = orden.reduce((s,d)=> s + (Number(d.turnos)||0)*COSTO_TURNO_USD + (Number(d.evaluaciones)||0)*COSTO_DEVOLUCION_USD, 0);
     vaciar($("#us-tiles")).append(
       tile("Pedidos al modelo en 30 días", tot.toLocaleString("es-AR"), orden.reduce((s,d)=>s+(Number(d.evaluaciones)||0),0) + " devoluciones"),
-      tile("Días con cuota agotada", String(conCuota), conCuota ? "la app pasó a otro modelo gratuito" : "la capa gratuita alcanzó"),
+      tile("Pedidos sin respuesta", String(totSin), totSin ? "alumnos que vieron «saturado»: señal para pasar al plan pago"
+        : conCuota ? "hubo " + conCuota + (conCuota === 1 ? " día" : " días") + " con cuota agotada, pero la app pasó a otro modelo" : "la capa gratuita alcanzó"),
       tile("Si fuera pago", "USD " + costo.toFixed(2).replace(".", ","), "estimado para estos 30 días"));
 
     const max = Math.max(1, ...orden.map(pedidos));
@@ -1186,13 +1308,15 @@
       const v = pedidos(d);
       const n429 = Number(d.cuota429) || 0;
       const c = h("div", { class:"c", style:"height:" + (v/max*100) + "%", tabindex:"0", "aria-label": diaCorto(d.fecha) + ": " + v + " pedidos" });
-      const detalle = diaCorto(d.fecha) + (n429 ? " · " + n429 + (n429 === 1 ? " vez" : " veces") + " sin cuota" : "");
+      const detalle = diaCorto(d.fecha) + (n429 ? " · " + n429 + (n429 === 1 ? " vez" : " veces") + " sin cuota" : "")
+        + (sinResp(d) ? " · " + sinResp(d) + " sin respuesta" : "");
       c.addEventListener("pointermove", ev => mostrarTip(ev, v + " pedidos", detalle));
       c.addEventListener("pointerleave", ocultarTip);
       c.addEventListener("focus", () => { const r = c.getBoundingClientRect(); mostrarTip({ clientX:r.left, clientY:r.top }, v + " pedidos", detalle); });
       c.addEventListener("blur", ocultarTip);
       cols.append(c);
-      marcas.append(h("span", { text: Number(d.cuota429) > 0 ? "⚠" : "", title: Number(d.cuota429) > 0 ? "Cuota agotada" : "" }));
+      const marca = sinResp(d) > 0 || Number(d.cuota429) > 0;
+      marcas.append(h("span", { text: marca ? "⚠" : "", title: sinResp(d) > 0 ? "Pedidos sin respuesta" : marca ? "Se pasó a otro modelo" : "" }));
     });
     let ejes = $("#us-ejes");
     if(!ejes){ ejes = h("div", { class:"ejes", id:"us-ejes" }); $("#us-marcas").after(ejes); }
@@ -1200,11 +1324,13 @@
 
     // Tabla: los mismos números, sin depender del gráfico.
     const t = vaciar($("#us-tabla"));
-    t.append(cabecera(["Día",["Turnos del operador","n"],["Devoluciones","n"],["Sin cuota","n"],"Modelos que contestaron"]));
-    dias.filter(d => pedidos(d) > 0).forEach(d => {
+    t.append(cabecera(["Día",["Turnos del operador","n"],["Devoluciones","n"],["Sin cuota","n"],["Sin respuesta","n"],"Modelos que contestaron"]));
+    // Un día en que nada anduvo tiene cero pedidos contestados: igual tiene que aparecer.
+    dias.filter(d => pedidos(d) > 0 || sinResp(d) > 0).forEach(d => {
       const modelos = Object.keys(d).filter(k => k.startsWith("m:")).map(k => k.slice(2) + " (" + d[k] + ")").join(", ");
       t.append(h("tr", {}, h("td", { class:"num", text:diaCorto(d.fecha) }), h("td", { class:"n", text:String(Number(d.turnos)||0) }),
-        h("td", { class:"n", text:String(Number(d.evaluaciones)||0) }), h("td", { class:"n", text:Number(d.cuota429) > 0 ? "⚠ " + d.cuota429 : "" }), h("td", { class:"small", text:modelos })));
+        h("td", { class:"n", text:String(Number(d.evaluaciones)||0) }), h("td", { class:"n", text:Number(d.cuota429) > 0 ? "⚠ " + d.cuota429 : "" }),
+        h("td", { class:"n", text:sinResp(d) ? "⚠ " + sinResp(d) : "" }), h("td", { class:"small", text:modelos })));
     });
   }
 

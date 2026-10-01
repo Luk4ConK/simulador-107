@@ -3,7 +3,7 @@
 // modelos enfriados y la caché de códigos no se contagien de una prueba a otra.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { crearRedis, crearGemini, instalarFetch, reqRes, URL_BASE } from "./falsos.mjs";
+import { crearRedis, crearGemini, instalarFetch, reqRes, URL_BASE, evaluadorPorDefecto } from "./falsos.mjs";
 
 let n = 0;
 async function cargar() {
@@ -321,6 +321,179 @@ test("códigos al azar: después de 30 fallos se frena esa conexión", async () 
     // Desde otra conexión, el código bueno anda.
     const otra = await llamar(chat, { modo: "verificar" }, { "x-codigo": "GV2027", "x-forwarded-for": "10.0.0.2" });
     assert.equal(otra.statusCode, 200);
+  } finally { quitar(); }
+});
+
+test("freno por IP: cuenta códigos distintos, y el del panel va aparte", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99", CODIGO_ACCESO: "GV2027" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { chat, datos } = await cargar();
+    // Un celular que reintenta solo con un código viejo: muchos pedidos, un solo código.
+    for (let i = 0; i < 40; i++) assert.equal((await llamar(chat, { modo: "verificar" }, { "x-codigo": "VIEJO1" })).statusCode, 401);
+    assert.equal((await llamar(chat, { modo: "verificar" }, { "x-codigo": "GV2027" })).statusCode, 200, "un código repetido no frena el aula");
+    // Alguien probando al azar desde el aula frena a los alumnos de esa conexión...
+    for (let i = 0; i < 30; i++) await llamar(chat, { modo: "verificar" }, { "x-codigo": "AZAR" + i });
+    assert.equal((await llamar(chat, { modo: "verificar" }, { "x-codigo": "GV2027" })).statusCode, 429);
+    // ...pero no al instructor, que sigue pudiendo entrar al panel desde la misma red.
+    assert.equal((await llamar(datos, { accion: "panel" }, { "x-panel": "ADMIN-99" })).statusCode, 200);
+  } finally { quitar(); }
+});
+
+test("clase cerrada: las llamadas en curso terminan y se guardan; nadie más entra ni empieza otra", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { chat, datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const sala = (await llamar(datos, { accion: "sala-crear", nombre: "Pre-curso", horas: 3 }, admin)).cuerpo.sala;
+    const alumno = { "x-codigo": sala.codigo };
+    const evaluar = grupo => ({ modo: "evaluar", prompt: "- ubicacion (U)", rubrica: [{ id: "ubicacion", peso: 1, critico: true }],
+      registro: { grupo, escenario: { titulo: "Balneario" }, transcripcion: [] } });
+
+    // Un grupo termina antes del cierre. El aviso "evaluando" que manda la app puede llegar
+    // después de que se guardó: no tiene que pisar el "terminada" con su puntaje.
+    assert.equal((await llamar(chat, evaluar("Grupo 1"), alumno)).statusCode, 200);
+    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 1", estado: "evaluando", escenario: "Balneario" }, alumno);
+    let vivo = (await llamar(datos, { accion: "sala-vivo", codigo: sala.codigo }, admin)).cuerpo;
+    assert.equal(vivo.grupos.find(g => g.grupo === "Grupo 1").estado, "terminada");
+
+    // Otro grupo está en plena llamada cuando el instructor cierra la clase.
+    assert.equal((await llamar(chat, { modo: "operador", inicio: true, instrucciones: "x ESTADO DE LA LLAMADA", turnos: turnosDeEjemplo }, alumno)).statusCode, 200);
+    await llamar(datos, { accion: "sala-cerrar", codigo: sala.codigo }, admin);
+    const { chat: chat2 } = await cargar();   // sin la caché de 30 s de la instancia anterior
+    // Nadie más entra ni empieza otra práctica...
+    assert.equal((await llamar(chat2, { modo: "verificar" }, alumno)).cuerpo.error, "sala_cerrada");
+    assert.equal((await llamar(chat2, { modo: "operador", inicio: true, instrucciones: "x", turnos: turnosDeEjemplo }, alumno)).statusCode, 403);
+    // ...pero la llamada que estaba en curso sigue y recibe su devolución.
+    const turno = await llamar(chat2, { modo: "operador", instrucciones: "x ESTADO DE LA LLAMADA", turnos: turnosDeEjemplo }, alumno);
+    assert.equal(turno.statusCode, 200, JSON.stringify(turno.cuerpo));
+    const ev = await llamar(chat2, evaluar("Grupo 2"), alumno);
+    assert.equal(ev.statusCode, 200, JSON.stringify(ev.cuerpo));
+    assert.equal(ev.cuerpo.guardado, true);
+    vivo = (await llamar(datos, { accion: "sala-vivo", codigo: sala.codigo }, admin)).cuerpo;
+    assert.equal(vivo.practicas.length, 2);
+    assert.equal(vivo.grupos.find(g => g.grupo === "Grupo 2").estado, "terminada");
+  } finally { quitar(); }
+});
+
+test("clase vencida: los celulares que reintentan con el código viejo no frenan la red del aula", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99", CODIGO_ACCESO: "GV2027" });
+  const redis = crearRedis();
+  const quitar = instalarFetch({ redis, gemini: crearGemini() });
+  try {
+    const { datos } = await cargar();
+    const sala = (await llamar(datos, { accion: "sala-crear", nombre: "Clase corta", horas: 1 }, { "x-panel": "ADMIN-99" })).cuerpo.sala;
+    // Se cumple la hora: se adelanta el vencimiento en lo guardado.
+    for (const k of ["sala:", "salainfo:"]) {
+      const v = JSON.parse(redis.ejecutar(["GET", "s107:" + k + sala.codigo]).result);
+      redis.ejecutar(["SET", "s107:" + k + sala.codigo, JSON.stringify({ ...v, vence: Date.now() - 1000 }), "EX", "3600"]);
+    }
+    const { chat } = await cargar();
+    for (let i = 0; i < 40; i++) {
+      const r = await llamar(chat, { modo: "verificar" }, { "x-codigo": sala.codigo });
+      assert.equal(r.cuerpo.error, "sala_cerrada", "una clase vencida dice que terminó, no 'código equivocado'");
+    }
+    assert.equal((await llamar(chat, { modo: "verificar" }, { "x-codigo": "GV2027" })).statusCode, 200);
+    assert.equal((await llamar(datos, { accion: "panel" }, { "x-panel": "ADMIN-99" })).statusCode, 200);
+  } finally { quitar(); }
+});
+
+test("un 500, un 504 o la red caída pasan al modelo siguiente", async () => {
+  for (const falla of [500, 504, "red"]) {
+    entorno();
+    const base = crearGemini();
+    const gemini = {
+      registro: base.registro, operador: null,
+      async responder(url, init) {
+        if (!url.includes("gemini-3.1-flash-lite:")) return base.responder(url, init);
+        base.registro.push({ modelo: "gemini-3.1-flash-lite" });
+        if (falla === "red") throw new TypeError("fetch failed");
+        return new Response(JSON.stringify({ error: { code: falla, status: falla === 500 ? "INTERNAL" : "DEADLINE_EXCEEDED" } }), { status: falla });
+      }
+    };
+    const quitar = instalarFetch({ redis: crearRedis(), gemini });
+    try {
+      const { chat } = await cargar();
+      const r = await llamar(chat, { modo: "operador", instrucciones: "x ESTADO DE LA LLAMADA", turnos: turnosDeEjemplo });
+      assert.equal(r.statusCode, 200, falla + ": " + JSON.stringify(r.cuerpo));
+      assert.equal(base.registro[0].modelo, "gemini-3.1-flash-lite");
+      assert.notEqual(r.cuerpo.modelo, "gemini-3.1-flash-lite");
+    } finally { quitar(); }
+  }
+});
+
+test("devolución con el JSON cortado: prueba el modelo siguiente en vez de rendirse", async () => {
+  entorno();
+  const gemini = crearGemini({ evaluador: (prompt, modelo) => modelo === "gemini-3.5-flash" ? '{"items":[{"id":"ubicacion","estado":"logr' : evaluadorPorDefecto(prompt) });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini });
+  try {
+    const { chat } = await cargar();
+    const e = await llamar(chat, { modo: "evaluar", prompt: "- ubicacion (U)", rubrica: [{ id: "ubicacion", peso: 1 }] });
+    assert.equal(e.statusCode, 200, JSON.stringify(e.cuerpo));
+    assert.equal(e.cuerpo.modelo, "gemini-2.5-flash");
+  } finally { quitar(); }
+});
+
+test("MODELO_OPERADOR acepta varios modelos separados por comas, en ese orden", async () => {
+  entorno({ MODELO_OPERADOR: "gemini-3.5-flash, gemini-2.5-flash" });
+  const gemini = crearGemini();
+  const quitar = instalarFetch({ redis: crearRedis(), gemini });
+  try {
+    const { chat } = await cargar();
+    const r = await llamar(chat, { modo: "operador", instrucciones: "x ESTADO DE LA LLAMADA", turnos: turnosDeEjemplo });
+    assert.equal(r.cuerpo.modelo, "gemini-3.5-flash");
+  } finally { quitar(); }
+});
+
+test("reintento de la devolución con el id que armó la app: no duplica la práctica ni el cupo", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { chat, datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const cuenta = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Escuela", plan: "prueba", cupoMensual: 30 } }, admin)).cuerpo.cuenta;
+    const pedido = { modo: "evaluar", practicaId: "k3x9practica01", prompt: "- ubicacion (U)", rubrica: [{ id: "ubicacion", peso: 1 }], registro: { grupo: "Grupo 1", transcripcion: [] } };
+    const a = await llamar(chat, pedido, { "x-codigo": cuenta.codigoAlumnos });
+    // La respuesta de la primera no llegó al celular: la app reintenta con el mismo id.
+    const b = await llamar(chat, pedido, { "x-codigo": cuenta.codigoAlumnos });
+    assert.equal(a.cuerpo.practicaId, "k3x9practica01");
+    assert.equal(b.cuerpo.practicaId, "k3x9practica01");
+    assert.equal((await llamar(datos, { accion: "practicas" }, { "x-panel": cuenta.codigoInstructor })).cuerpo.practicas.length, 1);
+    const usoMes = (await llamar(datos, { accion: "cuentas" }, admin)).cuerpo.cuentas.find(c => c.id === cuenta.id).usoMes;
+    assert.equal(usoMes.practicas, 1);
+    // Un id que ya es de otra cuenta no se pisa: esa práctica recibe uno nuevo.
+    const otra = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Otra" } }, admin)).cuerpo.cuenta;
+    const c = await llamar(chat, pedido, { "x-codigo": otra.codigoAlumnos });
+    assert.notEqual(c.cuerpo.practicaId, "k3x9practica01");
+  } finally { quitar(); }
+});
+
+test("uso: los pedidos que se quedaron sin respuesta también se cuentan", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99", CODIGO_ACCESO: "GV2027" });
+  const cuota = {};
+  ["gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-3.5-flash", "gemini-2.5-flash"].forEach(m => cuota[m] = { restantes: 9 });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini({ cuota }) });
+  try {
+    const { chat, datos } = await cargar();
+    const r = await llamar(chat, { modo: "operador", instrucciones: "x", turnos: turnosDeEjemplo }, { "x-codigo": "GV2027" });
+    assert.equal(r.statusCode, 429);
+    const hoy = (await llamar(datos, { accion: "uso", dias: 1 }, { "x-panel": "ADMIN-99" })).cuerpo.dias[0];
+    assert.equal(Number(hoy.sinRespuesta), 1);
+    assert.equal(Number(hoy.sinCuota), 1);
+  } finally { quitar(); }
+});
+
+test("cron diario: una escritura real en la base, para que Upstash no la archive", async () => {
+  entorno({ ...conBase });
+  const redis = crearRedis();
+  const quitar = instalarFetch({ redis, gemini: crearGemini() });
+  try {
+    const { datos } = await cargar();
+    const r = await llamar(datos, null, { "user-agent": "vercel-cron/1.0" }, "GET", { vivo: "1" });
+    assert.equal(r.statusCode, 200);
+    assert.equal(r.cuerpo.ok, true);
+    assert.ok(redis.datos.has("s107:vivo"));
   } finally { quitar(); }
 });
 

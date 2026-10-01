@@ -56,6 +56,7 @@ export function crearRedis() {
     HINCRBY: (k, f, n) => { const e = de(k, "hash", true); const v = (num(e.v.get(f)) || 0) + num(n); e.v.set(f, String(v)); return v; },
     SADD: (k, ...ms) => { const e = de(k, "set", true); let n = 0; ms.forEach(m => { if (!e.v.has(m)) { e.v.add(m); n++; } }); return n; },
     SMEMBERS: k => { const e = de(k, "set"); return e ? [...e.v] : []; },
+    SCARD: k => { const e = de(k, "set"); return e ? e.v.size : 0; },
     ZADD: (k, ...sm) => { const e = de(k, "zset", true); let n = 0; for (let i = 0; i < sm.length; i += 2) { if (!e.v.has(sm[i + 1])) n++; e.v.set(sm[i + 1], num(sm[i])); } return n; },
     ZREM: (k, ...ms) => { const e = de(k, "zset"); if (!e) return 0; return ms.reduce((n, m) => n + (e.v.delete(m) ? 1 : 0), 0); },
     ZREVRANGE: (k, a, b) => {
@@ -179,6 +180,7 @@ export function operadorPorDefecto(sistema, contenidos) {
   if (/SE TERMINÓ/.test(estado)) return "Sin la dirección no puedo mandarte la ambulancia. Averiguala y volvé a llamar al 107." + marcas + "\n[[CERRAR]]";
   if (/LA AMBULANCIA ESTÁ LLEGANDO/.test(estado)) return "La ambulancia ya está ahí. Seguí comprimiendo hasta que los paramédicos se hagan cargo. Voy a cortar." + marcas + "\n[[CERRAR]]";
   if (/te toca CERRAR/.test(estado)) return "El móvil ya está en camino. Voy a cortar: si cambia la situación, volvé a llamar al 107." + marcas + "\n[[CERRAR]]";
+  if (/decile en una frase corta que la ambulancia ya sale/.test(estado)) return "La ambulancia ya sale. Seguí así, fuerte y rápido." + marcas;
   if (/YA ESTÁ HACIENDO LA RCP/.test(estado)) return "Muy bien, seguí así, fuerte y rápido." + marcas;
   if (/YA TENÉS LO ESENCIAL/.test(estado)) return "La ambulancia ya sale. Poné el teléfono en altavoz y empezá a empujar fuerte en el medio del pecho." + marcas;
   if (/YA TENÉS TODO LO ESENCIAL/.test(estado)) return "El SEM ya está en camino, llega en unos 6 minutos. ¿Quién sos?" + marcas + "\n[[GRADO:6]]";

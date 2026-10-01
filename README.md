@@ -1,6 +1,6 @@
 # Simulador 107 — cómo publicarlo
 
-App web donde el alumno llama al sistema de emergencias y habla en voz alta con un operador simulado. Al cortar recibe la devolución sobre qué datos del protocolo pasó y cuáles faltaron.
+App web donde el alumno llama al sistema de emergencias y habla en voz alta con un operador simulado. Al cortar recibe la devolución sobre qué datos del protocolo pasó y cuáles faltaron. Es un producto de **Kalu Lab**.
 
 Sirve para dos públicos: la formación de guardavidas (el operador le pide lo que sólo un entrenado sabe dar) y los cursos de RCP para la comunidad (el operador reconoce el paro y guía la RCP por teléfono). Con la base de datos conectada suma clases en vivo para varios grupos a la vez, registro de prácticas y un panel para los instructores.
 
@@ -8,14 +8,14 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 
 ## La dirección
 
-**https://simulador-107.vercel.app** — es la web principal y todo empieza ahí. Abre en una entrada con dos puertas:
+**https://simulador.kalulab.store** — es la web principal y todo empieza ahí (**kalulab.store** lleva al mismo lugar, para dictarla corta; la dirección de Vercel, https://simulador-107.vercel.app, sigue andando). Mientras no esté conectado el dominio, usá la de Vercel. Abre en una entrada con dos puertas:
 
 - **Soy alumno:** el alumno pone el código de la clase que le diste y entra a practicar.
 - **Soy instructor:** ponés tu código y entrás al panel, donde abrís las clases y ves las prácticas.
 
-Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. **https://simulador-107.vercel.app/activar** revisa sola cuáles faltan y tiene los pasos con los enlaces directos.
+Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. La página **/activar** (por ejemplo, https://simulador-107.vercel.app/activar) revisa sola cuáles faltan, prueba que la base y la IA respondan, y tiene los pasos con los enlaces directos.
 
-**Desde la web de Sumar Salud.** Al final de esa misma página hay un recuadro listo para pegar en la web de Sumar Salud (en WordPress, con un bloque *HTML personalizado*): el alumno escribe ahí el código de la clase y entra directo a practicar, y el instructor tiene su botón al panel. Así todos entran siempre desde la web de Sumar Salud. Ahí mismo están los pasos para que el simulador tenga una dirección propia, como *simulador.sumarsalud.org*, si la querés.
+**Desde la web de Sumar Salud.** Al final de esa misma página hay un recuadro listo para pegar en la web de Sumar Salud (en WordPress, con un bloque *HTML personalizado*): el alumno escribe ahí el código de la clase y entra directo a practicar, y el instructor tiene su botón al panel. Ahí mismo están los pasos para conectar el dominio de Kalu Lab (Vercel y GoDaddy). Cuando el dominio ande, copiá el recuadro de nuevo desde **simulador.kalulab.store/activar**, así lleva a la dirección nueva.
 
 ---
 
@@ -105,13 +105,13 @@ Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pan
 
 Se entra desde la página principal, en *Soy instructor*, o directo en **https://simulador-107.vercel.app/panel**. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
 
-- **Clase en vivo.** Abrís una clase y te da un código de seis letras para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima y, al final, qué criterio costó más en toda la clase.
+- **Clase en vivo.** Abrís una clase y te da un código de seis caracteres para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima en cada escenario que se está llamando y, al final, qué criterio costó más en toda la clase. Al cerrar la clase, los grupos que estaban en una llamada la terminan y reciben su devolución, y el resumen queda a la vista para el cierre; el de una clase anterior se vuelve a ver con «ver resumen».
 - **Prácticas.** Cada llamada queda con su transcripción. Podés revisarla criterio por criterio (a ciegas: lo que dijo la IA se ve recién después de marcar lo tuyo), borrarla o descargar todo en una planilla.
 - **Alumnos.** La evolución del puntaje de cada grupo o alumno.
 - **Calidad.** Cuánto coincide la IA con los instructores (kappa de Cohen), con las revisiones a ciegas.
 - **Escenarios.** Escenarios propios de la cuenta, que ven todos sus alumnos en cualquier celular.
 - **Mi cuenta.** Los códigos de alumnos y de instructor, y cómo cambiarlos.
-- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los días en que se agotó la cuota gratuita.
+- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los pedidos que se quedaron sin respuesta (si aparecen más de dos días por mes, es la señal para pasar al plan pago de Gemini).
 
 ## Qué le pasás a los alumnos
 
@@ -131,7 +131,7 @@ En la pantalla de inicio del simulador sigue la tarjeta **"+ Cargar un escenario
 
 ## Cuánto cuesta
 
-Hoy corre en la capa gratuita de Gemini, de Vercel y de Upstash: **cero pesos**. La capa gratuita de Gemini tiene topes por modelo, por minuto y por día; la app los reparte entre varios modelos para aguantar 8 grupos a la vez.
+Hoy corre en la capa gratuita de Gemini, de Vercel y de Upstash: **cero pesos**. La capa gratuita de Gemini tiene topes por modelo, por minuto y por día; la app reparte los pedidos entre varios modelos y, si se saturan un momento, reintenta sola. Con 8 grupos en la capa gratuita, lo seguro es que llamen de a 4 mientras los otros 4 observan; para que llamen los 8 a la vez sin esperas, se activa el plan pago de Gemini ese día (menos de un dólar por clase). Antes de la primera clase conviene mirar los topes reales de tu clave en https://aistudio.google.com/rate-limit.
 
 Si fuera pago: unos **USD 0,036 por práctica** con Gemini (unos $67 con IVA, a septiembre de 2026), más USD 20 por mes de Vercel Pro, que es obligatorio el día que se le cobra a alguien, porque el plan gratuito de Vercel no admite uso comercial. Con Claude cuesta más por práctica, aunque el código usa caché del prompt para bajarlo.
 

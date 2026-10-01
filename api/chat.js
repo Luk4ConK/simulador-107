@@ -14,8 +14,11 @@
 //      y KV_REST_API_TOKEN). Sin base, la app funciona igual que antes: sin registro de
 //      prácticas, sin salas y con un único código de acceso.
 //
-//   MODELO_OPERADOR    · opcional · para probar primero otro modelo en la conversación
-//   MODELO_EVALUADOR   · opcional · para probar primero otro modelo en la devolución
+//   MODELO_OPERADOR    · opcional · uno o varios modelos, separados por comas y en orden de
+//                        preferencia, para probar primero en la conversación (por ejemplo
+//                        "gemini-3.5-flash-lite,gemini-3.1-flash-lite"). Los de la lista de
+//                        abajo quedan detrás, de respaldo. Después de cambiarla, redesplegar.
+//   MODELO_EVALUADOR   · opcional · lo mismo, para la devolución
 //   GEMINI_SIN_PENSAR  · opcional · poné "1" si el operador tarda demasiado en contestar
 //
 // Este archivo no importa nada de otros archivos del proyecto a propósito: sin
@@ -30,14 +33,20 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 // Se prueban en orden. Cada modelo tiene su propia cuota en la capa gratuita de Gemini
 // (por modelo y por proyecto, no por clave), así que cuando uno se agota se sigue con el
 // siguiente. Los Flash-Lite van primero para el operador porque tienen ~500 pedidos por
-// día cada uno, contra ~20 de los Flash. Un modelo que no existe para esta clave se
-// saltea y se recuerda, así que la lista puede tener nombres de más.
+// día cada uno, contra ~20 de los Flash. Un modelo que no existe para esta clave (404, o
+// 403 como los 2.5 desde el 18/09/2026 para quien no los usaba) se enfría 6 h, así que la
+// lista puede tener nombres de más.
+// Sin alias "-latest": comparten la cuota del modelo al que apuntan y sólo gastaban un
+// pedido fallido más. Los Flash del desborde del operador (3.6 y 3.7) no son los del
+// evaluador (3.8, 3.5 y 2.5): si el operador se come su cuota diaria en un pico, las
+// devoluciones de fin de ronda no se quedan sin modelo. Los Flash-Lite sí los comparten,
+// pero van al final de la lista del evaluador.
 const DEFAULTS = {
   gemini: {
     operador:  ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-2.5-flash-lite",
-                "gemini-flash-lite-latest", "gemini-3.5-flash", "gemini-2.5-flash", "gemma-3-27b-it"],
-    evaluador: ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest",
-                "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite"]
+                "gemini-3.6-flash", "gemini-3.7-flash", "gemma-3-27b-it"],
+    evaluador: ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash",
+                "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
   },
   anthropic: {
     operador:  ["claude-haiku-4-5", "claude-haiku-4-5-20251001"],
@@ -50,14 +59,31 @@ const DEFAULTS = {
 // rechaza con un error que se ve, para que se note en las pruebas y se suba el tope.
 const TOPE_PROMPT = 40000;
 
-const elegido = {};   // memoria del modelo que anduvo, por proveedor y rol
-const enfriado = {};  // modelo -> { hasta, motivo }: no se prueba hasta esa hora
+// Vercel corta la función a los 60 s (maxDuration en vercel.json) con un 504 en HTML, que
+// el navegador no puede leer y que, en la devolución, no deja nada guardado. Por eso los
+// modelos tienen hasta los 45 s desde que llegó el pedido, y cada uno su propio tope, para
+// que uno que se cuelga no se coma el tiempo de los demás. Los 15 s que sobran son para
+// contar el uso y guardar la práctica.
+const PRESUPUESTO_MS = 45000;
+const TOPE_MODELO_MS = { rapido: 15000, lento: 30000 };
+
+// Una clase cerrada (o vencida) no deja entrar ni empezar otra práctica, pero la llamada
+// que estaba en curso se termina y se evalúa: durante este margen, contado desde el cierre
+// o el vencimiento, se aceptan los turnos de una práctica ya empezada y la devolución.
+const GRACIA_SALA_MS = 20 * 60000;
+
+// Modelo -> { hasta, motivo }: no se prueba antes que los demás hasta esa hora. No se
+// guarda "el que anduvo" para ponerlo primero: así se hacía antes y, tras un desborde, el
+// operador quedaba pegado al Flash de reserva (y se comía la cuota diaria del evaluador)
+// aunque los Flash-Lite se hubieran liberado a los pocos segundos.
+const enfriado = {};
 
 const SISTEMA_EVALUADOR =
   "Sos instructor de guardavidas y de primeros auxilios evaluando una práctica de llamada al sistema de emergencias. " +
   "Respondés únicamente con un objeto JSON válido, sin texto alrededor y sin bloques de código.";
 
 export default async function handler(req, res) {
+  const inicio = Date.now();   // de acá se cuenta el PRESUPUESTO_MS de los modelos
   if (req.method === "GET") {
     // /api/chat?diag=1 — comprueba la clave, los modelos y la base. No devuelve secretos.
     if (req.query && (req.query.diag === "1" || req.query.diag === "true")) {
@@ -85,19 +111,27 @@ export default async function handler(req, res) {
   const codigo = String(req.headers["x-codigo"] || "");
   let acceso = null;
   if (requiereCodigo()) {
-    if (await demasiadosIntentos(ip)) {
+    if (await demasiadosIntentos(ip, "alumnos")) {
       return res.status(429).json({ error: "demasiados_intentos", detalle: "Muchos códigos equivocados seguidos. Esperá diez minutos." });
     }
     try { acceso = await resolverCodigo(codigo); }
     catch (e) { return res.status(503).json({ error: "base", detalle: String(e.message || e).slice(0, 200) }); }
     if (!acceso) {
-      if (codigo.trim()) await anotarIntento(ip);
+      if (codigo.trim()) await anotarIntento(ip, codigo, "alumnos");
       return res.status(401).json({ error: "codigo_invalido" });
     }
   } else {
     acceso = { rol: "alumno", cuentaId: "principal" };
   }
-  if (acceso.bloqueo) return res.status(403).json({ error: acceso.bloqueo, detalle: textoBloqueo(acceso.bloqueo) });
+  // Clase cerrada o vencida: los grupos que estaban en una llamada la terminan y reciben su
+  // devolución (ver GRACIA_SALA_MS). Lo que no se puede es entrar (verificar) ni empezar una
+  // práctica nueva (el primer turno trae `inicio`). La gracia no saltea un bloqueo de la
+  // cuenta: resolverCodigo deja "sala_cerrada" aunque la cuenta además esté pausada.
+  const enCurso = cuerpo.modo === "evaluar" || (cuerpo.modo === "operador" && !cuerpo.inicio);
+  const gracia = acceso.bloqueo === "sala_cerrada" && acceso.sala && enCurso
+    && !bloqueoDeCuenta(acceso.cuenta)
+    && Date.now() - Number(acceso.sala.vence) < GRACIA_SALA_MS;
+  if (acceso.bloqueo && !gracia) return res.status(403).json({ error: acceso.bloqueo, detalle: textoBloqueo(acceso.bloqueo) });
 
   // Verificación del código: no gasta una llamada al modelo.
   if (cuerpo.modo === "verificar") {
@@ -136,19 +170,37 @@ export default async function handler(req, res) {
         ? [{ role: "user", content: "[Entra la llamada al 107]" }, ...turnos]
         : turnos;
 
-      const r = await generar(prov, "operador", {
-        sistema, fijo: fijo || null, variable,
-        mensajes,
-        // Alcanza para dos oraciones más los marcadores. Si el modelo piensa antes de
-        // contestar, esos tokens salen de acá: por eso no va más justo.
-        maxTokens: 800,
-        rapido: true
-      });
+      let r;
+      try {
+        r = await generar(prov, "operador", {
+          sistema, fijo: fijo || null, variable,
+          mensajes,
+          // Alcanza para dos oraciones más los marcadores. Si el modelo piensa antes de
+          // contestar, esos tokens salen de acá: por eso no va más justo.
+          maxTokens: 800,
+          rapido: true,
+          hasta: inicio + PRESUPUESTO_MS
+        });
+      } catch (e) { await contarFalla(e); throw e; }
       await contarUso(acceso, "turnos", r.modelo, r.cuotas);
       return res.status(200).json({ texto: r.texto, modelo: r.modelo });
     }
 
     if (cuerpo.modo === "evaluar") {
+      // El tablero pasa a "evaluando" en este mismo pedido: así el "terminada" o "sin
+      // devolución" que escribe guardarPractica llega siempre después. El aviso que manda
+      // la app por /api/datos es otra función y puede llegar tarde; ése ya no pisa un
+      // estado terminal (ver sala-estado en api/datos.js).
+      if (acceso.sala && kvConfig() && cuerpo.registro && typeof cuerpo.registro === "object") {
+        const g = grupoDe(cuerpo.registro), k = P + "salaest:" + acceso.sala.codigo;
+        try {
+          await kvPipe([
+            ["HSET", k, g.toLowerCase(), JSON.stringify({ grupo: g, estado: "evaluando", escenario: corto(cuerpo.registro.escenario && cuerpo.registro.escenario.titulo, 140), perfil: cuerpo.registro.perfil === "lego" ? "lego" : "guardavidas", t: Date.now() })],
+            ["EXPIRE", k, 3 * 86400]
+          ]);
+        } catch (e) {}
+      }
+
       let datos = null, modelo = null, error = null;
       try {
         const r = await generar(prov, "evaluador", {
@@ -159,14 +211,21 @@ export default async function handler(req, res) {
           // respuesta se cortaba a mitad de palabra, antes del JSON.
           maxTokens: 4000,
           sinPensar: true,
-          rapido: false
+          rapido: false,
+          hasta: inicio + PRESUPUESTO_MS,
+          // Un JSON cortado o roto no cuenta como respuesta: se pasa al modelo siguiente,
+          // en vez de contestar json_invalido teniendo cinco modelos más para probar.
+          validar: t => Boolean(extraerJSON(t))
         });
         modelo = r.modelo;
         await contarUso(acceso, "evaluaciones", r.modelo, r.cuotas);
         datos = extraerJSON(r.texto);
         if (!datos) error = { codigo: "json_invalido", estado: 502, detalle: r.texto.slice(0, 600) };
       } catch (e) {
-        error = { codigo: "api", estado: (e && e.estado) || 502, detalle: String((e && e.message) || e).slice(0, 300) };
+        await contarFalla(e);
+        error = e && e.jsonInvalido
+          ? { codigo: "json_invalido", estado: 502, detalle: String(e.texto || "").slice(0, 600) }
+          : { codigo: "api", estado: (e && e.estado) || 502, detalle: String((e && e.message) || e).slice(0, 300) };
       }
 
       // El puntaje lo calcula el código a partir de la rúbrica, nunca el modelo.
@@ -206,31 +265,45 @@ function proveedor() {
 }
 
 function candidatos(prov, rol) {
-  const forzado = ((rol === "operador" ? process.env.MODELO_OPERADOR : process.env.MODELO_EVALUADOR) || "").trim();
-  let lista = DEFAULTS[prov.nombre][rol].slice();
-  // El forzado va primero, pero no solo: si se queda sin cuota, la clase sigue con los demás.
-  if (forzado) lista = [forzado, ...lista.filter(m => m !== forzado)];
-  const previo = elegido[prov.nombre + ":" + rol];
-  if (previo && !forzado) lista = [previo, ...lista.filter(m => m !== previo)];
-  return lista;
+  // MODELO_OPERADOR / MODELO_EVALUADOR pueden traer varios, separados por comas: así se
+  // ajusta la rotación desde Vercel, sin tocar el código, cuando Google saca o retira modelos.
+  const forzados = [...new Set(((rol === "operador" ? process.env.MODELO_OPERADOR : process.env.MODELO_EVALUADOR) || "")
+    .split(",").map(s => s.trim()).filter(Boolean))];
+  // Los forzados van primero, en el orden cargado, pero no solos: si se quedan sin cuota,
+  // la clase sigue con los demás.
+  return [...forzados, ...DEFAULTS[prov.nombre][rol].filter(m => !forzados.includes(m))];
 }
 
 function libre(modelo) { return !(enfriado[modelo] && enfriado[modelo].hasta > Date.now()); }
 
 // Recorre los modelos candidatos hasta que uno responda. No son fallas reales, y por eso
-// se pasa al siguiente: el modelo no existe para esta clave (404), está saturado (503),
-// se quedó sin cuota (429), o devolvió vacío porque gastó los tokens pensando.
-// Cada uno queda "enfriado" un rato para no insistir con él en los próximos pedidos.
+// se pasa al siguiente: el modelo no existe para esta clave (404/403), está saturado o
+// tuvo un error de su lado (500, 503, 504), se quedó sin cuota (429), devolvió vacío
+// porque gastó los tokens pensando, devolvió algo que no sirve (`opciones.validar`), o no
+// contestó a tiempo o se cortó la red. Cada uno queda "enfriado" un rato: los libres se
+// prueban primero, siempre en el orden de la lista.
+// `opciones.hasta` es la hora límite del pedido entero: cada modelo tiene su propio tope,
+// pero nunca más de lo que queda, así la función contesta antes de que la corte Vercel.
 async function generar(prov, rol, opciones) {
   const lista = candidatos(prov, rol);
   const orden = lista.filter(libre).concat(lista.filter(m => !libre(m)));
-  let ultimo = null, cuotas = 0;
+  const hasta = opciones.hasta || Date.now() + PRESUPUESTO_MS;
+  let ultimo = null, cuotas = 0, sinTiempo = false;
   for (const modelo of orden) {
+    const queda = hasta - Date.now();
+    if (queda < 3000) { sinTiempo = true; break; }
+    // El corte va como hora absoluta: los reintentos internos (sin razonamiento en Gemini,
+    // sin extras en Claude) usan lo que queda del mismo corte, no uno nuevo.
+    const corte = Date.now() + Math.min(opciones.rapido ? TOPE_MODELO_MS.rapido : TOPE_MODELO_MS.lento, queda);
     try {
       const texto = prov.nombre === "gemini"
-        ? await viaGemini(prov.clave, { ...opciones, modelo })
-        : await viaAnthropic(prov.clave, { ...opciones, modelo });
-      elegido[prov.nombre + ":" + rol] = modelo;
+        ? await viaGemini(prov.clave, { ...opciones, modelo, corte })
+        : await viaAnthropic(prov.clave, { ...opciones, modelo, corte });
+      if (opciones.validar && !opciones.validar(texto)) {
+        const e = new Error("no devolvió un JSON válido: " + texto.slice(0, 120));
+        e.jsonInvalido = true; e.texto = texto;
+        throw e;
+      }
       delete enfriado[modelo];
       return { texto, modelo, cuotas };
     } catch (e) {
@@ -238,7 +311,11 @@ async function generar(prov, rol, opciones) {
       if (e.cuota) { cuotas++; enfriar(modelo, e.esperaMs || 60000, e.diaria ? "cuota diaria agotada" : "cuota por minuto"); continue; }
       if (e.modeloInexistente) { enfriar(modelo, 6 * 3600000, "no disponible para esta clave"); continue; }
       if (e.modeloOcupado) { enfriar(modelo, 20000, "saturado"); continue; }
+      if (e.jsonInvalido) { enfriar(modelo, 60000, "devolvió un JSON inválido"); continue; }
       if (e.vacio || e.rechazo) { enfriar(modelo, 60000, e.vacio ? "respuesta vacía" : "rechazó el pedido"); continue; }
+      // Sin estado HTTP: se cortó la red ("fetch failed") o se pasó de su tope de tiempo
+      // (TimeoutError). Va después de vacío/rechazo, que tampoco traen estado.
+      if (!e.estado) { enfriar(modelo, 20000, e.name === "TimeoutError" ? "no respondió a tiempo" : "sin respuesta"); continue; }
       throw e;
     }
   }
@@ -247,6 +324,11 @@ async function generar(prov, rol, opciones) {
   if (cuotas) {
     const e = new Error("Todos los modelos disponibles llegaron a su tope de uso por ahora. " + String((ultimo && ultimo.message) || "").slice(0, 120));
     e.estado = 429; e.cuota = true;
+    throw e;
+  }
+  if (sinTiempo) {
+    const e = new Error("Los modelos no respondieron a tiempo. " + String((ultimo && ultimo.message) || "").slice(0, 120));
+    e.estado = 504;
     throw e;
   }
   throw ultimo || new Error("sin modelos disponibles");
@@ -278,7 +360,7 @@ async function diagnostico() {
   if (prov.nombre === "gemini") {
     try {
       const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {
-        headers: { "x-goog-api-key": prov.clave }
+        headers: { "x-goog-api-key": prov.clave }, signal: AbortSignal.timeout(10000)
       });
       const d = await r.json();
       if (!r.ok) { salida.error = "La clave fue rechazada: " + JSON.stringify(d).slice(0, 200); return salida; }
@@ -340,7 +422,7 @@ async function viaAnthropic(clave, opciones, sinExtras) {
     headers["anthropic-beta"] = "server-side-fallback-2026-07-01";
     cuerpo.fallbacks = "default";
   }
-  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers, body: JSON.stringify(cuerpo) });
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers, body: JSON.stringify(cuerpo), signal: senalDeCorte(opciones.corte) });
   if (!r.ok) {
     const t = await r.text();
     // Si algún parámetro opcional no lo acepta, se repite una vez sin los extras.
@@ -356,6 +438,12 @@ async function viaAnthropic(clave, opciones, sinExtras) {
   return texto;
 }
 
+// El tope de tiempo de un pedido al proveedor, a partir del corte (hora absoluta) que fija
+// generar(). Sin esto, un modelo colgado se comía los 60 s de la función.
+function senalDeCorte(corte) {
+  return AbortSignal.timeout(Math.max(1000, (corte || Date.now() + TOPE_MODELO_MS.lento) - Date.now()));
+}
+
 async function viaGemini(clave, opciones) {
   try {
     return await pedirAGemini(clave, opciones);
@@ -367,7 +455,7 @@ async function viaGemini(clave, opciones) {
   }
 }
 
-async function pedirAGemini(clave, { modelo, sistema, mensajes, maxTokens, rapido, sinPensar }) {
+async function pedirAGemini(clave, { modelo, sistema, mensajes, maxTokens, rapido, sinPensar, corte }) {
   // Gemma no acepta instrucciones de sistema: se le pasan al principio del primer turno.
   const esGemma = /^gemma/i.test(modelo);
   const contents = mensajes.map(m => ({
@@ -392,7 +480,8 @@ async function pedirAGemini(clave, { modelo, sistema, mensajes, maxTokens, rapid
     {
       method: "POST",
       headers: { "content-type": "application/json", "x-goog-api-key": clave },
-      body: JSON.stringify(cuerpo)
+      body: JSON.stringify(cuerpo),
+      signal: senalDeCorte(corte)
     }
   );
   if (!r.ok) throw fallo(await r.text(), r.status, r.headers);
@@ -413,12 +502,17 @@ function fallo(texto, status, headers) {
   const err = new Error(t.slice(0, 300));
   err.estado = (status === 429) ? 429 : 502;
   // Modelo que esta clave no puede usar: no es una falla real, hay que probar el siguiente.
-  err.modeloInexistente = status === 404 || /NOT_FOUND|not_found|not found|does not exist|is not supported for generateContent|unknown model/i.test(t);
+  // El 403 entra acá porque es lo que puede contestar un modelo restringido (los 2.5 desde
+  // el 18/09/2026, para los proyectos que no los usaban): si no, cortaba la rotación.
+  err.modeloInexistente = status === 404 || status === 403 || /NOT_FOUND|not_found|not found|does not exist|is not supported for generateContent|unknown model/i.test(t);
   // El modelo no acepta thinkingConfig: hay que repetir el pedido sin eso.
   err.sinPensarNoSoportado = status === 400 && /thinking/i.test(t);
-  // El modelo está saturado. No es una falla de la cuenta ni del pedido: hay que probar
-  // el siguiente de la lista, que es justamente para lo que está.
-  err.modeloOcupado = status === 503 || status === 529 || /UNAVAILABLE|high demand|overloaded/i.test(t);
+  // El modelo está saturado o falló de su lado (500 INTERNAL, 504 DEADLINE_EXCEEDED: la
+  // guía de errores de Gemini dice que se reintenten, y aparecen justo con carga). No es
+  // una falla de la cuenta ni del pedido: hay que probar el siguiente de la lista, que es
+  // justamente para lo que está. INTERNAL y DEADLINE_EXCEEDED van sin /i para no agarrar
+  // un "internal" suelto en el texto de un 400.
+  err.modeloOcupado = [500, 502, 503, 504, 529].includes(status) || /INTERNAL|DEADLINE_EXCEEDED/.test(t) || /UNAVAILABLE|high demand|overloaded/i.test(t);
   // Sin cuota: por minuto se libera enseguida; la diaria, recién al otro día.
   err.cuota = status === 429 || /RESOURCE_EXHAUSTED|rate_limit_error/i.test(t);
   if (err.cuota) {
@@ -486,10 +580,13 @@ function kvConfig() {
 async function kvPipe(cmds) {
   const c = kvConfig();
   if (!c) throw new Error("sin base de datos");
+  // Con tope de tiempo: si la base no contesta, mejor un error que se lea ("base") que una
+  // función colgada hasta que la corta Vercel.
   const r = await fetch(c.url + "/pipeline", {
     method: "POST",
     headers: { authorization: "Bearer " + c.token, "content-type": "application/json" },
-    body: JSON.stringify(cmds.map(x => x.map(v => String(v))))
+    body: JSON.stringify(cmds.map(x => x.map(v => String(v)))),
+    signal: AbortSignal.timeout(10000)
   });
   const d = await r.json().catch(() => null);
   if (!r.ok || !Array.isArray(d)) throw new Error("base de datos: " + ((d && d.error) || r.status));
@@ -545,12 +642,18 @@ async function resolverCodigo(bruto) {
   const hit = cacheAcceso.get(c);
   if (hit && hit.hasta > Date.now()) return hit.v;
 
-  const [cAl, cIn, salaTxt] = await kvPipe([["GET", P + "cod:" + c], ["GET", P + "codi:" + c], ["GET", P + "sala:" + c]]);
+  // salainfo: dura 90 días. Si la clase terminó hace más de 6 h (sala: ya no está), el
+  // código se sigue reconociendo como una clase que terminó: si no, los celulares que lo
+  // tienen guardado lo mandan al abrir la app, leen "código equivocado" y cada uno suma un
+  // intento fallido al freno de la IP del aula.
+  const [cAl, cIn, salaTxt, infoTxt] = await kvPipe([["GET", P + "cod:" + c], ["GET", P + "codi:" + c], ["GET", P + "sala:" + c], ["GET", P + "salainfo:" + c]]);
   let v = null;
-  const sala = json(salaTxt);
+  const sala = json(salaTxt) || json(infoTxt);
   if (sala) {
     v = { rol: "alumno", cuentaId: sala.cuentaId, sala };
-    if (sala.cerrada) v.bloqueo = "sala_cerrada";
+    // Cerrada por el instructor o vencida por tiempo: para el alumno es lo mismo, "esa
+    // clase terminó", y no un "código equivocado" que cuenta como intento fallido.
+    if (sala.cerrada || Number(sala.vence) <= Date.now()) v.bloqueo = "sala_cerrada";
   } else if (cIn) v = { rol: "instructor", cuentaId: cIn };
   else if (cAl) v = { rol: "alumno", cuentaId: cAl };
   if (v) {
@@ -606,25 +709,48 @@ async function contarUso(acceso, campo, modelo, cuotas) {
   try { await kvPipe(cmds); } catch (e) {}
 }
 
+// Los pedidos que se quedaron sin respuesta del modelo (cuota agotada en todos, errores,
+// tiempo). contarUso sólo cuenta los que anduvieron, así que sin esto el día más saturado
+// quedaba en «Uso y costos» vacío y sin marca. `sinRespuesta` los cuenta todos y
+// `sinCuota` los que fueron por cuota: es la señal para pasar al plan pago.
+async function contarFalla(e) {
+  if (!kvConfig()) return;
+  const g = P + "usog:" + hoyAR();
+  const cmds = [["HINCRBY", g, "sinRespuesta", 1], ["EXPIRE", g, RETENCION_DIAS * 86400]];
+  if (e && e.cuota) cmds.push(["HINCRBY", g, "sinCuota", 1]);
+  try { await kvPipe(cmds); } catch (x) {}
+}
+
 // ---- intentos fallidos de código: freno contra el que prueba al azar ----
+// Se cuentan códigos DISTINTOS por conexión, no pedidos. En un aula todos los celulares
+// salen por la misma IP: contando pedidos, un celular que reintentaba solo con un código
+// viejo (cada frase, cada sondeo) llegaba a 30 en un par de minutos y dejaba afuera a la
+// clase entera. El que prueba al azar usa códigos distintos, así que lo frena igual.
+// `freno` separa contadores: "alumnos" (acá y en sala-estado) y "panel" (api/datos.js), así
+// los errores de los alumnos no dejan afuera al instructor. Claves nuevas (rl:alumnos:,
+// rl:panel:) porque las viejas rl:cod: eran de otro tipo.
 const intentosMem = new Map();
-async function demasiadosIntentos(ip) {
+function huellaDeCodigo(codigo) { return createHash("sha256").update(normCodigo(codigo)).digest("hex").slice(0, 12); }
+async function demasiadosIntentos(ip, freno) {
   if (!ip) return false;
   if (kvConfig()) {
-    try { return (Number(await kv("GET", P + "rl:cod:" + ip)) || 0) >= 30; } catch (e) { return false; }
+    try { return (Number(await kv("SCARD", P + "rl:" + freno + ":" + ip)) || 0) >= 30; } catch (e) { return false; }
   }
-  const m = intentosMem.get(ip);
-  return Boolean(m && m.hasta > Date.now() && m.n >= 30);
+  const m = intentosMem.get(freno + ":" + ip);
+  return Boolean(m && m.hasta > Date.now() && m.codigos.size >= 30);
 }
-async function anotarIntento(ip) {
+async function anotarIntento(ip, codigo, freno) {
   if (!ip) return;
+  const h = huellaDeCodigo(codigo);
   if (kvConfig()) {
-    try { await kvPipe([["INCR", P + "rl:cod:" + ip], ["EXPIRE", P + "rl:cod:" + ip, 600]]); } catch (e) {}
+    const k = P + "rl:" + freno + ":" + ip;
+    try { await kvPipe([["SADD", k, h], ["EXPIRE", k, 600]]); } catch (e) {}
     return;
   }
-  const m = intentosMem.get(ip);
-  if (m && m.hasta > Date.now()) m.n++;
-  else intentosMem.set(ip, { n: 1, hasta: Date.now() + 600000 });
+  const m = intentosMem.get(freno + ":" + ip);
+  if (m && m.hasta > Date.now()) { m.codigos.add(h); m.hasta = Date.now() + 600000; }
+  else intentosMem.set(freno + ":" + ip, { codigos: new Set([h]), hasta: Date.now() + 600000 });
+  if (intentosMem.size > 1000) intentosMem.delete(intentosMem.keys().next().value);
 }
 function ipDe(req) {
   const h = req.headers || {};
@@ -637,18 +763,29 @@ function ipDe(req) {
    ====================================================================== */
 
 function corto(v, n) { return String(v == null ? "" : v).slice(0, n); }
+// El nombre del grupo en el tablero de la clase. Lo usan guardarPractica y el aviso de
+// "evaluando": tiene que ser la misma cuenta, o cada uno escribe en otra tarjeta.
+function grupoDe(r) { return corto(r.grupo || r.alias || "Sin nombre", 40).trim() || "Sin nombre"; }
+const FORMA_ID_PRACTICA = /^[a-z0-9]{8,40}$/;   // la de nuevoId() y la que arma la app
 
 async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
   const r = cuerpo.registro;
   const ahora = Date.now();
+  // El id lo puede traer el pedido: la app lo arma al empezar la llamada. Así, si la
+  // práctica se guardó pero la respuesta no llegó al celular (cambio de wifi a datos,
+  // pantalla bloqueada), el reintento encuentra la misma práctica en vez de crear otra y
+  // contarla dos veces en el cupo, el tablero y el índice. Un id que ya es de otra cuenta
+  // no se pisa: esa práctica recibe uno nuevo.
   let previa = null;
-  if (cuerpo.practicaId) {
-    previa = json(await kv("GET", P + "p:" + corto(cuerpo.practicaId, 40)));
-    if (previa && previa.cuentaId !== acceso.cuentaId) previa = null;
+  let idPedido = FORMA_ID_PRACTICA.test(String(cuerpo.practicaId || "")) ? String(cuerpo.practicaId) : null;
+  if (idPedido) {
+    const p = json(await kv("GET", P + "p:" + idPedido));
+    if (p && p.cuentaId === acceso.cuentaId) previa = p;
+    else if (p) idPedido = null;
   }
-  const id = previa ? previa.id : nuevoId();
+  const id = previa ? previa.id : (idPedido || nuevoId());
   const sala = acceso.sala ? acceso.sala.codigo : null;
-  const grupo = corto(r.grupo || r.alias || "Sin nombre", 40).trim() || "Sin nombre";
+  const grupo = grupoDe(r);
   const transcripcion = (Array.isArray(r.transcripcion) ? r.transcripcion : []).slice(0, 80)
     .map(l => ({ w: l && l.w === "op" ? "op" : "yo", t: Math.max(0, Number(l && l.t) || 0), x: corto(l && l.x, 900) }));
 
@@ -664,7 +801,8 @@ async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
       fam: corto(r.escenario && r.escenario.fam, 40), guia: corto(r.escenario && r.escenario.guia, 30)
     },
     duracionMs: Math.max(0, Number(r.duracionMs) || 0),
-    cortoPor: r.cortoPor === "operador" ? "operador" : "alumno",
+    // "tiempo": la terminó la app (lego sin ubicación, con el operador todavía en línea).
+    cortoPor: r.cortoPor === "operador" || r.cortoPor === "tiempo" ? r.cortoPor : "alumno",
     turnosOperador: Number(r.turnosOperador) || 0,
     grado: r.grado == null ? null : Number(r.grado),
     esenciales: corto(r.esenciales, 12),
