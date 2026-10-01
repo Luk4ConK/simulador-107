@@ -20,6 +20,21 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
+    // El cron diario de vercel.json: una escritura real en la base para que Upstash no la
+    // archive. Las bases gratuitas se archivan después de 30 días sin actividad y, con la
+    // base archivada, no arranca ninguna práctica ni abre el panel. Es un SET y no un PING
+    // porque hay reportes de que el PING no cuenta como actividad. Se reconoce por el
+    // parámetro de la ruta del cron o, si no llegara, por el user-agent que manda Vercel.
+    if ((req.query && req.query.vivo) || /^vercel-cron/i.test(String((req.headers || {})["user-agent"] || ""))) {
+      if (!kvConfig()) return res.status(200).json({ ok: false, base: false });
+      try {
+        await kv("SET", P + "vivo", String(Date.now()), "EX", 90 * 86400);
+        return res.status(200).json({ ok: true });
+      } catch (e) {
+        // A la vista en Vercel → Settings → Cron Jobs → View Logs.
+        return res.status(503).json({ ok: false, detalle: String(e.message || e).slice(0, 150) });
+      }
+    }
     if (req.query && req.query.info) return res.status(200).json(await infoPublica());
     return res.status(200).json({ registro: Boolean(kvConfig()) });
   }
@@ -41,12 +56,30 @@ export default async function handler(req, res) {
 
     // ---------------- alumno dentro de una clase ----------------
     if (accion === "sala-estado") {
-      const acc = await resolverCodigo(req.headers["x-codigo"]);
-      if (!acc) return res.status(401).json({ error: "codigo_invalido" });
+      // Pasa por el mismo freno que /api/chat: si no, esto servía para probar códigos al
+      // azar sin límite (401 contra 200).
+      if (await demasiadosIntentos(ip, "alumnos")) return res.status(429).json({ error: "demasiados_intentos" });
+      const codigoAlumno = String(req.headers["x-codigo"] || "");
+      const acc = await resolverCodigo(codigoAlumno);
+      if (!acc) {
+        if (codigoAlumno.trim()) await anotarIntento(ip, codigoAlumno, "alumnos");
+        return res.status(401).json({ error: "codigo_invalido" });
+      }
       if (!acc.sala || acc.bloqueo) return res.status(200).json({ ok: false });
       const grupo = corto(b.grupo, 40).trim() || "Sin nombre";
       const estado = ["conectado", "en llamada", "evaluando"].includes(b.estado) ? b.estado : "conectado";
       const k = P + "salaest:" + acc.sala.codigo;
+      // El aviso "evaluando" sale de la app a la vez que el pedido de la evaluación, que va
+      // por /api/chat (otra función, quizás otra instancia). Si éste llega tarde, pisaba el
+      // "terminada" o "sin devolución" de esa misma práctica y la tarjeta quedaba sin
+      // puntaje ni enlace. Un terminal de hace menos de 2 minutos es el de esta práctica:
+      // no se toca. (/api/chat ya escribe "evaluando" por su cuenta, en orden.)
+      if (estado === "evaluando") {
+        const previo = json(await kv("HGET", k, grupo.toLowerCase()));
+        if (previo && ["terminada", "sin devolución"].includes(previo.estado) && Date.now() - Number(previo.t || 0) < 120000) {
+          return res.status(200).json({ ok: true });
+        }
+      }
       await kvPipe([
         ["HSET", k, grupo.toLowerCase(), JSON.stringify({ grupo, estado, escenario: corto(b.escenario, 140), perfil: b.perfil === "lego" ? "lego" : "guardavidas", t: Date.now() })],
         ["EXPIRE", k, 3 * 86400]
@@ -55,11 +88,13 @@ export default async function handler(req, res) {
     }
 
     // ---------------- panel: instructor o administrador ----------------
-    if (await demasiadosIntentos(ip)) return res.status(429).json({ error: "demasiados_intentos", detalle: "Muchos códigos equivocados seguidos. Esperá diez minutos." });
+    // Con su propio contador ("panel"): los códigos errados de los alumnos, que en un aula
+    // salen todos por la misma IP, no dejan al instructor sin poder abrir otra clase.
+    if (await demasiadosIntentos(ip, "panel")) return res.status(429).json({ error: "demasiados_intentos", detalle: "Muchos códigos equivocados seguidos. Esperá diez minutos." });
     const codigoPanel = String(req.headers["x-panel"] || "");
     const acc = await resolverCodigo(codigoPanel);
     if (!acc || (acc.rol !== "instructor" && acc.rol !== "admin")) {
-      if (codigoPanel.trim()) await anotarIntento(ip);
+      if (codigoPanel.trim()) await anotarIntento(ip, codigoPanel, "panel");
       return res.status(401).json({ error: "codigo_invalido", detalle: "Ese no es un código de instructor." });
     }
     const esAdmin = acc.rol === "admin";
@@ -72,6 +107,7 @@ export default async function handler(req, res) {
       "salas": () => listarSalas(cuentaId),
       "sala-crear": () => crearSala(cuentaId, b),
       "sala-cerrar": () => cerrarSala(cuentaId, b.codigo),
+      "sala-extender": () => extenderSala(cuentaId, b.codigo),
       "sala-vivo": () => salaEnVivo(cuentaId, b.codigo),
       "practicas": () => listarPracticas(cuentaId, b),
       "practica": () => leerPractica(cuentaId, b.id),
@@ -189,7 +225,10 @@ async function crearSala(cuentaId, b) {
   };
   for (let i = 0; i < 6 && !sala.codigo; i++) {
     const cod = generarCodigo(6);
-    const ok = await kv("SET", P + "sala:" + cod, JSON.stringify({ ...sala, codigo: cod }), "EX", horas * 3600, "NX");
+    // La clave vive 6 h más que la clase, como una cerrada: al vencer, resolverCodigo la ve
+    // vencida y el alumno lee "esa clase terminó" (y los grupos en llamada la terminan), en
+    // vez de un "código equivocado" que suma al freno de la IP del aula.
+    const ok = await kv("SET", P + "sala:" + cod, JSON.stringify({ ...sala, codigo: cod }), "EX", horas * 3600 + 6 * 3600, "NX");
     if (ok === "OK") sala.codigo = cod;
   }
   if (!sala.codigo) throw problema("sin_codigo", "No se pudo generar el código de la clase. Probá de nuevo.", 500);
@@ -207,12 +246,31 @@ async function cerrarSala(cuentaId, codigo) {
   if (!info || info.cuentaId !== cuentaId) throw problema("sin_sala", "Esa clase no es de esta cuenta.", 404);
   info.cerrada = true; info.vence = Math.min(info.vence, Date.now());
   // La sala sigue existiendo un rato, cerrada, para que el alumno que entra tarde vea
-  // un mensaje claro ("esa clase terminó") y no "código equivocado".
+  // un mensaje claro ("esa clase terminó") y no "código equivocado". Los grupos que
+  // estaban en una llamada la terminan y reciben su devolución: api/chat.js les da un
+  // margen (GRACIA_SALA_MS) contado desde este `vence`.
   await kvPipe([
     ["SET", P + "salainfo:" + cod, JSON.stringify(info), "EX", 90 * 86400],
     ["SET", P + "sala:" + cod, JSON.stringify(info), "EX", 6 * 3600]
   ]);
   return { sala: info };
+}
+
+// Una hora más para una clase abierta, o que venció hace poco: la que se alarga no obliga
+// a que todos entren con un código nuevo. Una cerrada a mano no se reabre.
+async function extenderSala(cuentaId, codigo) {
+  const cod = normCodigo(codigo);
+  const info = json(await kv("GET", P + "salainfo:" + cod));
+  if (!info || info.cuentaId !== cuentaId) throw problema("sin_sala", "Esa clase no es de esta cuenta.", 404);
+  if (info.cerrada) throw problema("sala_cerrada", "Esa clase ya se cerró: abrí una nueva.");
+  const ahora = Date.now();
+  // Si ya venció, la hora se cuenta desde ahora. Tope: 12 h por delante, como al crearla.
+  info.vence = Math.min(Math.max(Number(info.vence) || 0, ahora) + 3600000, ahora + 12 * 3600000);
+  await kvPipe([
+    ["SET", P + "salainfo:" + cod, JSON.stringify(info), "EX", 90 * 86400],
+    ["SET", P + "sala:" + cod, JSON.stringify(info), "EX", Math.ceil((info.vence - ahora) / 1000) + 6 * 3600]
+  ]);
+  return { sala: { ...info, abierta: true } };
 }
 
 async function listarSalas(cuentaId) {
@@ -480,10 +538,13 @@ function kvConfig() {
 async function kvPipe(cmds) {
   const c = kvConfig();
   if (!c) throw new Error("sin base de datos");
+  // Con tope de tiempo: si la base no contesta, mejor un error que se lea ("base") que una
+  // función colgada hasta que la corta Vercel.
   const r = await fetch(c.url + "/pipeline", {
     method: "POST",
     headers: { authorization: "Bearer " + c.token, "content-type": "application/json" },
-    body: JSON.stringify(cmds.map(x => x.map(v => String(v))))
+    body: JSON.stringify(cmds.map(x => x.map(v => String(v)))),
+    signal: AbortSignal.timeout(10000)
   });
   const d = await r.json().catch(() => null);
   if (!r.ok || !Array.isArray(d)) throw new Error("base de datos: " + ((d && d.error) || r.status));
@@ -535,12 +596,18 @@ async function resolverCodigo(bruto) {
   const admin = normCodigo(process.env.CODIGO_ADMIN), acceso = normCodigo(process.env.CODIGO_ACCESO);
   if (admin && iguales(c, admin)) return { rol: "admin", cuentaId: "principal" };
   if (acceso && iguales(c, acceso)) return { rol: "alumno", cuentaId: "principal" };
-  const [cAl, cIn, salaTxt] = await kvPipe([["GET", P + "cod:" + c], ["GET", P + "codi:" + c], ["GET", P + "sala:" + c]]);
+  // salainfo: dura 90 días. Si la clase terminó hace más de 6 h (sala: ya no está), el
+  // código se sigue reconociendo como una clase que terminó: si no, los celulares que lo
+  // tienen guardado lo mandan al abrir la app, leen "código equivocado" y cada uno suma un
+  // intento fallido al freno de la IP del aula.
+  const [cAl, cIn, salaTxt, infoTxt] = await kvPipe([["GET", P + "cod:" + c], ["GET", P + "codi:" + c], ["GET", P + "sala:" + c], ["GET", P + "salainfo:" + c]]);
   let v = null;
-  const sala = json(salaTxt);
+  const sala = json(salaTxt) || json(infoTxt);
   if (sala) {
     v = { rol: "alumno", cuentaId: sala.cuentaId, sala };
-    if (sala.cerrada) v.bloqueo = "sala_cerrada";
+    // Cerrada por el instructor o vencida por tiempo: para el alumno es lo mismo, "esa
+    // clase terminó", y no un "código equivocado" que cuenta como intento fallido.
+    if (sala.cerrada || Number(sala.vence) <= Date.now()) v.bloqueo = "sala_cerrada";
   } else if (cIn) v = { rol: "instructor", cuentaId: cIn };
   else if (cAl) v = { rol: "alumno", cuentaId: cAl };
   if (v) {
@@ -552,13 +619,18 @@ async function resolverCodigo(bruto) {
   return v;
 }
 
-async function demasiadosIntentos(ip) {
+// Se cuentan códigos DISTINTOS por conexión y por freno ("alumnos" o "panel"): ver la
+// explicación en api/chat.js. Acá no hace falta la copia en memoria: sin base, el panel y
+// las clases no existen.
+function huellaDeCodigo(codigo) { return createHash("sha256").update(normCodigo(codigo)).digest("hex").slice(0, 12); }
+async function demasiadosIntentos(ip, freno) {
   if (!ip) return false;
-  try { return (Number(await kv("GET", P + "rl:cod:" + ip)) || 0) >= 30; } catch (e) { return false; }
+  try { return (Number(await kv("SCARD", P + "rl:" + freno + ":" + ip)) || 0) >= 30; } catch (e) { return false; }
 }
-async function anotarIntento(ip) {
+async function anotarIntento(ip, codigo, freno) {
   if (!ip) return;
-  try { await kvPipe([["INCR", P + "rl:cod:" + ip], ["EXPIRE", P + "rl:cod:" + ip, 600]]); } catch (e) {}
+  const k = P + "rl:" + freno + ":" + ip;
+  try { await kvPipe([["SADD", k, huellaDeCodigo(codigo)], ["EXPIRE", k, 600]]); } catch (e) {}
 }
 function ipDe(req) {
   const h = req.headers || {};

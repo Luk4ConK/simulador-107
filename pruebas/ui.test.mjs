@@ -162,6 +162,35 @@ try {
     }
   });
 
+  await prueba("lego que ya comprime y lo dice todo en la primera frase: igual escucha que la ambulancia sale", async () => {
+    // Lo que se enseña en un curso de RCP. Antes la única orden de anunciar la ambulancia
+    // estaba en la rama de "todavía no comprime", así que nunca la anunciaba, el reloj del
+    // arribo no arrancaba y la llamada terminaba en "sin la dirección no puedo mandarte".
+    const admin = { "x-panel": "ADMIN-DE-PRUEBA-99" };
+    const cuenta = (await api("/api/datos", { accion: "cuenta-guardar", cuenta: { nombre: "Curso RCP Oeste", plan: "instructor" } }, admin)).cuenta;
+    const sala = (await api("/api/datos", { accion: "sala-crear", nombre: "RCP domingo", perfil: "lego", horas: 2 }, { "x-panel": cuenta.codigoInstructor })).sala;
+    const page = await nuevaPagina();
+    await page.goto(base + "/?sala=" + sala.codigo);
+    await page.waitForSelector("#v-setup:not([hidden])");
+    await page.waitForFunction(() => /RCP domingo/.test(document.querySelector("#cuenta-info").textContent));
+    await page.fill("#alias", "Grupo 7");
+    await page.click('.card[data-id="lego-gimnasio"]');
+    await page.click("#btn-brief");
+    await page.waitForSelector("#v-brief:not([hidden])");
+    await page.click("#btn-call");
+    await marcar(page, "107");
+    await page.waitForSelector("#typer:not([hidden])", { timeout: 10000 });
+    await page.waitForFunction(() => document.querySelectorAll(".msg.op:not(.live)").length >= 1, null, { timeout: 10000 });
+    await decir(page, "Ya estoy comprimiendo. Estoy en el gimnasio de San Martín 2850, primer piso. Un hombre se desplomó, no responde y no respira.");
+    // Después se queda callado comprimiendo: el operador anuncia, alienta y cierra al llegar.
+    await page.waitForSelector("#ver-informe:not([hidden])", { timeout: 40000 });
+    const feed = await page.locator("#feed").innerText();
+    assert.match(feed, /ambulancia ya sale/i);
+    assert.match(feed, /ambulancia ya está ahí/i);
+    assert.ok(!/Sin la dirección/i.test(feed), "no la abandona con la dirección dada");
+    await page.context().close();
+  });
+
   await prueba("lego en una clase: entra por link, RCP guiada hasta que llega la ambulancia, y el tablero lo ve", async () => {
     const admin = { "x-panel": "ADMIN-DE-PRUEBA-99" };
     const cuenta = (await api("/api/datos", { accion: "cuenta-guardar", cuenta: { nombre: "Curso RCP Norte", plan: "instructor" } }, admin)).cuenta;
@@ -369,16 +398,26 @@ try {
     await page.click("#es-guardar");
     await page.waitForFunction(() => /calambre/.test(document.querySelector("#es-lista").textContent));
 
-    // Cerrar la clase y abrir otra desde el panel.
+    // Cerrar la clase: queda a la vista, cerrada, con su resumen para el debriefing.
     await page.click('#tabs button[data-t="clase"]');
     await page.waitForSelector("#clase-viva:not([hidden])");
     await page.click("#cv-cerrar");
+    await page.waitForSelector("#cv-volver:not([hidden])");
+    assert.equal(await page.locator("#cv-barras .barra").count(), 10, "el resumen sigue a la vista después de cerrar");
+    assert.equal(await page.locator("#cv-cerrar").isVisible(), false);
+    // Volver y abrir otra desde el panel.
+    await page.click("#cv-volver");
     await page.waitForSelector("#clase-nueva:not([hidden])");
     await page.fill("#cn-nombre", "Clase de repaso");
     await page.click("#cn-abrir");
     await page.waitForSelector("#clase-viva:not([hidden])");
     await page.waitForFunction(() => /^[2-9A-Z]{6}$/.test(document.querySelector("#cv-codigo").textContent));
+    assert.equal(await page.locator("#cv-cerrar").isVisible(), true, "la clase nueva vuelve a tener su botón de cerrar");
     assert.match(await page.locator("#clase-anteriores").innerText(), /RCP sábado/);
+    // El resumen de una clase anterior se puede volver a ver.
+    await page.locator("#clase-anteriores tr", { hasText: "RCP sábado" }).locator("button", { hasText: "ver resumen" }).click();
+    await page.waitForFunction(() => /RCP sábado/.test(document.querySelector("#cv-nombre").textContent));
+    assert.equal(await page.locator("#cv-barras .barra").count(), 10);
 
     // Uso y contactos (sólo administrador).
     await api("/api/datos", { accion: "contacto", nombre: "Marta Instructora", email: "marta@example.com", rol: "Instructora de RCP", mensaje: "Quiero probarlo" });

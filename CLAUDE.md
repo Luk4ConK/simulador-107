@@ -336,8 +336,9 @@ justamente para que la dispare el teclado.
   mide `tRcpMs`, el momento en que dijo que empezó a comprimir (meta AHA: antes de 150 s).
 - **Rotación ante cuota agotada.** Un 429 enfría ese modelo el tiempo que dice
   `retryDelay` (una cuota diaria, al menos una hora) y se prueba el siguiente. Si todos
-  fallaron y alguno fue por cuota, el error final es 429 `cuota`, no 502. Así la capa
-  gratuita aguanta 8 grupos a la vez.
+  fallaron y alguno fue por cuota, el error final es 429 `cuota`, no 502. Con 8 grupos en
+  la capa gratuita, lo seguro es que llamen de a 4; los topes reales de cada modelo se ven
+  en aistudio.google.com/rate-limit (Google no los publica para los 3.x).
 - **El servidor recalcula el puntaje** con la rúbrica que manda la app (`puntuar()`
   repetido en los dos archivos de `api/`). El registro guarda la práctica aunque la
   evaluación falle, y el reintento reusa `practicaId` para no duplicarla.
@@ -369,6 +370,88 @@ justamente para que la dispare el teclado.
   tratamiento); Ecker se cita como Resuscitation 2020 (en línea en 2019). Si agregás una
   afirmación clínica, que tenga su fuente ahí.
 
+### Auditoría de octubre de 2026
+
+Una auditoría con verificación independiente (clínica, código y operativa) encontró 38
+problemas reales; estos son los arreglos que conviene no deshacer.
+
+Clínica (fuentes: AHA 2025 adulto y pediátrica, ERC 2025 adulto y pediátrica):
+- **La técnica de la RCP guiada cambia con la víctima: `listaRcp()`.** Adulto sin
+  ahogamiento: `RCP_COMPRESIONES`. Adulto ahogado: `RCP_VENTILACIONES_ADULTO` (talón de
+  la mano, unos 5 cm: un tercio del pecho de un adulto pasa los 6 cm). Chico:
+  `RCP_VENTILACIONES` (un tercio, unos 5 cm, una o dos manos). Lactante (`victima:
+  "lactante"`, el panel ya lo ofrece): `RCP_VENTILACIONES_LACTANTE`, boca a boca y nariz,
+  cabeza derecha sin hiperextender, dos pulgares, unos 4 cm. Un lactante lleva siempre
+  ventilaciones, aunque la guía sea `lego-rcp`.
+- En `GUIAS.ahogamiento.saber`: no existe la regla "una sola mano de 1 a 9 años"; la
+  evaluación de pulso y respiración dura hasta 10 s y sólo se estira a un minuto con
+  hipotermia marcada (agua fría, helado).
+- En los guiones, la recuperación se canta con "respira normalmente" o "tose", nunca con
+  "boquea" o "respira con ruido", que son respiración agónica.
+- La referencia de 150 s hasta la primera compresión guiada es de la AHA para las
+  centrales (mediana, desde que atiende), no "internacional". Por eso `S.t0` se reinicia
+  cuando atiende la central, después del tono de llamada y del permiso del micrófono.
+
+Llamada (lego):
+- **El operador no le corta nunca a quien está reanimando.** `abandona()` da falso en
+  lego con la RCP en marcha o con el paro reconocido (conciencia y respiración). Si a los
+  `TOPE_MINUTOS_LEGO` no hubo despacho, termina la app con un aviso (`endCall("tiempo")`,
+  `cortoPor: "tiempo"`), no la voz del operador.
+- Si la dirección se demora, el estado le pide reconocer el paro primero: la RCP guiada no
+  espera a la dirección.
+- Si ya comprimía antes de que el operador tuviera lo esencial, la rama "YA ESTÁ HACIENDO
+  LA RCP" le pide anunciar la ambulancia. En lego, `sinAvance` no sube con lo esencial
+  completo y `turnosPost` cuenta desde el despacho.
+- **`empezoRCP()` sólo lee afirmaciones.** Preguntas ("¿dónde comprimo?"), negaciones
+  ("no le estoy haciendo RCP") y el conteo de los 5 soplidos no cuentan; por voz no llegan
+  los signos. La marca `rcp` del modelo se acepta sólo con `confirmaRcp()`. Casos en
+  `pruebas/llamada.test.mjs`.
+- Guardavidas: sin despacho, ni `[[ESPERA]]` ni `TOPE_MINUTOS` cierran (antes el estado le
+  decía "ya despachaste" sin ubicación).
+- Una respuesta del operador que llega después de cortar se descarta; `sendTurn` no manda
+  con un pedido en curso y `rec.onresult` ignora lo que llega después de `stop()`.
+- Ante un 429 por saturación, la app reintenta sola dos veces (8 s y 20 s) antes de
+  pedirle al alumno que repita. `api()` corta a los 75 s (`sin_respuesta`).
+- El `practicaId` lo arma la app al empezar (`nuevoIdPractica()`); el servidor lo acepta si
+  es nuevo o de la misma cuenta, así el reintento de una devolución que se guardó pero no
+  llegó al celular no duplica la práctica ni el cupo. `S.guardada` dice si de verdad quedó.
+
+Servidor:
+- **Clase cerrada o vencida.** La clave `sala:` vive 6 h más que la clase y `salainfo:`
+  90 días: un código de clase vieja se lee como `sala_cerrada` ("esa clase terminó"), nunca
+  como código equivocado. Durante `GRACIA_SALA_MS` (20 min) desde el cierre o el
+  vencimiento, una llamada ya empezada (turnos sin `inicio` y la evaluación) termina y se
+  guarda; nadie nuevo entra.
+- **El freno por IP cuenta códigos distintos** (`SADD`/`SCARD` en `rl:<freno>:<ip>`), no
+  pedidos, y el de los alumnos (`alumnos`) va aparte del del panel (`panel`): en un aula
+  todos salen por la misma IP y un celular que reintentaba con un código viejo dejaba
+  afuera a todos, instructor incluido. `sala-estado` pasa por el mismo freno.
+- Un aviso "evaluando" que llega tarde no pisa un "terminada" o "sin devolución" reciente;
+  el servidor escribe "evaluando" él mismo al empezar la evaluación.
+- Rotación: también pasan al siguiente modelo un 500, 502, 504, un 403 (modelo
+  restringido), la red caída, el tiempo agotado y un JSON inválido del evaluador. Tope de
+  45 s por pedido (`PRESUPUESTO_MS`) y por modelo (`TOPE_MODELO_MS`), para contestar antes
+  de que Vercel corte a los 60 s. Ya no se pone primero "el que anduvo": tras un desborde
+  el operador quedaba pegado al Flash de reserva y se comía la cuota del evaluador. La
+  lista no tiene alias `-latest` y el desborde del operador (3.6 y 3.7 Flash) no es el
+  del evaluador (3.8, 3.5 y 2.5 Flash).
+- `contarFalla()` cuenta en `usog:` los pedidos sin respuesta (`sinRespuesta`, `sinCuota`):
+  es la señal para pasar al plan pago, y el panel la muestra.
+- **Cron diario** (`vercel.json`, `/api/datos?vivo=1`): una escritura real en Upstash,
+  que archiva las bases gratuitas a los 30 días sin actividad. En Hobby, una vez por día.
+
+Panel:
+- Una clase cerrada queda a la vista con su resumen (`P.salaVista`) hasta tocar "Volver";
+  las clases anteriores tienen "ver resumen". El tablero sigue actualizándose mientras haya
+  grupos terminando, hasta 45 minutos después del cierre.
+- El guion que se muestra es el de cada escenario que los grupos tienen ahora, no el más
+  usado en la clase.
+- A ciegas también en la tabla de Prácticas y en el recuadro de la ubicación.
+- Prácticas paginadas de a 500 (hasta 5.000 por período) y el CSV respeta la búsqueda.
+- Plan Prueba: 30 prácticas por mes y vencimiento a 30 días.
+- `/activar` muestra la prueba real de `/api/chat?diag=1` (la base responde, la IA
+  contesta), no sólo si las variables están cargadas.
+
 ## Variables de entorno (en Vercel, no en el repo)
 
 | Variable | Para qué |
@@ -376,7 +459,7 @@ justamente para que la dispare el teclado.
 | `GEMINI_API_KEY` | clave de Google AI Studio. Si está, se usa esta. **Es la que está en uso.** |
 | `ANTHROPIC_API_KEY` | clave de Claude. Se usa si no hay clave de Gemini. |
 | `CODIGO_ACCESO` | palabra que los alumnos ingresan una vez. Sin esto, cualquiera con el link gasta la cuota. |
-| `MODELO_OPERADOR` / `MODELO_EVALUADOR` | para forzar un modelo puntual |
+| `MODELO_OPERADOR` / `MODELO_EVALUADOR` | uno o varios modelos, separados por comas y en orden, que se prueban antes que la lista del código |
 | `GEMINI_SIN_PENSAR` | `1` manda `thinkingBudget: 0` en la conversación, para que el operador conteste más rápido |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` (o `KV_REST_API_*`) | la base de datos; las carga Vercel al conectar Upstash. Sin esto, todo anda sin registro |
 | `CODIGO_ADMIN` | código del administrador: abre el panel completo |
@@ -396,7 +479,7 @@ Hay pruebas automáticas en `pruebas/`, sin dependencias del proyecto (Node 20+;
 navegador usa el Playwright global y el Chromium del entorno):
 
 ```
-node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs   # servidor y rúbrica, sin red
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs   # servidor, rúbrica y llamada, sin red
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs            # punta a punta en Chromium
 NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs  # la copia de Claude, con un Claude falso
 RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107
@@ -411,6 +494,11 @@ clon de Windows hay que poner `git config core.autocrlf false`: con CRLF,
 
 `pruebas/falsos.mjs`: `gemini.operador` reemplaza al operador falso en el medio de una
 prueba (volverlo a `null` al terminar); así se prueba un operador que se porta mal.
+
+El recorte de llaves balanceadas de `rubrica.test.mjs` y `llamada.test.mjs` no entiende
+expresiones regulares: en las funciones que se recortan, una regex con un `[` o una `{`
+sin cerrar (por ejemplo `/^\[silencio/`) hace que el recorte se pase de largo. Ahí usá
+`startsWith` o `includes`.
 
 `pruebas/falsos.mjs` tiene un Redis en memoria (sólo los comandos que se usan: si agregás
 uno en `api/`, agregalo ahí) y un Gemini falso con cuotas, 404 y un operador que sigue el

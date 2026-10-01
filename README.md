@@ -105,13 +105,13 @@ Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pan
 
 Se entra desde la página principal, en *Soy instructor*, o directo en **https://simulador-107.vercel.app/panel**. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
 
-- **Clase en vivo.** Abrís una clase y te da un código de seis letras para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima y, al final, qué criterio costó más en toda la clase.
+- **Clase en vivo.** Abrís una clase y te da un código de seis caracteres para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima en cada escenario que se está llamando y, al final, qué criterio costó más en toda la clase. Al cerrar la clase, los grupos que estaban en una llamada la terminan y reciben su devolución, y el resumen queda a la vista para el cierre; el de una clase anterior se vuelve a ver con «ver resumen».
 - **Prácticas.** Cada llamada queda con su transcripción. Podés revisarla criterio por criterio (a ciegas: lo que dijo la IA se ve recién después de marcar lo tuyo), borrarla o descargar todo en una planilla.
 - **Alumnos.** La evolución del puntaje de cada grupo o alumno.
 - **Calidad.** Cuánto coincide la IA con los instructores (kappa de Cohen), con las revisiones a ciegas.
 - **Escenarios.** Escenarios propios de la cuenta, que ven todos sus alumnos en cualquier celular.
 - **Mi cuenta.** Los códigos de alumnos y de instructor, y cómo cambiarlos.
-- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los días en que se agotó la cuota gratuita.
+- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los pedidos que se quedaron sin respuesta (si aparecen más de dos días por mes, es la señal para pasar al plan pago de Gemini).
 
 ## Qué le pasás a los alumnos
 
@@ -131,7 +131,7 @@ En la pantalla de inicio del simulador sigue la tarjeta **"+ Cargar un escenario
 
 ## Cuánto cuesta
 
-Hoy corre en la capa gratuita de Gemini, de Vercel y de Upstash: **cero pesos**. La capa gratuita de Gemini tiene topes por modelo, por minuto y por día; la app los reparte entre varios modelos para aguantar 8 grupos a la vez.
+Hoy corre en la capa gratuita de Gemini, de Vercel y de Upstash: **cero pesos**. La capa gratuita de Gemini tiene topes por modelo, por minuto y por día; la app reparte los pedidos entre varios modelos y, si se saturan un momento, reintenta sola. Con 8 grupos en la capa gratuita, lo seguro es que llamen de a 4 mientras los otros 4 observan; para que llamen los 8 a la vez sin esperas, se activa el plan pago de Gemini ese día (menos de un dólar por clase). Antes de la primera clase conviene mirar los topes reales de tu clave en https://aistudio.google.com/rate-limit.
 
 Si fuera pago: unos **USD 0,036 por práctica** con Gemini (unos $67 con IVA, a septiembre de 2026), más USD 20 por mes de Vercel Pro, que es obligatorio el día que se le cobra a alguien, porque el plan gratuito de Vercel no admite uso comercial. Con Claude cuesta más por práctica, aunque el código usa caché del prompt para bajarlo.
 

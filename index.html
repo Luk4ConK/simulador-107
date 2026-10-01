@@ -516,8 +516,9 @@
      `perfil` dice quién llama: "guardavidas" (entrenado; el operador pregunta y despacha,
      no le enseña) o "lego" (persona sin formación de un curso de RCP; el operador lo
      guía por teléfono, como indican las guías). Un escenario sin `perfil` es de guardavidas.
-     `victima` (sólo lego): "adulto" o "nino"; con `guia:"lego-ahogamiento"` o en chicos,
-     la RCP guiada incluye ventilaciones.
+     `victima` (sólo lego): "adulto", "nino" o "lactante" (menos de 1 año; hoy sólo llega
+     desde los escenarios del panel). Con `guia:"lego-ahogamiento"`, en chicos y en
+     lactantes, la RCP guiada incluye ventilaciones: ver listaRcp().
      Los cuatro escenarios que se habían sacado para mostrar el prototipo (laguna,
      pileta, vereda, dos víctimas) volvieron, con su guion para el instructor.
      Las ubicaciones son de la zona de Santa Fe, pero son de práctica: si alguna no
@@ -534,11 +535,14 @@
       /* Guion para el INSTRUCTOR presente, no para la app: es él quien va cantando en
          voz alta cómo evoluciona la víctima mientras el alumno atiende. La app no lo
          muestra ni lo evalúa. Está acá para que quede junto al escenario; el panel del
-         instructor lo lee de acá y lo muestra en la clase en vivo. */
+         instructor lo lee de acá y lo muestra en la clase en vivo.
+         En los guiones, que la víctima se recupera se canta con "respira normalmente" o
+         "tose": nunca con "respira con ruido" ni "boquea", que son respiración agónica y la
+         app enseña a transmitirlos como que NO respira. */
       notasInstructor:[
         "Al minuto y medio: después de las 5 ventilaciones de rescate y un ciclo de compresiones, sigue sin responder y sin signos de circulación. Llega el compañero con el DEA.",
         "A los 3 minutos: el DEA analiza y no indica descarga. Siguen con RCP.",
-        "A los 4 minutos y medio: la víctima boquea, expulsa agua y arranca a respirar sola, con mucha espuma en boca y nariz. No se le encuentra pulso radial. Sigue sin responder. Pasó a grado 4."
+        "A los 4 minutos y medio: tose, expulsa agua y arranca a respirar sola, rápido y con esfuerzo, con mucha espuma en boca y nariz. Tiene pulso en el cuello pero no en la muñeca. Sigue sin responder. Pasó a grado 4."
       ] },
 
     /* El ruido raro es respiración agónica: el punto docente es transmitirlo como que NO
@@ -583,7 +587,7 @@
         "Punto docente: fuera de servicio te identificás como guardavidas y dejás un teléfono. A los testigos se les da una tarea a cada uno: uno al DEA, otro a esperar a la ambulancia.",
         "A los 30 segundos, si nadie fue por el DEA: 'la gente sólo mira'.",
         "Al minuto y medio llega el DEA: indica descarga. Después de la descarga, RCP.",
-        "A los 4 minutos: segundo análisis, no indica descarga; se mueve y respira con ruido. Si el alumno lo reporta: de costado, vigilar, parches puestos."
+        "A los 4 minutos: segundo análisis, no indica descarga; empieza a moverse y respira normalmente, sin ronquidos ni boqueos, pero sigue sin responder. Si el alumno lo reporta: de costado, vigilar la respiración, parches puestos."
       ] },
 
     /* Dos víctimas: decirlo desde el principio y priorizar al que no respira. */
@@ -799,7 +803,7 @@
     "Extracción o rescate = sacarlo del agua. Andarivel, zona profunda, cabecera, torre o puesto, espigón, correntada = partes del lugar donde trabaja el guardavidas.",
     "Móvil = la ambulancia. SEM = servicio de emergencias médicas, o sea vos. Triage o triaje = ordenar por gravedad cuando hay varias víctimas.",
     "FV (fibrilación ventricular) y TV = los ritmos que el DEA manda descargar. Asistolia = sin actividad, no se descarga.",
-    "PLSD = posición lateral de seguridad del lado derecho. Pocket mask o mascarilla de bolsillo, BVM o ambú y cánula orofaríngea = dispositivos para ventilar. Maniobra de Sellick = comprimir el esófago para evitar el vómito.",
+    "PLSD = posición lateral de seguridad del lado derecho. Pocket mask o mascarilla de bolsillo, BVM o ambú y cánula orofaríngea = dispositivos para ventilar. Maniobra de Sellick o presión cricoidea = presionar el cartílago cricoides para cerrar el esófago y que no suba el contenido del estómago mientras se ventila.",
     "Manta térmica o de supervivencia = para que la víctima no siga perdiendo calor. Broncoaspiración = que el vómito se vaya a los pulmones.",
     "El término correcto es ahogamiento, con o sin lesión. 'Casi ahogamiento' y 'ahogamiento seco' están en desuso: si el alumno los usa, entendelo igual pero pedile el dato observable.",
     "Ahogamiento primario (lo que la escuela llama 'puro'): no lo precipitó otra cosa. Secundario: lo precipitó alcohol, drogas, una convulsión, un traumatismo o un cuadro cardíaco. Si sospechás secundario, preguntá qué pasó antes de entrar al agua."
@@ -856,7 +860,13 @@
   /* La RCP guiada, en el orden en que se indica. Frases cortas, para decir de a una.
      Adulto sin ahogamiento: sólo compresiones (AHA 2025). Chicos y ahogados: primero 5
      ventilaciones y después 30:2, y si no puede o no quiere ventilar, sólo compresiones
-     (ERC 2025 pediátrica; AHA/AAP 2024 ahogamiento). */
+     (ERC 2025 pediátrica; AHA/AAP 2024 ahogamiento).
+     La profundidad y las manos cambian con la edad, así que hay una lista por víctima
+     (la elige listaRcp()): el tercio del pecho es de chicos; en un adulto ahogado un tercio
+     pasa de largo los 6 cm, y ahí van el talón de la mano y unos 5 cm, como en
+     RCP_COMPRESIONES (AHA 2025 adulto, ERC 2025 adulto). Al lactante no se le tapa la
+     nariz ni se le tira la cabeza para atrás, que le cierra la vía aérea: boca a boca y
+     nariz, cabeza derecha y dos pulgares (ERC 2025 pediátrica, AHA/AAP 2025 pediátrica). */
   const RCP_COMPRESIONES = [
     "Poné el teléfono en altavoz y dejalo al lado tuyo.",
     "Ponelo boca arriba en el piso, sobre algo firme, y arrodillate a su lado.",
@@ -868,7 +878,28 @@
     "Poné el teléfono en altavoz y dejalo al lado tuyo.",
     "Ponelo boca arriba. Con una mano en la frente y dos dedos debajo del mentón, inclinale la cabeza hacia atrás.",
     "Tapale la nariz, poné tu boca sobre la suya y soplá despacio, un segundo, hasta ver que el pecho sube. Cinco veces.",
-    "Después, en el medio del pecho, empujá fuerte y rápido 30 veces: que el pecho baje un tercio. En un chico chico alcanza con una mano.",
+    "Después, poné el talón de una mano en el medio del pecho (si es grande, la otra mano encima) y empujá fuerte y rápido 30 veces: que el pecho baje un tercio, unos cinco centímetros, y vuelva a subir del todo.",
+    "Después, 2 soplidos y otra vez 30 compresiones. Seguí así sin parar.",
+    "Si no podés o no querés soplar, hacé sólo las compresiones, sin parar."
+  ];
+  // El adulto ahogado: las ventilaciones del ahogamiento con las manos y la profundidad del
+  // adulto. El paso de las compresiones va partido en dos, como en RCP_COMPRESIONES, para
+  // que siga siendo una indicación por turno.
+  const RCP_VENTILACIONES_ADULTO = [
+    "Poné el teléfono en altavoz y dejalo al lado tuyo.",
+    "Ponelo boca arriba en el piso, sobre algo firme. Con una mano en la frente y dos dedos debajo del mentón, inclinale la cabeza hacia atrás.",
+    "Tapale la nariz, poné tu boca sobre la suya y soplá despacio, un segundo, hasta ver que el pecho sube. Cinco veces.",
+    "Después, poné el talón de una mano en el medio del pecho y la otra mano encima.",
+    "Con los brazos rectos, empujá fuerte y rápido 30 veces: que baje unos cinco centímetros y vuelva a subir del todo, unas dos veces por segundo.",
+    "Después, 2 soplidos y otra vez 30 compresiones. Seguí así sin parar.",
+    "Si no podés o no querés soplar, hacé sólo las compresiones, sin parar."
+  ];
+  // El bebé de menos de un año: los mismos pasos que el chico, con su técnica.
+  const RCP_VENTILACIONES_LACTANTE = [
+    "Poné el teléfono en altavoz y dejalo al lado tuyo.",
+    "Ponelo boca arriba sobre algo firme, una mesa o el piso. La cabeza derecha, mirando al techo: levantale apenas el mentón con un dedo, sin tirarle la cabeza para atrás.",
+    "Tapale con tu boca la boca y la nariz juntas y soplá suave, un segundo, hasta ver que el pecho sube. Cinco veces.",
+    "Después abrazale el pecho con las dos manos y, con los dos pulgares juntos en el medio del pecho, justo debajo de la línea de las tetillas, empujá fuerte y rápido 30 veces: que baje un tercio, unos cuatro centímetros.",
     "Después, 2 soplidos y otra vez 30 compresiones. Seguí así sin parar.",
     "Si no podés o no querés soplar, hacé sólo las compresiones, sin parar."
   ];
@@ -921,14 +952,14 @@
          contradice lo que se enseña en el aula, gana el aula: corregilo acá. */
       saber:[
         "El guardavidas NO administra oxígeno: en Argentina no está en su alcance. El oxígeno de la tabla de grados lo pone el SEM cuando llega, así que no se lo preguntes ni se lo indiques.",
-        "La relación de compresiones y ventilaciones es la de siempre: 30:2 en adultos, y 15:2 en chicos y lactantes cuando hay dos socorristas. 100 a 120 compresiones por minuto, 5 a 6 cm de profundidad. En chicos de 1 a 9 años se comprime con una sola mano. (OJO: el manual SVB de la escuela dice 15:2 para todas las edades con dos socorristas. El instructor corrigió que 15:2 se reserva a pediátricos. Manda el instructor.)",
+        "La relación de compresiones y ventilaciones es la de siempre: 30:2 en adultos, y 15:2 en chicos y lactantes cuando hay dos socorristas. 100 a 120 compresiones por minuto. Profundidad: 5 a 6 cm en adolescentes y adultos; un tercio del pecho en chicos (unos 5 cm) y en lactantes (unos 4 cm). En chicos, una o dos manos según el tamaño; en lactantes, dos pulgares abrazando el pecho o el talón de una mano. (OJO: el manual SVB de la escuela dice 15:2 para todas las edades con dos socorristas. El instructor corrigió que 15:2 se reserva a pediátricos. Manda el instructor.)",
         "Se arranca siempre con 5 ventilaciones de rescate: el ahogamiento es un paro por asfixia, así que el oxígeno va primero, antes que las compresiones.",
         "Después de los primeros 5 ciclos se evalúan ventilación y signos de circulación, y de ahí en más cada 2 minutos o 5 ciclos. El DEA pausa solo cada 2 minutos, así que los tiempos coinciden.",
         "Vomitar durante la reanimación es lo habitual, no la excepción: pasa en la mitad de las víctimas conscientes y en el 86% de las que reciben RCP completa. Si vomita: lateralizar, limpiar la boca, volver a ponerlo boca arriba y seguir. NO es signo de mejora y no se frena la RCP por eso.",
         "La espuma NO es vómito. No se lateraliza ni se detiene la reanimación por espuma: se limpia, o se ventila por encima y se limpia en la pausa de las compresiones. Si el alumno frena por la espuma, corregilo.",
         "Ventilar de más infla el estómago, provoca vómito y broncoaspiración, y encima perjudica el retorno venoso al corazón. Insuflar suave, en un segundo, sólo hasta que el tórax se eleve.",
         "Si el boca a boca no entra: revisar la hiperextensión del cuello y reintentar. Si sigue sin entrar, pensar en obstrucción de la vía aérea por cuerpo extraño.",
-        "Casi todo ahogado está hipotérmico, incluso en verano: el agua recién es térmicamente neutra cerca de los 33 grados. Y en hipotermia el pulso y la respiración pueden ser tan lentos que casi no se detectan, así que se evalúa 30 a 45 segundos antes de decidir que no hay.",
+        "Muchos ahogados se enfrían, incluso en verano: el agua recién es térmicamente neutra cerca de los 33 grados, así que hay que secarlos y abrigarlos. Pero la evaluación dura lo de siempre, hasta 10 segundos, y ante la duda se reanima. Sólo si estuvo en agua fría y está helado, el pulso y la respiración pueden ser tan lentos que cuesta detectarlos: ahí se mira hasta un minuto (ERC 2025).",
         "A la víctima hipotérmica se la maneja con suavidad: una maniobra brusca puede desencadenar una fibrilación. Se la saca del agua en posición horizontal si se puede, se le quita la ropa mojada y se la abriga.",
         "En hipotermia la desfibrilación puede no funcionar hasta que el cuerpo se recalienta. Por eso, en ahogamiento, no se da a nadie por muerto hasta que esté caliente.",
         "Sólo NO se inicia RCP si la escena es insegura, si hubo más de una hora de sumersión, o si hay rigidez cadavérica, livideces o descomposición. Ante cualquier duda, se reanima.",
@@ -1140,7 +1171,7 @@
               turns:[], log:[], t0:0, tick:null, ended:false, listening:false, busy:false,
               hablando:false, mudo:false, textMode:false, micDiag:"", codigo:"",
               marcado:"", arriboKey:"normal", arribo:0, grado:null, grados:[], sondeos:0,
-              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false, sinAvance:0, cerrando:false, anuncioSinUbicacion:false,
+              ultimaOp:0, rub:null, fase:"interrogatorio", turnosOp:0, turnosPost:0, datos:{}, despachado:false, sinAvance:0, cerrando:false, anuncioSinUbicacion:false, guardada:false, reintento:0,
               // Quién llama en el ejercicio, cómo se llama el alumno o el grupo, y a qué
               // cuenta y clase pertenece (lo contesta el servidor al verificar el código).
               perfil:"guardavidas", alias:"", acceso:null, requiere:false,
@@ -1151,15 +1182,35 @@
   function show(v){ for(const k in views) views[k].hidden = (k!==v); window.scrollTo(0,0); }
 
   /* ---------------- servidor ---------------- */
+  // Con tope de tiempo: si la conexión del celular se queda colgada sin fallar, el pedido
+  // no terminaba nunca y el alumno quedaba en "Revisando la llamada…" sin botón para
+  // salir. 75 s es más que los 60 s que Vercel le da a la función.
   async function api(payload){
-    const r = await fetch("/api/chat", {
-      method:"POST",
-      headers:{"content-type":"application/json", "x-codigo":S.codigo},
-      body: JSON.stringify(payload)
-    });
-    const data = await r.json().catch(()=>({error:"respuesta_ilegible"}));
+    const ctl = typeof AbortController === "function" ? new AbortController() : null;
+    const reloj = ctl ? setTimeout(()=>ctl.abort(), 75000) : null;
+    let r, data;
+    try{
+      r = await fetch("/api/chat", {
+        method:"POST",
+        headers:{"content-type":"application/json", "x-codigo":S.codigo},
+        body: JSON.stringify(payload),
+        signal: ctl ? ctl.signal : undefined
+      });
+      data = await r.json().catch(()=>({error:"respuesta_ilegible"}));
+    }catch(err){
+      if(err && err.name === "AbortError"){ const e = new Error("sin_respuesta"); e.code = "sin_respuesta"; throw e; }
+      throw err;
+    }finally{ if(reloj) clearTimeout(reloj); }
     if(!r.ok){ const e = new Error(data.detalle||data.error||"error"); e.code = data.error; e.status = r.status; e.data = data; throw e; }
     return data;
+  }
+
+  // El id de una práctica: minúsculas y números, con la misma forma que acepta el servidor.
+  function nuevoIdPractica(){
+    const b = new Uint8Array(6);
+    if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(b);
+    else for(let i = 0; i < b.length; i++) b[i] = Math.floor(Math.random()*256);
+    return Date.now().toString(36) + Array.from(b, x => x.toString(16).padStart(2, "0")).join("");
   }
 
   /* Avisos al tablero de la clase en vivo, el que mira el instructor. Nunca frenan la
@@ -1182,7 +1233,8 @@
     demasiados_intentos: "Muchos códigos equivocados seguidos. Esperá diez minutos y probá de nuevo.",
     cupo_agotado: "Tu institución ya usó todas las prácticas de este mes. Consultalo con tu instructor.",
     prompt_largo: "El guion del operador quedó demasiado largo para el servidor. Avisale al administrador.",
-    sin_clave: "Falta cargar la clave de API en el servidor. Avisale al administrador."
+    sin_clave: "Falta cargar la clave de API en el servidor. Avisale al administrador.",
+    sin_respuesta: "El servidor no respondió a tiempo. Revisá la conexión del celular y probá de nuevo."
   };
   const BLOQUEOS = ["codigo_invalido","sala_cerrada","cuenta_vencida","cuenta_inactiva","demasiados_intentos"];
   function textoError(e){ return (ERRORES[e.code] || e.message || "Error") + (e.code ? " ("+e.code+")" : ""); }
@@ -1587,10 +1639,22 @@
   function esLego(){ return S.perfil === "lego"; }
   function guia(){ return (S.scn && S.scn.guia && GUIAS[S.scn.guia]) || null; }
   function esencialesDe(){ return esLego() ? ESENCIALES_LEGO : ESENCIALES; }
-  // Chico o ahogado: la RCP guiada lleva ventilaciones (5 y después 30:2).
+  // Chico, lactante o ahogado: la RCP guiada lleva ventilaciones (5 y después 30:2).
   function rcpConVentilaciones(){
     const g = guia();
-    return Boolean((g && g.rcp === "ventilaciones") || (S.scn && S.scn.victima === "nino"));
+    const v = S.scn && S.scn.victima;
+    return Boolean((g && g.rcp === "ventilaciones") || v === "nino" || v === "lactante");
+  }
+  /* La lista de indicaciones que corresponde a esta víctima: la técnica cambia con la edad
+     (ver el comentario de RCP_COMPRESIONES). El adulto ahogado tiene la suya; si la víctima
+     no está dicha, va la del chico, que nunca le indica el talón de la mano y los 5 cm a
+     un bebé. */
+  function listaRcp(){
+    if(!rcpConVentilaciones()) return RCP_COMPRESIONES;
+    const v = S.scn && S.scn.victima;
+    if(v === "adulto") return RCP_VENTILACIONES_ADULTO;
+    if(v === "lactante") return RCP_VENTILACIONES_LACTANTE;
+    return RCP_VENTILACIONES;
   }
   // En paro no hay empeoramiento posible: la despedida no le pide avisar "si empeora".
   function sinEmpeoramiento(){ return S.grado === 6 || (S.scn && S.scn.guia === "pcr"); }
@@ -1630,13 +1694,48 @@
   }
 
   /* En modo lego, que ya empezó a comprimir es un hecho que la app lee de lo que dice el
-     alumno, sin esperar a que el modelo lo marque: misma regla que el despacho. Contar
-     en voz alta ("uno, dos, tres, cuatro...") también cuenta. */
+     alumno, sin esperar a que el modelo lo marque: misma regla que el despacho. Pero sólo
+     lo que AFIRMA. La primera versión buscaba palabras sueltas y daba por empezada la RCP
+     con "¿dónde comprimo?", "no sé cómo comprimir", "no le estoy haciendo RCP" o el conteo
+     de los 5 soplidos: el operador dejaba de darle las indicaciones justo al que las pedía,
+     y el tiempo hasta la RCP de la devolución quedaba mal medido. Por voz no llegan los
+     signos de pregunta, así que no se puede depender de ellos. */
+  const AFIRMA_RCP = / (?:estoy|estamos|sigo|seguimos)(?: le| lo)? (?:comprimiendo|empujando|apretando|(?:haci[eé]ndo|d[aá]ndo)(?:le|lo)? (?:la |el |las |un )?(?:rcp|masaje|compresiones))| (?:empec[eé]|arranqu[eé]|empezamos|arrancamos) (?:a |con )(?:la |el |las )?(?:comprim|empuj|apret|rcp|masaje|compresiones|hacer(?:le)? (?:la |el )?(?:rcp|masaje))| (?:comprimo|empujo|aprieto) /g;
+  // Lo que alcanza como respuesta cuando el operador ACABA de decirle que empuje.
+  const ACUSE_RCP = new Set(["listo","dale","ok","okey","bueno","si","sí","ya","ahí","ahi","voy","va","empecé","empece","arranqué","arranque","estoy","lo","hago","haciendo","eso","está","esta","le"]);
   function empezoRCP(txt){
-    const t = String(txt||"").toLowerCase();
-    if(/(comprim|empujando|estoy empujando|ya empuj|estoy apretando|apretando el pecho|masaje card|estoy haciendo (la )?rcp|haciendo rcp|ya empec[eé]|ya arranqu[eé])/.test(t)) return true;
+    const crudo = String(txt||"").toLowerCase();
+    const t = " " + crudo.replace(/[^a-z0-9áéíóúüñ]+/g, " ").trim() + " ";
+    const dichas = t.trim().split(" ").filter(Boolean);
+    const ops = S.turns.filter(x => x.role === "assistant").map(x => String(x.content).toLowerCase());
+    const EMPUJE = /(empuj|comprim|compresi|apret)/, SOPLIDO = /(sopl|ventil)/;
+    const pidioEmpujar = EMPUJE.test(ops[ops.length-1] || "");
+    // La última indicación de maniobra: si fueron los 5 soplidos, contar hasta cinco son
+    // los soplidos, no compresiones.
+    const maniobra = ops.slice().reverse().find(o => SOPLIDO.test(o) || EMPUJE.test(o)) || "";
+    const contabaSoplidos = SOPLIDO.test(maniobra) && !EMPUJE.test(maniobra);
+
+    // 1) Lo afirma en primera persona. Una negación pegada lo anula ("no le estoy haciendo
+    //    RCP"); una más atrás no ("no respira, ya estoy comprimiendo").
+    AFIRMA_RCP.lastIndex = 0;
+    let m;
+    while((m = AFIRMA_RCP.exec(t))){
+      const antes = t.slice(0, m.index + 1);
+      AFIRMA_RCP.lastIndex = m.index + 1;
+      if(/ (?:no|nadie|nunca|todav[ií]a no|a[uú]n no)(?: le| lo)? $/.test(antes)) continue;
+      // "¿dónde comprimo?", "cómo empujo": el verbo suelto en una pregunta.
+      if(/^ (?:comprimo|empujo|aprieto) $/.test(m[0]) && (/\?/.test(crudo) || / (?:c[oó]mo|d[oó]nde|cu[aá]nto|cu[aá]ndo|qu[eé]|tengo que|hay que)(?: le| lo)? $/.test(antes))) continue;
+      return true;
+    }
+    // 2) Le acaban de decir que empuje y contesta corto: "listo", "ya empecé", "ahí voy".
+    if(pidioEmpujar && dichas.length <= 5 && dichas.every(w => ACUSE_RCP.has(w))
+       && /(listo|dale|ok|voy|va|empec|arranqu|estoy|hago|haciendo|\bya\b)/.test(t)) return true;
+    // 3) Cuenta en voz alta ("uno, dos, tres, cuatro..."), salvo que esté contando los
+    //    soplidos: ahí sólo cuenta si pasa de cinco.
     const numeros = t.match(/\b(\d{1,2}|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\b/g) || [];
-    return numeros.length >= 4 && numeros.length >= t.split(/\s+/).filter(Boolean).length * 0.6;
+    if(numeros.length < 4 || numeros.length < dichas.length * 0.6) return false;
+    if(!contabaSoplidos) return true;
+    return numeros.length > 5 || numeros.some(n => /^(seis|siete|ocho|nueve|diez|[6-9]|\d{2})$/.test(n));
   }
 
   /* La ubicación no se le cree al modelo sin más. El operador declara con [[DATOS:...]] lo
@@ -1657,7 +1756,7 @@
     const propias = palabras(((S.scn && S.scn.addr) || "") + " " + ((S.scn && S.scn.zona) || ""))
       .filter(p => p.length >= 6 && !GENERICAS_DIRECCION.has(p));
     return S.turns.some(t => {
-      if(t.role !== "user" || /^\[silencio/.test(t.content)) return false;
+      if(t.role !== "user" || String(t.content).startsWith("[silencio")) return false;
       const txt = String(t.content).toLowerCase();
       if(/\d/.test(txt.replace(NUMEROS_QUE_NO_UBICAN, ""))) return true;
       if(PISTAS_UBICACION.test(txt)) return true;
@@ -1680,7 +1779,15 @@
      abierta para siempre esperando un dato que no va a llegar. */
   function abandona(){
     if(S.despachado) return false;
-    if(esLego()) return S.sinAvance >= TOPE_SIN_AVANCE_LEGO || (Date.now()-S.t0) >= TOPE_MINUTOS_LEGO*60000;
+    if(esLego()){
+      // Con la RCP en marcha, o con el paro ya evaluado, el operador no corta nunca: sigue
+      // guiando y pide la dirección de otra manera. Antes, sin dirección, a los seis turnos
+      // le decía "voy a cortar, volvé a llamar" a alguien que estaba reanimando a un chico.
+      // Si la práctica se estira sin despacho, la termina la app (ver sondear()), no el
+      // operador.
+      if(S.datos.rcp || (S.datos.conciencia && S.datos.respiracion)) return false;
+      return S.sinAvance >= TOPE_SIN_AVANCE_LEGO || (Date.now()-S.t0) >= TOPE_MINUTOS_LEGO*60000;
+    }
     return S.sinAvance >= TOPE_SIN_AVANCE;
   }
 
@@ -1691,10 +1798,13 @@
       if(!S.despachado || !S.datos.rcp) return false;
       return faltan(EXTRAS_LEGO).length === 0 || S.turnosPost > TOPE_EXTRAS_LEGO;
     }
-    if(S.fase === "espera") return true;
     if(abandona()) return true;
-    if((Date.now()-S.t0) >= TOPE_MINUTOS*60000) return true;
+    // Sin despacho, ni [[ESPERA]] ni el tope de minutos cierran: sólo el abandono, que es
+    // honesto. Antes iban primero, y a los 4 minutos el estado le decía "ya despachaste el
+    // móvil" a un operador que no tenía la ubicación.
     if(!S.despachado && faltan(ESENCIALES).length) return false;
+    if(S.fase === "espera") return true;
+    if((Date.now()-S.t0) >= TOPE_MINUTOS*60000) return true;
     // Ya despachó: o terminó los extras, o se le acabaron los turnos para hacerlo.
     return faltan(extrasDe()).length === 0 || S.turnosPost > TOPE_EXTRAS;
   }
@@ -1812,9 +1922,21 @@
 
     if(fEs.length){
       L.push("- TODAVÍA TE FALTA LO ESENCIAL. No sabés: "+fEs.map(x=>x.pide).join("; ")+".");
-      L.push("- Preguntá por eso, de a una cosa por vez, en ese orden. Si ya te lo dijo con otras palabras, no lo repitas.");
-      if(S.sinAvance >= AVISAR_SIN_AVANCE && fEs.some(x=>x.id==="ubicacion")){
-        L.push("- Ya le pediste la dirección "+S.sinAvance+" veces. Ayudalo a armarla con otra pregunta: ¿qué ve desde ahí?, ¿una esquina, un comercio, un cartel, una ruta y a qué altura?, ¿hay alguien que sepa la dirección?");
+      const faltaUbic = fEs.some(x=>x.id==="ubicacion");
+      const faltaReconocer = fEs.filter(x=>x.id==="conciencia" || x.id==="respiracion");
+      // Si la dirección se demora, reconocer el paro no la espera: con el orden fijo, quien
+      // abría con "¡se ahogó mi nene y no sé dónde estoy!" nunca escuchaba las dos preguntas
+      // que destraban la RCP guiada.
+      if(faltaUbic && faltaReconocer.length && (S.sinAvance >= 1 || S.datos.motivo)){
+        L.push("- La dirección se está demorando: dejala un momento. Ahora preguntá, de a una por vez: "+faltaReconocer.map(x=>x.pide).join("; ")+". Si no responde y no respira normalmente, arrancás la RCP guiada y recién después volvés a la dirección. La RCP guiada no espera a la dirección.");
+      } else {
+        L.push("- Preguntá por eso, de a una cosa por vez, en ese orden. Si ya te lo dijo con otras palabras, no lo repitas.");
+        if(S.sinAvance >= AVISAR_SIN_AVANCE && faltaUbic){
+          L.push("- Ya le pediste la dirección "+S.sinAvance+" veces. Ayudalo a armarla con otra pregunta: ¿qué ve desde ahí?, ¿una esquina, un comercio, un cartel, una ruta y a qué altura?, ¿hay alguien que sepa la dirección?");
+        }
+      }
+      if(S.datos.rcp && !S.despachado && faltaUbic){
+        L.push("- Está haciendo la RCP y todavía no tenés la dirección: NO cortes, NO le digas que corte ni que vuelva a llamar. En cada mensaje, una frase para que siga comprimiendo y UNA sola pregunta nueva para armar la ubicación (qué ve, la ruta y a qué altura, un comercio o un cartel, alguien que la sepa o que salga a la calle a hacer señas).");
       }
       // Si ya se sabe que no responde y no respira, la RCP no espera a la dirección.
       if(S.datos.conciencia && S.datos.respiracion && !S.datos.rcp){
@@ -1827,10 +1949,14 @@
       L.push("- YA TENÉS LO ESENCIAL.");
       if(!S.despachado) L.push("- En ESTE mensaje avisale en una frase corta que la ambulancia ya sale.");
       L.push("- Si no responde y no respira normalmente (o respira raro, o no sabe): arrancá la RCP guiada YA, en este mismo mensaje, con la primera indicación. Después, una indicación por turno, en este orden:");
-      L.push((rcpConVentilaciones() ? RCP_VENTILACIONES : RCP_COMPRESIONES).map((x,i)=>"  "+(i+1)+". "+x).join("\n"));
+      L.push(listaRcp().map((x,i)=>"  "+(i+1)+". "+x).join("\n"));
       L.push("- Si responde, o si respira normalmente, no hay RCP: que lo ponga de costado, que no lo deje solo y que te avise si deja de respirar normal.");
       L.push("- Cuando te diga que ya está comprimiendo, lo acusás en dos palabras y seguís.");
     } else {
+      // Ya comprimía antes de que el operador tuviera lo esencial (lo que se enseña en un
+      // curso de RCP): la única orden de anunciar la ambulancia estaba en la rama de arriba,
+      // así que nunca la anunciaba y el reloj del arribo no arrancaba.
+      if(!S.despachado) L.push("- Todavía NO le avisaste que la ambulancia sale. En ESTE mensaje, antes que nada, decile en una frase corta que la ambulancia ya sale.");
       L.push("- YA ESTÁ HACIENDO LA RCP. No la frenes con preguntas largas.");
       if(fEx.length && S.turnosPost <= TOPE_EXTRAS_LEGO){
         L.push("- Te queda por resolver, DE A UNA POR TURNO y sólo si no te lo contó: "+fEx.map(x=>x.pide).join("; ")+". Cada pregunta en una frase, y terminás alentándolo a seguir.");
@@ -1956,7 +2082,7 @@
       "1. Lo esencial, en este orden: "+ESENCIALES_LEGO.map(x=>x.pide).join("; ")+".",
       "2. Apenas lo tenés, en el MISMO mensaje: avisás que la ambulancia ya sale y, si no responde y no respira normalmente, arrancás la RCP guiada con la primera indicación.",
       "3. La RCP guiada, una indicación por turno, en este orden:",
-      (rcpConVentilaciones() ? RCP_VENTILACIONES : RCP_COMPRESIONES).map((x,i)=>"   "+(i+1)+". "+x).join("\n"),
+      listaRcp().map((x,i)=>"   "+(i+1)+". "+x).join("\n"),
       "4. Con la RCP en marcha, de a una cosa por turno y sólo si no te lo contó: "+EXTRAS_LEGO.map(x=>x.pide).join("; ")+".",
       "5. Después lo sostenés hasta que llegue la ambulancia, con frases cortas de aliento. Situaciones que pueden aparecer:",
       RCP_SITUACIONES.map(x=>"   · "+x).join("\n"),
@@ -1973,7 +2099,19 @@
     return L.join("\n");
   }
 
+  /* La marca rcp del operador no se le cree en el mismo mensaje en que da la primera
+     indicación de compresiones: tiene que haberla dado antes y que la persona haya
+     contestado algo después. Si no, el tiempo hasta la RCP quedaba con la hora de su
+     respuesta y el estado pasaba a "ya está comprimiendo" sin que nadie lo dijera. Lo
+     que la persona afirma lo lee la app directo, con empezoRCP(). */
+  function confirmaRcp(){
+    const i = S.turns.findIndex(t => t.role === "assistant" && /(empuj|comprim|apret)/i.test(t.content));
+    return i >= 0 && S.turns.slice(i + 1).some(t => t.role === "user" && !/^\[silencio/.test(t.content));
+  }
+
   async function ask(sondeo){
+    // Para reconocer una respuesta que llega cuando esta llamada ya terminó.
+    const llamada = S.t0;
     S.busy = true; updateControls();
     // Un sondeo es el operador hablando sin que el alumno haya dicho nada: se lo
     // contamos como tal para que la conversación siga teniendo sentido.
@@ -1989,7 +2127,10 @@
     try{
       const p = instrucciones(sondeo);
       const { texto } = await api({ modo:"operador", fijo:p.fijo, variable:p.variable, turnos: S.turns, inicio: S.primerTurno });
-      S.primerTurno = false;
+      // Si mientras esperaba la respuesta el alumno cortó, lo que llega tarde no se
+      // muestra, no se lee en voz alta ni se agrega al registro de la práctica.
+      if(S.ended || S.t0 !== llamada){ live.remove(); return; }
+      S.primerTurno = false; S.reintento = 0;
       let txt = String(texto||"").trim();
 
       // El grado en el que clasificó. La app lo usa para la cadencia de los controles y
@@ -2007,6 +2148,7 @@
       const md = txt.match(/\[\[\s*DATOS\s*:([^\]]*)\]\]/i);
       if(md) md[1].split(",").map(x=>x.trim().toLowerCase()).filter(Boolean).forEach(id=>{
         if(id === "ubicacion" && !dijoUbicacion()) return; // ver dijoUbicacion()
+        if(id === "rcp" && !confirmaRcp()) return;          // ver confirmaRcp()
         S.datos[id] = true;
       });
       txt = txt.replace(/\[\[\s*DATOS[^\]]*\]\]/gi,"").trim();
@@ -2014,8 +2156,10 @@
 
       // Turnos seguidos sin arrancarle un dato nuevo. Es lo que corta el bucle del
       // operador preguntando lo mismo una y otra vez a alguien que no se lo va a dar.
+      // En lego, con lo esencial completo no hay "sin avance": si no despachó todavía, es
+      // porque falta el anuncio, no un dato de quien llama.
       if(Object.keys(S.datos).length > teniaAntes) S.sinAvance = 0;
-      else if(!S.despachado) S.sinAvance++;
+      else if(!S.despachado && (!esLego() || faltan(ESENCIALES_LEGO).length)) S.sinAvance++;
       // El anuncio del despacho se detecta de lo que DIJO, no de lo que declaró tener:
       // el modelo suele anunciar por su cuenta sin mandar la marca de datos, y así el
       // tope nunca arrancaba.
@@ -2028,7 +2172,9 @@
 
       // Turnos gastados desde que despachó (guardavidas) o desde que arrancó la RCP
       // (lego): es lo que limita cuánto puede seguir preguntando antes de callarse.
-      if(esLego()){ if(S.datos.rcp) S.turnosPost++; }
+      // En lego los turnos para los extras cuentan desde que la ambulancia salió: si ya
+      // comprimía antes, se gastaban mientras todavía faltaba anunciarla.
+      if(esLego()){ if(S.datos.rcp && S.despachado) S.turnosPost++; }
       else if(S.despachado || faltan(ESENCIALES).length === 0) S.turnosPost++;
 
       // El operador puede declarar que terminó de interrogar antes de completar la
@@ -2082,6 +2228,21 @@
       }
     }catch(e){
       live.remove();
+      if(S.ended || S.t0 !== llamada) return;
+      // Saturación momentánea de la capa gratuita (429 por minuto): se reintenta solo, sin
+      // pedirle al alumno que repita, hasta dos veces. La cuota es por minuto, así que el
+      // pico de 8 grupos llamando a la vez se reparte en unos segundos. Mientras tanto
+      // S.busy sigue en true: el operador figura pensando y el micrófono queda cerrado.
+      if(e.status===429 && e.code!=="demasiados_intentos" && (S.reintento||0) < 2 && !S.cerrando){
+        S.reintento = (S.reintento||0) + 1;
+        if(sondeo) S.turns.pop();   // ask(true) vuelve a poner el [silencio]
+        setTimeout(()=>{
+          if(S.ended || S.cerrando || S.t0 !== llamada){ S.busy = false; updateControls(); return; }
+          ask(sondeo);
+        }, S.reintento === 1 ? 8000 : 20000);
+        return;
+      }
+      S.reintento = 0;
       const map = {
         codigo_invalido:"El código de acceso ya no es válido. Pedíselo al instructor.",
         sala_cerrada:"La clase se cerró. Terminá la llamada y pedile al instructor el código nuevo.",
@@ -2090,7 +2251,7 @@
         sin_clave:"Falta cargar la clave de API en el servidor (sin_clave).",
         api:"El servicio no respondió. Volvé a hablar para reintentar."
       };
-      addMsg("sys", (e.status===429 && e.code!=="demasiados_intentos" ? "El servicio está saturado: todos los modelos gratuitos llegaron a su tope por ahora. Esperá unos segundos y volvé a hablar (429)." : (map[e.code] || "Se cortó la comunicación con el operador. Volvé a hablar para reintentar.")));
+      addMsg("sys", (e.status===429 && e.code!=="demasiados_intentos" ? "El servicio está saturado por ahora. Lo que dijiste quedó anotado: esperá unos segundos y volvé a hablar (429)." : (map[e.code] || "Se cortó la comunicación con el operador. Volvé a hablar para reintentar.")));
       S.busy = false; S.hablando = false; S.ultimaOp = Date.now(); updateControls();
       escuchar();
     }
@@ -2123,6 +2284,13 @@
      cadencia: es el momento de cerrar. */
   function sondear(){
     if(S.ended || S.busy || S.hablando || !S.ultimaOp || S.cerrando) return;
+    // Lego sin despacho: el operador no le corta a quien reanima (ver abandona()), así que
+    // si la práctica se estira, la termina la app con un aviso, no la voz del operador.
+    if(esLego() && !S.despachado && !abandona() && (Date.now()-S.t0) >= TOPE_MINUTOS_LEGO*60000){
+      addMsg("sys", "Fin del ejercicio: pasaron "+TOPE_MINUTOS_LEGO+" minutos sin que el operador pudiera ubicarte. En una llamada real el operador no corta: sigue guiando la RCP hasta encontrar el lugar.");
+      endCall("tiempo");
+      return;
+    }
     const llego = esLego() && llegoMovil() && !S.avisoArribo;
     if(!llego && Date.now()-S.ultimaOp < cadencia()) return;
     if((bufFinal+bufProv).trim()) return;   // el alumno está hablando: no lo pisamos
@@ -2268,6 +2436,9 @@
       rec.continuous = S.manos;
 
       rec.onresult = ev=>{
+        // stop() puede devolver un resultado final del audio ya capturado: si se lo toma,
+        // arma otra frase y la manda mientras el operador todavía contesta la anterior.
+        if(S.manos && !quiereEscuchar) return;
         let fin = "", prov = "";
         for(let i = ev.resultIndex; i < ev.results.length; i++){
           const r = ev.results[i];
@@ -2305,7 +2476,9 @@
   }
 
   function sendTurn(text){
-    text=(text||"").trim(); if(!text || S.ended || S.cerrando) return;
+    // Con un pedido al operador en curso no sale otro: serían dos respuestas y la segunda
+    // le cortaría la voz a la primera. (Mientras el operador HABLA sí se puede adelantar.)
+    text=(text||"").trim(); if(!text || S.ended || S.cerrando || S.busy) return;
     addMsg("me", text);
     S.turns.push({role:"user", content:text});
     logIt("yo", text);
@@ -2401,7 +2574,10 @@
     S.grado=null; S.grados=[]; S.sondeos=0; S.ultimaOp=0;
     S.fase="interrogatorio"; S.turnosOp=0; S.turnosPost=0; S.datos={}; S.despachado=false;
     S.sinAvance=0; S.cerrando=false; S.anuncioSinUbicacion=false;
-    S.tDespacho=0; S.tRcp=null; S.primerTurno=true; S.practicaId=null; S.avisoArribo=false;
+    // El id de la práctica lo arma la app desde el arranque: si la devolución se guardó
+    // pero la respuesta no llegó al celular, el reintento encuentra la misma práctica en
+    // vez de crear otra y contarla dos veces en el cupo y en el tablero.
+    S.tDespacho=0; S.tRcp=null; S.primerTurno=true; S.practicaId=nuevoIdPractica(); S.guardada=false; S.reintento=0; S.avisoArribo=false;
     // El perfil de la práctica es el del escenario (un escenario de lego es de lego
     // aunque el selector haya quedado en otra cosa).
     S.perfil = S.scn.perfil === "lego" ? "lego" : "guardavidas";
@@ -2435,6 +2611,11 @@
 
     S.busy = true; updateControls();
     await ringback();
+    // El reloj de la llamada cuenta desde que atiende la central, como la métrica de la AHA
+    // (tiempo hasta la primera compresión guiada): ni el tono de llamada ni el permiso del
+    // micrófono son tiempo de la llamada. De acá salen la transcripción, el tiempo hasta la
+    // ubicación y hasta la RCP, los topes y el arribo.
+    S.t0 = Date.now(); $("#clock").textContent = "00:00";
     // El operador atiende con la apertura fija: sale al instante y no gasta una llamada al modelo.
     addMsg("op", APERTURA);
     S.turns.push({role:"assistant", content:APERTURA});
@@ -2504,7 +2685,9 @@
       "ESCENARIO: "+S.scn.title,
       "SITUACIÓN QUE VEÍA EL ALUMNO: "+S.scn.scene,
       "UBICACIÓN REAL DONDE ESTABA: "+S.scn.addr,
-      "LA LLAMADA LA CORTÓ: "+(S.hungBy==="alumno"?"el alumno":"el operador"),
+      "LA LLAMADA LA CORTÓ: "+(S.hungBy==="alumno" ? "el alumno"
+        : S.hungBy==="tiempo" ? "la app, al cumplirse el tiempo del ejercicio (el operador seguía en línea, así que no cuenta como que cortó el alumno)"
+        : "el operador"),
       "DURACIÓN: "+stamp(S.dur),
       "",
       "TRANSCRIPCIÓN (los mensajes del alumno están numerados #1, #2…):",
@@ -2549,7 +2732,7 @@
 
   function metaBase(){
     const es = esencialesDe();
-    return S.scn.title+" · duración "+stamp(S.dur)+" · cortó "+(S.hungBy==="alumno"?"el alumno":"el operador")
+    return S.scn.title+" · duración "+stamp(S.dur)+(S.hungBy==="tiempo" ? " · terminó por tiempo" : " · cortó "+(S.hungBy==="alumno"?"el alumno":"el operador"))
       + (S.grado!=null ? " · último grado: "+S.grado : "")
       + (S.sondeos ? " · el operador controló "+S.sondeos+" vez/veces" : "")
       + " · el operador habló "+S.turnosOp+" vez/veces"
@@ -2580,7 +2763,7 @@
     };
     try{
       const r = await api(pedido);
-      if(r.practicaId) S.practicaId = r.practicaId;
+      if(r.practicaId){ S.practicaId = r.practicaId; S.guardada = true; }
       const datos = r.datos;
       // El puntaje sale de la rúbrica, nunca del modelo. Si el servidor ya lo calculó (lo
       // guarda en el registro) se usa ese; es la misma cuenta que puntuar().
@@ -2591,7 +2774,7 @@
       ultimaEval = datos;
       render(datos);
     }catch(e){
-      if(e.data && e.data.practicaId) S.practicaId = e.data.practicaId;
+      if(e.data && e.data.practicaId){ S.practicaId = e.data.practicaId; S.guardada = true; }
       $("#deb-loading").hidden=true; $("#deb-body").hidden=false;
       $("#deb-title").textContent = "No se pudo armar la devolución";
       $("#deb-meta").textContent = metaBase() + " · " + (e.status===429
@@ -2601,7 +2784,7 @@
       $("#deb-retry").hidden = false;
       // Aunque no haya devolución, la llamada queda en el registro para que el instructor
       // la revise a mano.
-      if(S.practicaId){ const sv = $("#deb-saved"); sv.hidden = false; sv.textContent = "La llamada quedó guardada para tu instructor, sin devolución por ahora."; }
+      if(S.guardada){ const sv = $("#deb-saved"); sv.hidden = false; sv.textContent = "La llamada quedó guardada para tu instructor, sin devolución por ahora."; }
     }
   }
   $("#deb-retry").addEventListener("click", ()=>{ $("#deb-notes-wrap").hidden=false; evaluate(); });

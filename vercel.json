@@ -3,6 +3,9 @@
     "api/chat.js": { "maxDuration": 60 },
     "api/datos.js": { "maxDuration": 20 }
   },
+  "crons": [
+    { "path": "/api/datos?vivo=1", "schedule": "0 15 * * *" }
+  ],
   "rewrites": [
     { "source": "/panel", "destination": "/panel.html" },
     { "source": "/instructores", "destination": "/instructores.html" },

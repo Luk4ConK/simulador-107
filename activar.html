@@ -26,6 +26,9 @@
   .fila .est{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase}
   .fila.lista .est{color:var(--ok)}
   .fila.pendiente .est{color:var(--bad)}
+  /* Lo que contestó la prueba real: qué pasó y qué hacer, con el detalle técnico al final. */
+  .fila .res{font-size:14px; margin-top:6px}
+  .fila.pendiente .res{color:var(--bad)}
   .acciones{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; align-items:center}
   .acciones .hora{font-size:13px; color:var(--ink-3)}
   .listo{margin-top:16px; background:var(--surface); border:1px solid var(--ok); border-radius:12px; padding:14px 16px}
@@ -50,19 +53,19 @@
 <main class="angosto doc">
   <span class="lbl">Para quien administra el simulador</span>
   <h1 style="margin-top:10px">Activar el panel y las clases</h1>
-  <p class="resumen">Para practicar, el simulador ya funciona. Para que los instructores entren al panel, abran clases con código y quede el registro de las prácticas, hacen falta tres cosas en Vercel. Esta página revisa sola cuáles ya están.</p>
+  <p class="resumen">Para practicar, el simulador ya funciona. Para que los instructores entren al panel, abran clases con código y quede el registro de las prácticas, hacen falta tres cosas en Vercel. Esta página revisa sola cuáles ya están y prueba que la base y la IA respondan de verdad (la prueba le hace un pedido chiquito a la IA, que cuenta para la cuota gratuita).</p>
 
   <div class="control" id="control" aria-live="polite">
-    <div class="fila" data-clave="registro"><span class="icono" aria-hidden="true">·</span><div><b>Base de datos</b><span class="est">Revisando…</span><div class="d">Guarda las cuentas, las clases y las prácticas.</div></div></div>
-    <div class="fila" data-clave="admin"><span class="icono" aria-hidden="true">·</span><div><b>Código de administrador</b><span class="est">Revisando…</span><div class="d">El que abre el panel completo la primera vez.</div></div></div>
-    <div class="fila" data-clave="clave"><span class="icono" aria-hidden="true">·</span><div><b>Clave de la IA</b><span class="est">Revisando…</span><div class="d">La que usa el operador. Si el simulador ya te atiende, está.</div></div></div>
+    <div class="fila" data-clave="registro"><span class="icono" aria-hidden="true">·</span><div><b>Base de datos</b><span class="est">Revisando…</span><div class="d">Guarda las cuentas, las clases y las prácticas.</div><div class="res" hidden></div></div></div>
+    <div class="fila" data-clave="admin"><span class="icono" aria-hidden="true">·</span><div><b>Código de administrador</b><span class="est">Revisando…</span><div class="d">El que abre el panel completo la primera vez.</div><div class="res" hidden></div></div></div>
+    <div class="fila" data-clave="clave"><span class="icono" aria-hidden="true">·</span><div><b>Clave de la IA</b><span class="est">Revisando…</span><div class="d">La que usa el operador para atender las llamadas y armar las devoluciones.</div><div class="res" hidden></div></div></div>
   </div>
   <div class="acciones">
     <button class="btn sec" id="revisar" type="button">Revisar de nuevo</button>
     <span class="hora" id="hora"></span>
   </div>
   <div class="listo" id="listo" hidden>
-    <b>Todo activado.</b> Entrá a la <a href="./">página principal</a> y, en <i>Soy instructor</i>, poné tu código de administrador.
+    <b>Todo activado y probado.</b> La base y la IA respondieron recién. Entrá a la <a href="./">página principal</a> y, en <i>Soy instructor</i>, poné tu código de administrador.
   </div>
 
   <h2>Los pasos</h2>
@@ -75,9 +78,9 @@
     <li><b>Volver a publicar.</b>
       Lo que cargaste se aplica recién en la próxima publicación. Abrí <a href="https://vercel.com/sumar-salud-ong/simulador-107/deployments" target="_blank" rel="noopener">Deployments</a>, tocá los tres puntos de la primera fila y elegí <i>Redeploy</i>. Tarda uno o dos minutos.</li>
     <li><b>Revisar.</b>
-      Volvé acá y tocá <i>Revisar de nuevo</i>: las tres filas tienen que quedar en verde.</li>
+      Volvé acá y tocá <i>Revisar de nuevo</i>: las tres filas tienen que quedar en verde. Verde quiere decir que la base y la IA contestaron una prueba en ese momento, no sólo que las variables están cargadas. Conviene revisarlo también el día de la primera clase.</li>
     <li><b>Entrar y abrir la primera clase.</b>
-      En la <a href="./">página principal</a>, en <i>Soy instructor</i>, poné tu código de administrador. En el panel creás las cuentas de los instructores (cada una trae su propio código de instructor) y abrís las clases. Cada clase tiene un código de seis letras: los alumnos lo ponen en <i>Soy alumno</i>, en la página principal, o entran con el link que arma el panel.</li>
+      En la <a href="./">página principal</a>, en <i>Soy instructor</i>, poné tu código de administrador. En el panel creás las cuentas de los instructores (cada una trae su propio código de instructor) y abrís las clases. Cada clase tiene un código de seis caracteres (letras y números): los alumnos lo ponen en <i>Soy alumno</i>, en la página principal, o entran con el link que arma el panel.</li>
   </ol>
   <p style="color:var(--ink-3); font-size:14px">Los enlaces abren el proyecto <b>simulador-107</b> del equipo <b>sumar-salud-ong</b> en Vercel. Si alguna vez cambia de nombre o de equipo, entrá desde vercel.com y buscalo en la lista.</p>
 
@@ -108,35 +111,86 @@
 <script>
 (function(){
   "use strict";
-  const TEXTOS = {
-    registro: ["Conectada", "Falta conectarla (paso 1)"],
-    admin:    ["Cargado", "Falta cargarlo (paso 2)"],
-    clave:    ["Cargada", "Falta cargarla en Vercel: GEMINI_API_KEY"]
+  /* Cada fila dice lo que de verdad pasa. Primero, al instante, si la variable está
+     cargada (el GET de /api/chat); después, el resultado de la prueba real
+     (/api/chat?diag=1): un PING a la base y un pedido chiquito a la IA. Antes se ponía en
+     verde con que la variable existiera, y una clave revocada o una base desconectada
+     también "están cargadas": el problema aparecía recién cuando el primer alumno llamaba
+     al 107. Ninguna de las dos respuestas trae la clave. */
+  const FALTA = {
+    registro: "Falta conectarla (paso 1)",
+    admin:    "Falta cargarlo (paso 2)",
+    clave:    "Falta cargarla en Vercel: GEMINI_API_KEY"
   };
-  function pintar(estado){
+  // El detalle técnico va al final, entre paréntesis: sirve para diagnosticar. De la
+  // respuesta de Google se toma sólo el mensaje, no el JSON entero.
+  function tecnico(t){
+    if(!t) return "";
+    const m = /"message"\s*:\s*"([^"]+)"/.exec(String(t));
+    return " (" + String(m ? m[1] : t).slice(0, 160) + ")";
+  }
+  // Lo que dice una fila: ok es true (verde), false (rojo) o null (probando o sin datos).
+  // `espera` es lo que se agrega a lo cargado mientras no está el resultado de la prueba.
+  function leer(k, estado, dg, espera){
+    if(!estado && !dg) return { ok:null, texto:"No se pudo revisar" };
+    if(k === "admin"){
+      // No hay forma de probarlo sin saberlo: se prueba entrando al panel.
+      const ok = Boolean(dg ? dg.codigoAdmin : estado.admin);
+      return { ok, texto: ok ? "Cargado" : FALTA.admin };
+    }
+    if(k === "registro"){
+      const base = dg && dg.baseDeDatos;
+      if(!(base ? base.configurada : estado.registro)) return { ok:false, texto:FALTA.registro };
+      if(!dg) return { ok:null, texto:"Conectada" + espera };
+      if(base.ok) return { ok:true, texto:"Conectada y responde" };
+      return { ok:false, texto:"Conectada, pero no responde",
+        res:"Revisá en Storage que la base siga conectada al proyecto y volvé a publicar (paso 3)." + tecnico(base.detalle) };
+    }
+    // La clave de la IA.
+    if(!(dg ? dg.claveCargada : estado.clave)) return { ok:false, texto:FALTA.clave };
+    if(!dg) return { ok:null, texto:"Cargada" + espera };
+    if(dg.error && /rechazada/.test(dg.error)) return { ok:false, texto:"Cargada, pero Google la rechaza",
+      res:"Revisá que esté bien copiada en GEMINI_API_KEY, sin espacios, y que siga activa en Google AI Studio; después volvé a publicar (paso 3)." + tecnico(dg.error) };
+    if(dg.error) return { ok:false, texto:"Cargada, pero no se pudo probar", res:"Probá de nuevo en un rato." + tecnico(dg.error) };
+    const pr = dg.prueba;
+    if(pr && pr.ok) return { ok:true, texto:"Cargada y responde", res:"Contestó una llamada de prueba (" + pr.modelo + ")." };
+    // Los modelos de la lista que no existen para esta clave no son una falla: la lista
+    // tiene nombres de más a propósito. Lo que sirve saber es cuáles están en pausa.
+    const pausa = Object.entries(dg.enfriados || {}).map(([m, v]) => m + ": " + v).join(", ");
+    return { ok:false, texto:"Cargada, pero la IA no contestó",
+      res:(pausa ? "Los modelos están en pausa (" + pausa + "). Si es la cuota del día, se renueva sola." : "Probá de nuevo en un rato.") + tecnico(pr && pr.detalle) };
+  }
+  function pintar(estado, dg, espera){
     let todo = true;
-    document.querySelectorAll(".fila").forEach(f => {
-      const k = f.dataset.clave;
-      const sabe = estado && k in estado;
-      const ok = sabe && Boolean(estado[k]);
-      todo = todo && ok;
+    document.querySelectorAll("#control .fila").forEach(f => {
+      const r = leer(f.dataset.clave, estado, dg, espera || "");
+      todo = todo && r.ok === true;
       // "lista" y "pendiente": .falta ya lo usa publico.css para los datos del titular.
-      f.classList.toggle("lista", ok);
-      f.classList.toggle("pendiente", sabe && !ok);
-      f.querySelector(".icono").textContent = !sabe ? "?" : ok ? "✓" : "✕";
-      f.querySelector(".est").textContent = !sabe ? "No se pudo revisar" : TEXTOS[k][ok ? 0 : 1];
+      f.classList.toggle("lista", r.ok === true);
+      f.classList.toggle("pendiente", r.ok === false);
+      f.querySelector(".icono").textContent = r.ok === true ? "✓" : r.ok === false ? "✕" : estado ? "…" : "?";
+      f.querySelector(".est").textContent = r.texto;
+      const res = f.querySelector(".res");
+      res.textContent = r.res || ""; res.hidden = !r.res;
     });
-    document.getElementById("listo").hidden = !todo;
+    // «Todo activado» sólo con la prueba real hecha, no con lo cargado.
+    document.getElementById("listo").hidden = !(todo && dg);
   }
   async function revisar(){
-    const b = document.getElementById("revisar");
+    const b = document.getElementById("revisar"), hora = document.getElementById("hora");
     b.disabled = true;
-    let estado = null;
+    let estado = null, dg = null;
     try{ const r = await fetch("/api/chat", { cache:"no-store" }); if(r.ok) estado = await r.json(); }catch(e){}
-    pintar(estado);
-    document.getElementById("hora").textContent = estado
-      ? "Revisado a las " + new Date().toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit", hour12:false })
-      : "El servidor no respondió. Probá de nuevo en un rato.";
+    pintar(estado, null, " · probando…");
+    if(estado){
+      hora.textContent = "Probando la base y la IA… puede tardar unos segundos.";
+      try{ const r = await fetch("/api/chat?diag=1", { cache:"no-store" }); if(r.ok) dg = await r.json(); }catch(e){}
+      pintar(estado, dg, " · no se pudo probar");
+    }
+    const hh = new Date().toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit", hour12:false });
+    hora.textContent = !estado ? "El servidor no respondió. Probá de nuevo en un rato."
+      : dg ? "Revisado y probado a las " + hh
+      : "A las " + hh + " se vio lo cargado, pero la prueba no respondió. Probá de nuevo en un rato.";
     b.disabled = false;
   }
   document.getElementById("revisar").addEventListener("click", revisar);
