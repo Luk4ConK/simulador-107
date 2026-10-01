@@ -8,12 +8,14 @@ para los cursos de RCP: el operador reconoce el paro y guía la RCP por teléfon
 
 Es un producto de **Kalu Lab**, la empresa del titular (nombre comercial; desde octubre de
 2026, dominio **kalulab.store**, comprado en GoDaddy: si sale bien se buscará el .com).
-La usa la formación de guardavidas de **Sumar Salud** (Asociación Civil Sumar Salud,
-Santa Fe capital, Argentina), donde nació, en sus entrenamientos y en los cursos de RCP y
-primeros auxilios. Hasta ahora, en las prácticas, llamar al 107 se resolvía diciendo en voz alta
-"llamo al 107"; esta app reemplaza ese hueco.
+Kalu Lab es un proyecto aparte de la Asociación Civil Sumar Salud (Santa Fe), donde el
+titular es instructor de guardavidas: **Sumar Salud no es parte oficial del proyecto**. El
+titular usa el simulador en sus clases de ahí para probarlo, como un instructor más, pero
+el producto no la presenta como socia, cliente ni lugar de uso oficial (pedido del
+titular, octubre de 2026). En las prácticas de RCP y guardavidas, llamar al 107 se
+resolvía diciendo en voz alta "llamo al 107"; esta app reemplaza ese hueco.
 
-El usuario es instructor de esa formación, no programador. Explicale los cambios en
+El usuario es el titular de Kalu Lab e instructor de guardavidas y RCP, no programador. Explicale los cambios en
 castellano llano y evitá dejarlo con pasos que requieran terminal si hay alternativa.
 
 ## Estado
@@ -30,18 +32,20 @@ La web es **https://simulador-107.vercel.app** (equipo `sumar-salud-ong`, proyec
 **Dominio (octubre de 2026):** la dirección del simulador es `simulador.kalulab.store`, y
 `kalulab.store` y `www.kalulab.store` redirigen ahí desde Vercel (Settings → Domains),
 mientras Kalu Lab no tenga página propia. Se decidió así para que la dirección que
-reciben alumnos e instituciones (links, QR, el recuadro de Sumar Salud, la app instalada)
-no cambie el día que la empresa tenga su página en la raíz. No se resuelve con un rewrite
+reciben alumnos e instituciones (links, QR, la app instalada) no cambie el día que la
+empresa tenga su página en la raíz. No se resuelve con un rewrite
 por host en `vercel.json`: en Vercel el archivo `index.html` le gana a cualquier rewrite de
 `/`. La página de la empresa, cuando exista, va en otro proyecto de Vercel con el dominio
 raíz. Los pasos de DNS (GoDaddy) están en `/activar`.
 
 **Marca:** la entrada, los pies de página y los textos legales dicen que el simulador es
 un producto de Kalu Lab (nombre comercial del titular; los datos del titular siguen
-saliendo de `TITULAR_*`). El escudo de Sumar Salud se sacó de la entrada: la web es de
-varias instituciones y el borrador de licencia (cláusula séptima) pide autorización
-escrita para usar su logo. Mencionar que el simulador nació en su formación sí está
-permitido, y se hace en /instructores.
+saliendo de `TITULAR_*`). La entrada no lleva la marca de ninguna institución (estuvo el
+escudo de Sumar Salud); la cuenta principal, la del titular, se llama Kalu Lab por
+defecto (`NOMBRE_PRINCIPAL`). En octubre de 2026 se sacó también el recuadro para pegar
+en la web de Sumar Salud que armaba `/activar`: si algún cliente quiere que sus alumnos
+entren desde su propia web, está en el historial de git (commit anterior a "Kalu Lab va
+por su cuenta").
 
 **La raíz es la entrada única** (pedido del instructor: todo empieza en la web principal,
 así los alumnos la conocen): `v-gate` de `index.html` tiene dos puertas, alumnos con el
@@ -52,10 +56,10 @@ práctica libre ("Practicar sin código") sólo aparece si el servidor no pide c
 GET de `/api/chat` dice qué está activado (`registro`, `admin`, `clave`, nunca los
 valores) y `/activar` (activar.html) lo muestra como lista de control con los pasos y los
 enlaces directos a Vercel, para que el dueño no dependa de nadie para activar el panel.
-Al final, `/activar` arma el recuadro para pegar en la web institucional (dos puertas: un
-formulario GET que manda `?c=CÓDIGO` y un enlace a `/panel`). Va sin JavaScript, con estilos
-en línea y `target="_blank"` (en una web que lo mete en un iframe, el micrófono no andaría),
-y toma la dirección de `location.origin`: con un dominio propio se copia de nuevo desde ahí.
+Al final, `/activar` explica cómo conectar el dominio de Kalu Lab. Los links que arma el
+panel (`/?sala=` o `/?c=`) toman `location.origin`, así que salen con la dirección desde
+la que se abre el panel. Un sitio que quiera meter el simulador en su web tiene que
+abrirlo en una pestaña nueva: dentro de un iframe el micrófono no anda.
 
 **Septiembre de 2026: se armó el producto completo** (en la rama
 `claude/simulador-107-producto-rllxr2`; producción se actualiza recién cuando se une a la
@@ -481,7 +485,7 @@ Panel:
 | `GEMINI_SIN_PENSAR` | `1` manda `thinkingBudget: 0` en la conversación, para que el operador conteste más rápido |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` (o `KV_REST_API_*`) | la base de datos; las carga Vercel al conectar Upstash. Sin esto, todo anda sin registro |
 | `CODIGO_ADMIN` | código del administrador: abre el panel completo |
-| `NOMBRE_PRINCIPAL` | nombre de la cuenta principal (por defecto, Sumar Salud) |
+| `NOMBRE_PRINCIPAL` | nombre de la cuenta principal, la del titular (por defecto, Kalu Lab) |
 | `TITULAR_NOMBRE` / `TITULAR_CUIT` / `TITULAR_DOMICILIO` | datos del titular para términos y privacidad |
 | `CONTACTO_EMAIL` / `CONTACTO_WHATSAPP` | contacto público |
 | `CODIGO_DEMO` | código de alumnos de la cuenta de demo pública |

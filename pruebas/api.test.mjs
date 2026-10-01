@@ -127,7 +127,7 @@ test("códigos: CODIGO_ACCESO sin base sigue funcionando; uno equivocado da 401"
     assert.equal((await llamar(chat, null, {}, "GET")).cuerpo.requiereCodigo, true);
     const ok = await llamar(chat, { modo: "verificar" }, { "x-codigo": "gv2027" });
     assert.equal(ok.statusCode, 200);
-    assert.equal(ok.cuerpo.cuenta.nombre, "Sumar Salud");
+    assert.equal(ok.cuerpo.cuenta.nombre, "Kalu Lab");
     const mal = await llamar(chat, { modo: "verificar" }, { "x-codigo": "OTRO" });
     assert.equal(mal.statusCode, 401);
   } finally { quitar(); }

@@ -36,10 +36,6 @@
   .pasos li b:first-child{display:block}
   code{font-family:var(--mono); font-size:.92em; background:var(--surface-2); border:1px solid var(--line-soft);
        border-radius:6px; padding:1px 6px}
-  /* El recuadro para la web institucional: se ve tal cual va a quedar allá. */
-  .vista{margin-top:16px; padding:8px; border:1px dashed var(--line); border-radius:14px; background:var(--surface-2)}
-  .fuente{display:block; width:100%; min-height:130px; margin-top:12px; padding:10px 12px; border:1px solid var(--line);
-          border-radius:10px; background:var(--surface); font-family:var(--mono); font-size:12px; line-height:1.45; resize:vertical}
 </style>
 </head>
 <body>
@@ -84,27 +80,12 @@
   </ol>
   <p style="color:var(--ink-3); font-size:14px">Los enlaces abren el proyecto <b>simulador-107</b> del equipo <b>sumar-salud-ong</b> en Vercel. Si alguna vez cambia de nombre o de equipo, entrá desde vercel.com y buscalo en la lista.</p>
 
-  <h2 id="web">La entrada en la web de Sumar Salud</h2>
-  <p>Para que todos entren desde la web de Sumar Salud, pegá este recuadro en una de sus páginas; por ejemplo, en la de la escuela de guardavidas. El alumno escribe ahí el código de la clase y entra directo a practicar. El instructor tiene su botón al panel. Se abre en una pestaña nueva, así el micrófono funciona en cualquier web.</p>
-  <div class="vista" id="bloque-vista"></div>
-  <textarea class="fuente" id="bloque-codigo" readonly aria-label="El código del recuadro, para copiar" spellcheck="false"></textarea>
-  <div class="acciones">
-    <button class="btn pri" id="copiar" type="button">Copiar el recuadro</button>
-    <span class="hora" id="copiado" aria-live="polite"></span>
-  </div>
-  <ol class="pasos">
-    <li><b>Si la web está hecha en WordPress:</b>
-      editá la página, tocá <i>+</i> para agregar un bloque, buscá <b>HTML personalizado</b>, pegá el recuadro y actualizá la página. En otras plataformas la opción se llama <i>Insertar código</i>, <i>Embed</i> o <i>HTML</i>.</li>
-    <li><b>Si la web no deja pegar código:</b>
-      alcanza con un botón o un ítem del menú que diga <i>Simulador 107</i> y lleve a <a class="origen" href="./"></a>. Ahí están las mismas dos puertas.</li>
-  </ol>
-
-  <h3>La dirección propia: simulador.kalulab.store</h3>
+  <h2>La dirección propia: simulador.kalulab.store</h2>
   <p>El simulador es un producto de Kalu Lab y su dirección es <b>simulador.kalulab.store</b>. Mientras la empresa no tenga su propia página, <b>kalulab.store</b> lleva al simulador, así alcanza con dictar la dirección corta. La dirección de Vercel sigue andando, así que los links viejos no se rompen. Esta página está abierta ahora en <span class="origen-txt"></span>.</p>
   <ol class="pasos">
     <li><b>En Vercel,</b> abrí <a href="https://vercel.com/sumar-salud-ong/simulador-107/settings/domains" target="_blank" rel="noopener">Domains</a> y agregá <code>simulador.kalulab.store</code>. Después agregá <code>kalulab.store</code> y <code>www.kalulab.store</code>, y en cada una elegí que redirija a <code>simulador.kalulab.store</code>. Vercel muestra, para cada dirección, el registro DNS que necesita.</li>
     <li><b>En GoDaddy,</b> donde está el dominio: <i>Mis productos</i> → <i>kalulab.store</i> → <i>DNS</i>. Cargá exactamente lo que muestra Vercel: el registro <b>CNAME</b> de nombre <code>simulador</code>, el registro <b>A</b> de nombre <code>@</code> (borrá antes los registros A que puso GoDaddy para la página de «Próximo lanzamiento») y el <b>CNAME</b> de <code>www</code>.</li>
-    <li>En unos minutos, a veces unas horas, Vercel los marca como válidos y les pone el candado solo. Después abrí esta página en <b>simulador.kalulab.store/activar</b> y copiá de nuevo el recuadro para la web de Sumar Salud: va a llevar a la dirección nueva.</li>
+    <li>En unos minutos, a veces unas horas, Vercel los marca como válidos y les pone el candado solo. Los links que arma el panel (el de cada clase y los mensajes de bienvenida) toman solos la dirección desde la que lo abrís: entrá al panel por <b>simulador.kalulab.store/panel</b>.</li>
   </ol>
 </main>
 
@@ -196,50 +177,8 @@
   document.getElementById("revisar").addEventListener("click", revisar);
   revisar();
 
-  /* El recuadro para la web institucional. Sin JavaScript y con los estilos en línea, para
-     que funcione en cualquier plataforma que deje pegar HTML. Lleva a la dirección desde
-     la que se abrió esta página: si el simulador pasa a una dirección propia, se copia
-     de nuevo desde ahí. El formulario manda ?c=CÓDIGO, que la app ya sabe leer. */
-  const origen = location.origin;
-  const ctaBase = "box-sizing:border-box;display:block;width:100%;margin-top:8px;padding:12px;border-radius:10px;font:inherit;font-weight:700;text-align:center;cursor:pointer";
-  const BLOQUE = [
-    '<!-- Simulador 107: la entrada para alumnos e instructores -->',
-    '<div style="box-sizing:border-box;max-width:680px;margin:24px auto;padding:20px;border:1px solid #CEDAD9;border-radius:14px;background:#FFFFFF;color:#0C1B1E;font-family:inherit;line-height:1.5">',
-    '  <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#4C5E60">Simulador 107</p>',
-    '  <p style="margin:4px 0 0;font-size:22px;font-weight:700;line-height:1.2">Practicá la llamada al 107</p>',
-    '  <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:16px">',
-    '    <form action="' + origen + '/" method="get" target="_blank" rel="noopener" style="flex:1 1 240px;margin:0">',
-    '      <label for="sim107-codigo" style="display:block;font-weight:700">Soy alumno</label>',
-    '      <input id="sim107-codigo" name="c" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código de la clase" style="box-sizing:border-box;width:100%;margin-top:8px;padding:12px;border:1px solid #CEDAD9;border-radius:10px;background:#FFFFFF;color:#0C1B1E;font:inherit;font-size:18px;letter-spacing:.1em;text-transform:uppercase">',
-    '      <button type="submit" style="' + ctaBase + ';border:0;background:#C8451D;color:#FFFFFF">Entrar a practicar</button>',
-    '    </form>',
-    '    <div style="flex:1 1 240px">',
-    '      <p style="margin:0;font-weight:700">Soy instructor</p>',
-    '      <p style="margin:8px 0 0;color:#4C5E60">Abrí las clases y seguí a tus alumnos desde el panel.</p>',
-    '      <a href="' + origen + '/panel" target="_blank" rel="noopener" style="' + ctaBase + ';background:#0C1B1E;color:#FFFFFF;text-decoration:none">Entrar al panel</a>',
-    '    </div>',
-    '  </div>',
-    '  <p style="margin:14px 0 0;font-size:14px;color:#4C5E60">El código de la clase te lo da tu instructor.</p>',
-    '</div>'
-  ].join("\n");
-  document.getElementById("bloque-vista").innerHTML = BLOQUE;
-  document.getElementById("bloque-codigo").value = BLOQUE;
-  document.querySelectorAll(".origen").forEach(a => { a.href = origen + "/"; a.textContent = origen.replace(/^https?:\/\//, ""); });
-  document.querySelectorAll(".origen-txt").forEach(s => { s.textContent = origen.replace(/^https?:\/\//, ""); });
-  document.getElementById("copiar").addEventListener("click", async () => {
-    const aviso = document.getElementById("copiado");
-    const campo = document.getElementById("bloque-codigo");
-    let copiado = true;
-    try{ await navigator.clipboard.writeText(BLOQUE); }
-    catch(e){
-      // Sin permiso para el portapapeles: se prueba a la vieja usanza y, si tampoco, queda
-      // seleccionado para copiarlo a mano.
-      campo.focus(); campo.select();
-      try{ copiado = document.execCommand("copy"); }catch(x){ copiado = false; }
-    }
-    aviso.textContent = copiado ? "Copiado. Ahora pegalo en la web."
-      : "Quedó seleccionado: copialo con Ctrl+C o con el menú del celular.";
-  });
+  // La dirección desde la que se abrió esta página, para la sección del dominio.
+  document.querySelectorAll(".origen-txt").forEach(s => { s.textContent = location.host; });
 })();
 </script>
 </body>
