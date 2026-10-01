@@ -7,7 +7,8 @@ pregunta como a un profesional y no le dicta maniobras) y **lego** (persona sin 
 para los cursos de RCP: el operador reconoce el paro y guía la RCP por teléfono).
 
 Es un producto de **Kalu Lab**, la empresa del titular (nombre comercial; desde octubre de
-2026, dominio **kalulab.store**, comprado en GoDaddy: si sale bien se buscará el .com).
+2026, dominio **kalulab.store**, comprado en GoDaddy: el primer año salió casi nada, pero la
+renovación ronda los USD 84 por año; si sale bien se buscará el .com).
 Kalu Lab es un proyecto aparte de la Asociación Civil Sumar Salud (Santa Fe), donde el
 titular es instructor de guardavidas: **Sumar Salud no es parte oficial del proyecto**. El
 titular usa el simulador en sus clases de ahí para probarlo, como un instructor más, pero
@@ -69,7 +70,7 @@ páginas públicas (presentación para instructores, fundamentos con fuentes, t�
 privacidad) y pruebas automáticas en `pruebas/`. El plan de negocio, los precios, la
 operativa, los textos legales y el protocolo del piloto están en el Drive del titular,
 carpeta «Simulador 107 · Operativa» (no en el repo). Veredicto: viable a escala chica
-(7 instructores o 3 instituciones cubren la estructura paga); piloto gratuito hasta el
+(8 instructores o 3 instituciones cubren la estructura paga); piloto gratuito hasta el
 31/03/2027 y decisión con cuatro criterios (kappa ≥ 0,6 con ≥ 50 revisiones a ciegas, 5
 instructores externos activos, 3 compromisos de pago, baja del tiempo hasta la ubicación).
 
