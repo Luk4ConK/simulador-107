@@ -15,7 +15,7 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 
 Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. La página **/activar** (por ejemplo, https://simulador-107.vercel.app/activar) revisa sola cuáles faltan, prueba que la base y la IA respondan, y tiene los pasos con los enlaces directos.
 
-**Desde la web de Sumar Salud.** Al final de esa misma página hay un recuadro listo para pegar en la web de Sumar Salud (en WordPress, con un bloque *HTML personalizado*): el alumno escribe ahí el código de la clase y entra directo a practicar, y el instructor tiene su botón al panel. Ahí mismo están los pasos para conectar el dominio de Kalu Lab (Vercel y GoDaddy). Cuando el dominio ande, copiá el recuadro de nuevo desde **simulador.kalulab.store/activar**, así lleva a la dirección nueva.
+**El dominio de Kalu Lab.** Al final de esa misma página están los pasos para conectar el dominio (Vercel y GoDaddy). Entrá al panel siempre por **simulador.kalulab.store/panel**: los links que arma para cada clase y los mensajes de bienvenida salen con la dirección desde la que lo abrís.
 
 ---
 
@@ -25,13 +25,13 @@ Hay dos opciones y el código acepta las dos. Con una alcanza.
 
 **Opción gratis — Google Gemini.** Entrá a **https://aistudio.google.com/apikey** con una cuenta de Google, creá una clave y copiala. La capa gratuita no pide tarjeta y alcanza de sobra para probar y para un curso chico. Tiene topes de llamadas por minuto y por día: si varios alumnos practican al mismo tiempo, alguno puede recibir un "esperá unos segundos". Para afinar guiones y para las primeras prácticas, sobra.
 
-**Opción paga — Claude.** Entrá a **https://platform.claude.com/settings/keys** con la cuenta de la ONG, cargá crédito y creá una clave. Sale unos centavos por práctica (ver más abajo), no tiene topes molestos y el operador queda un poco más fino.
+**Opción paga — Claude.** Entrá a **https://platform.claude.com/settings/keys** con la cuenta de Kalu Lab, cargá crédito y creá una clave. Sale unos centavos por práctica (ver más abajo), no tiene topes molestos y el operador queda un poco más fino.
 
 Lo razonable es **arrancar con Gemini** y pasar a Claude si notás que el operador se queda corto. El cambio es borrar una variable y agregar la otra: no se toca una línea de código.
 
 En los dos casos la clave se muestra una sola vez. Copiala antes de cerrar.
 
-**La clave no va nunca en un archivo de este proyecto, ni en un chat, ni en un mensaje.** Va únicamente en las variables de entorno de Vercel (paso 3). Si alguna vez quedó escrita en otro lado, borrala desde el panel donde la creaste y generá una nueva: una clave filtrada la puede usar cualquiera a costa de la ONG.
+**La clave no va nunca en un archivo de este proyecto, ni en un chat, ni en un mensaje.** Va únicamente en las variables de entorno de Vercel (paso 3). Si alguna vez quedó escrita en otro lado, borrala desde el panel donde la creaste y generá una nueva: una clave filtrada la puede usar cualquiera a tu costa.
 
 ## 2. Subir el proyecto a Vercel
 
@@ -55,7 +55,7 @@ En Vercel: *Settings* → *Environment Variables*. Agregá:
 | `CODIGO_ADMIN` | tu código de administrador: largo y sólo tuyo. Abre todo el panel | Sí, para usar el panel |
 | `TITULAR_NOMBRE`, `TITULAR_CUIT`, `TITULAR_DOMICILIO` | tus datos como titular del servicio. Salen en los términos y en la privacidad | Sí, antes de mostrar las páginas públicas |
 | `CONTACTO_EMAIL`, `CONTACTO_WHATSAPP` | dónde te escriben los interesados | Al menos uno |
-| `NOMBRE_PRINCIPAL` | el nombre de la cuenta principal, si no es "Sumar Salud" | No |
+| `NOMBRE_PRINCIPAL` | el nombre de tu cuenta principal, si no querés que diga "Kalu Lab" | No |
 | `CODIGO_DEMO` | el código de alumnos de una cuenta "Demo pública" creada en el panel. La página para instructores lo muestra | No |
 | `MOSTRAR_PRECIOS` | `1` muestra los planes en la página para instructores. **Recién al pasar al plan pago de Vercel** | No |
 

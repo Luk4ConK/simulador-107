@@ -576,7 +576,7 @@ function hashAObjeto(h) {
 }
 
 function cuentaPrincipal() {
-  return { id: "principal", nombre: (process.env.NOMBRE_PRINCIPAL || "Sumar Salud").trim(), tipo: "ong", plan: "cortesia", cupoMensual: 0, activa: true, vence: null };
+  return { id: "principal", nombre: (process.env.NOMBRE_PRINCIPAL || "Kalu Lab").trim(), tipo: "institucion", plan: "cortesia", cupoMensual: 0, activa: true, vence: null };
 }
 async function leerCuenta(id) {
   const c = json(await kv("GET", P + "cuenta:" + id));

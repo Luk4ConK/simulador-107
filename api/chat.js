@@ -7,7 +7,7 @@
 //   ANTHROPIC_API_KEY  · pago   · clave de Claude. Se usa si no hay clave de Gemini.
 //   CODIGO_ACCESO      · opcional · código de los alumnos de la cuenta principal
 //   CODIGO_ADMIN       · opcional · código del dueño: abre el panel de administración
-//   NOMBRE_PRINCIPAL   · opcional · nombre de la cuenta principal (por defecto "Sumar Salud")
+//   NOMBRE_PRINCIPAL   · opcional · nombre de la cuenta principal, la del titular (por defecto "Kalu Lab")
 //
 //   UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN · opcional · la base de datos.
 //      Las carga sola la integración de Upstash en Vercel (también sirven KV_REST_API_URL
@@ -608,7 +608,7 @@ function requiereCodigo() {
 }
 
 function cuentaPrincipal() {
-  return { id: "principal", nombre: (process.env.NOMBRE_PRINCIPAL || "Sumar Salud").trim(), tipo: "ong", plan: "cortesia", cupoMensual: 0, activa: true, vence: null };
+  return { id: "principal", nombre: (process.env.NOMBRE_PRINCIPAL || "Kalu Lab").trim(), tipo: "institucion", plan: "cortesia", cupoMensual: 0, activa: true, vence: null };
 }
 async function leerCuenta(id) {
   const c = json(await kv("GET", P + "cuenta:" + id));
