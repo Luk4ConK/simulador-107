@@ -45,7 +45,7 @@
 <body>
 <div class="angosto">
   <div class="barra-sup">
-    <a class="marca" href="./"><span class="sigil">107</span>Simulador 107</a>
+    <a class="marca" href="./"><span class="sigil">107</span>Simulador 107<span class="empresa">de Kalu Lab</span></a>
     <nav><a href="./">Inicio</a><a href="panel">Panel</a></nav>
   </div>
 </div>
@@ -99,12 +99,12 @@
       alcanza con un botón o un ítem del menú que diga <i>Simulador 107</i> y lleve a <a class="origen" href="./"></a>. Ahí están las mismas dos puertas.</li>
   </ol>
 
-  <h3>Opcional: una dirección con el nombre de Sumar Salud</h3>
-  <p>En vez de <span class="origen-txt"></span>, el simulador puede abrir en una dirección propia, como <b>simulador.sumarsalud.org</b>. Es gratis y no cambia nada más: las clases, los códigos y el panel siguen iguales.</p>
+  <h3>La dirección propia: simulador.kalulab.store</h3>
+  <p>El simulador es un producto de Kalu Lab y su dirección es <b>simulador.kalulab.store</b>. Mientras la empresa no tenga su propia página, <b>kalulab.store</b> lleva al simulador, así alcanza con dictar la dirección corta. La dirección de Vercel sigue andando, así que los links viejos no se rompen. Esta página está abierta ahora en <span class="origen-txt"></span>.</p>
   <ol class="pasos">
-    <li>En Vercel, abrí <a href="https://vercel.com/sumar-salud-ong/simulador-107/settings/domains" target="_blank" rel="noopener">Domains</a>, tocá <i>Add Domain</i> y escribí la dirección nueva. Vercel te muestra un registro de tipo <b>CNAME</b>: un nombre (<code>simulador</code>) y un valor.</li>
-    <li>Cargá ese registro donde se administra el dominio de la web de Sumar Salud: el panel del hosting o de la empresa donde se registró el dominio, en la parte de <i>DNS</i> o <i>Zona DNS</i>. Si la web la maneja otra persona, pasale esos dos datos.</li>
-    <li>En unos minutos, a veces unas horas, Vercel la marca como válida y le pone el candado solo. Después volvé a copiar el recuadro desde esta página abierta en la dirección nueva: va a llevar a esa dirección.</li>
+    <li><b>En Vercel,</b> abrí <a href="https://vercel.com/sumar-salud-ong/simulador-107/settings/domains" target="_blank" rel="noopener">Domains</a> y agregá <code>simulador.kalulab.store</code>. Después agregá <code>kalulab.store</code> y <code>www.kalulab.store</code>, y en cada una elegí que redirija a <code>simulador.kalulab.store</code>. Vercel muestra, para cada dirección, el registro DNS que necesita.</li>
+    <li><b>En GoDaddy,</b> donde está el dominio: <i>Mis productos</i> → <i>kalulab.store</i> → <i>DNS</i>. Cargá exactamente lo que muestra Vercel: el registro <b>CNAME</b> de nombre <code>simulador</code>, el registro <b>A</b> de nombre <code>@</code> (borrá antes los registros A que puso GoDaddy para la página de «Próximo lanzamiento») y el <b>CNAME</b> de <code>www</code>.</li>
+    <li>En unos minutos, a veces unas horas, Vercel los marca como válidos y les pone el candado solo. Después abrí esta página en <b>simulador.kalulab.store/activar</b> y copiá de nuevo el recuadro para la web de Sumar Salud: va a llevar a la dirección nueva.</li>
   </ol>
 </main>
 

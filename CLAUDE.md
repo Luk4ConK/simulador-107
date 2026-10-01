@@ -6,9 +6,11 @@ protocolo transmitió y cuáles faltaron. Tiene dos perfiles: **guardavidas** (e
 pregunta como a un profesional y no le dicta maniobras) y **lego** (persona sin formación,
 para los cursos de RCP: el operador reconoce el paro y guía la RCP por teléfono).
 
+Es un producto de **Kalu Lab**, la empresa del titular (nombre comercial; desde octubre de
+2026, dominio **kalulab.store**, comprado en GoDaddy: si sale bien se buscará el .com).
 La usa la formación de guardavidas de **Sumar Salud** (Asociación Civil Sumar Salud,
-Santa Fe capital, Argentina) en sus entrenamientos y en los cursos de RCP y primeros
-auxilios. Hasta ahora, en las prácticas, llamar al 107 se resolvía diciendo en voz alta
+Santa Fe capital, Argentina), donde nació, en sus entrenamientos y en los cursos de RCP y
+primeros auxilios. Hasta ahora, en las prácticas, llamar al 107 se resolvía diciendo en voz alta
 "llamo al 107"; esta app reemplaza ese hueco.
 
 El usuario es instructor de esa formación, no programador. Explicale los cambios en
@@ -24,6 +26,22 @@ URL y las variables de entorno. No hay build: es HTML estático más una funció
 La web es **https://simulador-107.vercel.app** (equipo `sumar-salud-ong`, proyecto
 `simulador-107` en Vercel; producción sale de `main`). Si no la encontrás, está en el campo
 *website* del repositorio y en los *deployments* de GitHub.
+
+**Dominio (octubre de 2026):** la dirección del simulador es `simulador.kalulab.store`, y
+`kalulab.store` y `www.kalulab.store` redirigen ahí desde Vercel (Settings → Domains),
+mientras Kalu Lab no tenga página propia. Se decidió así para que la dirección que
+reciben alumnos e instituciones (links, QR, el recuadro de Sumar Salud, la app instalada)
+no cambie el día que la empresa tenga su página en la raíz. No se resuelve con un rewrite
+por host en `vercel.json`: en Vercel el archivo `index.html` le gana a cualquier rewrite de
+`/`. La página de la empresa, cuando exista, va en otro proyecto de Vercel con el dominio
+raíz. Los pasos de DNS (GoDaddy) están en `/activar`.
+
+**Marca:** la entrada, los pies de página y los textos legales dicen que el simulador es
+un producto de Kalu Lab (nombre comercial del titular; los datos del titular siguen
+saliendo de `TITULAR_*`). El escudo de Sumar Salud se sacó de la entrada: la web es de
+varias instituciones y el borrador de licencia (cláusula séptima) pide autorización
+escrita para usar su logo. Mencionar que el simulador nació en su formación sí está
+permitido, y se hace en /instructores.
 
 **La raíz es la entrada única** (pedido del instructor: todo empieza en la web principal,
 así los alumnos la conocen): `v-gate` de `index.html` tiene dos puertas, alumnos con el
@@ -81,7 +99,7 @@ api/datos.js          salas, prácticas, revisiones, escenarios, cuentas, contac
 manifest.webmanifest  para que se instale como app
 sw.js                 service worker: abre rápido, nunca cachea /api/
 vercel.json           maxDuration de las funciones, direcciones cortas, cabeceras
-icons/                íconos y el escudo de Sumar Salud que usa la entrada
+icons/                íconos de la app
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
 herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
 README.md             guía de despliegue, escrita para el usuario

@@ -266,7 +266,9 @@ try {
     // Con base de datos se pide código: no hay práctica libre, y el panel figura activado.
     assert.equal(await page.locator("#gate-libre").isHidden(), true);
     assert.equal(await page.locator("#inst-activar").isHidden(), true);
-    assert.ok(await page.locator(".escudo").evaluate(img => img.complete && img.naturalWidth > 0), "el escudo de Sumar Salud carga");
+    // La entrada es de Kalu Lab: el nombre de la institución lo ve cada alumno al entrar.
+    assert.match(await page.locator(".marca").textContent(), /Kalu Lab/);
+    assert.match(await page.locator("#v-gate .pie").innerText(), /producto de Kalu Lab/);
     await page.fill("#inst-in", "NO-ES-UN-CODIGO");
     await page.click("#inst-go");
     await page.waitForFunction(() => /no abre el panel/.test(document.querySelector("#inst-err").textContent));

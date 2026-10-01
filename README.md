@@ -1,6 +1,6 @@
 # Simulador 107 — cómo publicarlo
 
-App web donde el alumno llama al sistema de emergencias y habla en voz alta con un operador simulado. Al cortar recibe la devolución sobre qué datos del protocolo pasó y cuáles faltaron.
+App web donde el alumno llama al sistema de emergencias y habla en voz alta con un operador simulado. Al cortar recibe la devolución sobre qué datos del protocolo pasó y cuáles faltaron. Es un producto de **Kalu Lab**.
 
 Sirve para dos públicos: la formación de guardavidas (el operador le pide lo que sólo un entrenado sabe dar) y los cursos de RCP para la comunidad (el operador reconoce el paro y guía la RCP por teléfono). Con la base de datos conectada suma clases en vivo para varios grupos a la vez, registro de prácticas y un panel para los instructores.
 
@@ -8,14 +8,14 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 
 ## La dirección
 
-**https://simulador-107.vercel.app** — es la web principal y todo empieza ahí. Abre en una entrada con dos puertas:
+**https://simulador.kalulab.store** — es la web principal y todo empieza ahí (**kalulab.store** lleva al mismo lugar, para dictarla corta; la dirección de Vercel, https://simulador-107.vercel.app, sigue andando). Mientras no esté conectado el dominio, usá la de Vercel. Abre en una entrada con dos puertas:
 
 - **Soy alumno:** el alumno pone el código de la clase que le diste y entra a practicar.
 - **Soy instructor:** ponés tu código y entrás al panel, donde abrís las clases y ves las prácticas.
 
-Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. **https://simulador-107.vercel.app/activar** revisa sola cuáles faltan y tiene los pasos con los enlaces directos.
+Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. La página **/activar** (por ejemplo, https://simulador-107.vercel.app/activar) revisa sola cuáles faltan, prueba que la base y la IA respondan, y tiene los pasos con los enlaces directos.
 
-**Desde la web de Sumar Salud.** Al final de esa misma página hay un recuadro listo para pegar en la web de Sumar Salud (en WordPress, con un bloque *HTML personalizado*): el alumno escribe ahí el código de la clase y entra directo a practicar, y el instructor tiene su botón al panel. Así todos entran siempre desde la web de Sumar Salud. Ahí mismo están los pasos para que el simulador tenga una dirección propia, como *simulador.sumarsalud.org*, si la querés.
+**Desde la web de Sumar Salud.** Al final de esa misma página hay un recuadro listo para pegar en la web de Sumar Salud (en WordPress, con un bloque *HTML personalizado*): el alumno escribe ahí el código de la clase y entra directo a practicar, y el instructor tiene su botón al panel. Ahí mismo están los pasos para conectar el dominio de Kalu Lab (Vercel y GoDaddy). Cuando el dominio ande, copiá el recuadro de nuevo desde **simulador.kalulab.store/activar**, así lleva a la dirección nueva.
 
 ---
 

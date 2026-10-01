@@ -38,16 +38,13 @@ function cambiar(viejo, nuevo) {
 // a otras páginas para que no quede ninguno roto.
 cambiar(
   `      <p class="pie">¿Querés usarlo con tus alumnos? <a href="instructores">Conocé el simulador</a><br>
-        <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a></p>\n`,
+        <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a><br>
+        Simulador 107 es un producto de Kalu Lab.</p>\n`,
   ``
 );
 cambiar(
   `El panel todavía no está activado. <a href="activar">Ver qué falta</a>.`,
   `El panel no existe en la copia de Claude.`
-);
-cambiar(
-  `        <img class="escudo" src="icons/sumarsalud-guardavidas.png" width="84" height="84" alt="Escudo de Sumar Salud: capacitación y entrenamiento de guardavidas">\n`,
-  ``
 );
 cambiar(
   `<p class="sub">Practicá la llamada al sistema de emergencias hablando en voz alta con un operador simulado. Al cortar recibís la devolución sobre qué datos pasaste y cuáles faltaron.</p>`,
