@@ -475,6 +475,31 @@ Panel:
 - `/activar` muestra la prueba real de `/api/chat?diag=1` (la base responde, la IA
   contesta), no sólo si las variables están cargadas.
 
+### Pestaña Instructores (octubre de 2026)
+
+Pedido del titular: administrar a los instructores (altas, códigos y estadísticas) desde
+un solo lugar. La pestaña «Clientes» pasó a llamarse **Instructores** (`data-t="cuentas"`).
+- **Las estadísticas salen de contadores, nunca de leer prácticas.** `pedidosDetalle()` en
+  `api/datos.js` junta, por cuenta: los últimos seis meses de `uso:<cuenta>:<mes>`, el hash
+  `dias:<cuenta>` (fecha → prácticas, para los días de clase), la última práctica de
+  `idx:` (`ZREVRANGE … WITHSCORES`) y las prácticas y clases en vivo de 90 días (`ZCOUNT`
+  en `idx:` y `salas:`). Lo usan `cuentas` con `detalle: true` (la pestaña) y `panel`
+  (`estadisticas`, para «Mi cuenta» del instructor). El selector de cuentas pide `cuentas`
+  sin detalle.
+- `guardarPractica()` suma `dias:` con cada práctica nueva, y `puntajeSuma`, `puntajeN`,
+  `ubicSumaMs` y `ubicN` en `uso:` la primera vez que una práctica recibe puntaje: el
+  reintento de una devolución ya guardada no vuelve a sumar. Esos contadores arrancaron en
+  octubre de 2026; las prácticas anteriores no suman días ni promedios.
+- **Un día de clase es un día con 3 prácticas o más** (`MIN_DIA_DE_CLASE`): así no cuenta
+  el instructor que probó solo una vez. La meta del piloto del tablero (5 cuentas con 2
+  días de clase o más) no cuenta la cuenta principal ni la de la demo (`esDemo`, la cuenta
+  cuyo código de alumnos es `CODIGO_DEMO`).
+- La ficha de cada cuenta deja al administrador cambiarle los códigos (`codigo-regenerar`
+  con `cuentaId`) y abrir su panel en Alumnos (`cambiarCuenta()`). `pintarUso()` dibuja lo
+  mismo en la ficha y en «Mi cuenta».
+- El tooltip de los gráficos se muda adentro del `dialog` abierto (`mostrarTip`): el
+  diálogo está en la capa superior y lo tapaba.
+
 ## Variables de entorno (en Vercel, no en el repo)
 
 | Variable | Para qué |

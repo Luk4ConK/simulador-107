@@ -766,6 +766,14 @@ function corto(v, n) { return String(v == null ? "" : v).slice(0, n); }
 // El nombre del grupo en el tablero de la clase. Lo usan guardarPractica y el aviso de
 // "evaluando": tiene que ser la misma cuenta, o cada uno escribe en otra tarjeta.
 function grupoDe(r) { return corto(r.grupo || r.alias || "Sin nombre", 40).trim() || "Sin nombre"; }
+// Cuándo dio la ubicación: el momento de la intervención del alumno que el evaluador marcó
+// en turno_ubicacion. Es la misma cuenta que hace resumen() en api/datos.js para el panel.
+function tiempoUbicacion(ev, transcripcion) {
+  const tu = Number(ev && ev.turno_ubicacion);
+  if (!tu) return null;
+  const mios = transcripcion.filter(l => l.w === "yo");
+  return mios[tu - 1] ? mios[tu - 1].t : null;
+}
 const FORMA_ID_PRACTICA = /^[a-z0-9]{8,40}$/;   // la de nuevoId() y la que arma la app
 
 async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
@@ -828,6 +836,19 @@ async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
   if (!previa) {
     const u = P + "uso:" + acceso.cuentaId + ":" + hoyAR().slice(0, 7);
     cmds.push(["HINCRBY", u, "practicas", 1], ["EXPIRE", u, 800 * 86400]);
+    // Cuántas prácticas tuvo la cuenta cada día (fecha → cantidad): de ahí salen los días
+    // de clase y la última práctica de la pestaña Instructores. Sin datos personales.
+    const d = P + "dias:" + acceso.cuentaId;
+    cmds.push(["HINCRBY", d, hoyAR(), 1], ["EXPIRE", d, 800 * 86400]);
+  }
+  // El puntaje y el tiempo hasta la ubicación, sumados por mes, para los promedios del
+  // panel. Una sola vez por práctica, cuando recibe su primer puntaje: el reintento de una
+  // devolución que ya se había guardado no vuelve a sumar.
+  if (calc && calc.puntaje != null && !(previa && previa.puntaje != null)) {
+    const u = P + "uso:" + acceso.cuentaId + ":" + new Date(reg.fecha - 3 * 3600000).toISOString().slice(0, 7);
+    cmds.push(["HINCRBY", u, "puntajeSuma", Math.round(Number(calc.puntaje) || 0)], ["HINCRBY", u, "puntajeN", 1], ["EXPIRE", u, 800 * 86400]);
+    const tUbic = tiempoUbicacion(datos, transcripcion);
+    if (tUbic != null) cmds.push(["HINCRBY", u, "ubicSumaMs", Math.round(tUbic)], ["HINCRBY", u, "ubicN", 1]);
   }
   if (sala) {
     if (!previa) cmds.push(["RPUSH", P + "salaprac:" + sala, id], ["EXPIRE", P + "salaprac:" + sala, 90 * 86400]);
