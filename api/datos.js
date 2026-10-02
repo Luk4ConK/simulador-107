@@ -119,7 +119,7 @@ export default async function handler(req, res) {
       "codigo-regenerar": () => regenerarCodigo(cuentaId, b.tipo)
     };
     const soloAdmin = {
-      "cuentas": () => listarCuentas(),
+      "cuentas": () => listarCuentas(Boolean(b.detalle)),
       "cuenta-guardar": () => guardarCuenta(b.cuenta),
       "contactos": () => listarContactos(),
       "contacto-estado": () => estadoContacto(b.id, b.estado, b.nota),
@@ -194,12 +194,76 @@ async function datosPanel(cuentaId, acc, esAdmin) {
   const cuenta = await leerCuenta(cuentaId);
   if (!cuenta) throw problema("sin_cuenta", "Esa cuenta no existe.", 404);
   const mes = hoyAR().slice(0, 7);
-  const uso = hashAObjeto(await kv("HGETALL", P + "uso:" + cuentaId + ":" + mes));
+  const detalle = pedidosDetalle(cuentaId);
+  const r = await kvPipe([["HGETALL", P + "uso:" + cuentaId + ":" + mes], ...detalle.cmds]);
+  const uso = hashAObjeto(r[0]);
   return {
     rol: acc.rol, esAdmin,
     cuenta: publicaCuenta(cuenta),
     usoMes: { mes, practicas: Number(uso.practicas) || 0, turnos: Number(uso.turnos) || 0, evaluaciones: Number(uso.evaluaciones) || 0 },
+    estadisticas: detalle.leer(r.slice(1)),
     codigoEnv: cuentaId === "principal" && Boolean((process.env.CODIGO_ACCESO || "").trim())
+  };
+}
+
+// ---------------- estadísticas de una cuenta ----------------
+
+// Un «día de clase» es un día con al menos esta cantidad de prácticas en la cuenta: no
+// cuenta al instructor que probó solo una vez, y sí a una clase chica. Es lo que mide el
+// criterio de uso real del piloto, «lo usaron en dos clases o más».
+const MIN_DIA_DE_CLASE = 3;
+const MESES_DETALLE = 6;
+
+// Lo que muestran la pestaña Instructores y «Mi cuenta»: prácticas y promedios de los
+// últimos seis meses, días con prácticas, la última práctica, y cuántas prácticas y clases
+// en vivo hubo en 90 días. Sale de contadores (uso:, dias:, idx:, salas:), sin leer ninguna
+// práctica. Devuelve los pedidos a la base y la función que lee sus respuestas.
+function pedidosDetalle(id) {
+  const meses = ultimosMeses(MESES_DETALLE);
+  const desde90 = Date.now() - 90 * 86400000;
+  const cmds = [
+    ...meses.map(m => ["HGETALL", P + "uso:" + id + ":" + m]),
+    ["HGETALL", P + "dias:" + id],
+    ["ZREVRANGE", P + "idx:" + id, 0, 0, "WITHSCORES"],
+    ["ZCOUNT", P + "idx:" + id, desde90, "+inf"],
+    ["ZCOUNT", P + "salas:" + id, desde90, "+inf"]
+  ];
+  const leer = r => {
+    const k = meses.length;
+    const ultima = Array.isArray(r[k + 1]) && r[k + 1].length >= 2 ? Number(r[k + 1][1]) : 0;
+    return {
+      meses: meses.map((mes, j) => {
+        const u = hashAObjeto(r[j]);
+        return {
+          mes, practicas: Number(u.practicas) || 0,
+          puntajeSuma: Number(u.puntajeSuma) || 0, puntajeN: Number(u.puntajeN) || 0,
+          ubicSumaMs: Number(u.ubicSumaMs) || 0, ubicN: Number(u.ubicN) || 0
+        };
+      }),
+      dias: resumenDias(hashAObjeto(r[k])),
+      ultimaPractica: ultima || null,
+      practicas90: Number(r[k + 2]) || 0,
+      clases90: Number(r[k + 3]) || 0
+    };
+  };
+  return { cmds, leer };
+}
+
+// Los últimos n meses en hora argentina, del más viejo al actual: ["2026-05", …, "2026-10"].
+function ultimosMeses(n) {
+  const [a, m] = hoyAR().split("-").map(Number);
+  return Array.from({ length: n }, (_, i) => new Date(Date.UTC(a, m - n + i, 1)).toISOString().slice(0, 7));
+}
+
+function resumenDias(h) {
+  const dias = Object.entries(h).map(([d, n]) => [d, Number(n) || 0]).filter(([d, n]) => n > 0 && /^\d{4}-\d{2}-\d{2}$/.test(d));
+  const deClase = dias.filter(([, n]) => n >= MIN_DIA_DE_CLASE);
+  const hace90 = new Date(Date.now() - 3 * 3600000 - 90 * 86400000).toISOString().slice(0, 10);
+  return {
+    conPracticas: dias.length,
+    deClase: deClase.length,
+    deClase90: deClase.filter(([d]) => d >= hace90).length,
+    minimo: MIN_DIA_DE_CLASE
   };
 }
 
@@ -440,18 +504,30 @@ function prefijoDe(nombre) {
 
 // ---------------- cuentas (sólo administrador) ----------------
 
-async function listarCuentas() {
+// Con `detalle` (la pestaña Instructores), cada cuenta trae además sus estadísticas; el
+// selector de cuentas lo pide sin detalle, sólo con la cuenta y su uso del mes.
+async function listarCuentas(detalle) {
   let ids = await kv("SMEMBERS", P + "cuentas");
   ids = Array.isArray(ids) ? ids : [];
   if (!ids.includes("principal")) ids.unshift("principal");
   const mes = hoyAR().slice(0, 7);
-  const cmds = ids.map(id => ["GET", P + "cuenta:" + id]).concat(ids.map(id => ["HGETALL", P + "uso:" + id + ":" + mes]));
-  const r = await kvPipe(cmds);
-  const cuentas = ids.map((id, i) => {
-    const c = json(r[i]) || (id === "principal" ? cuentaPrincipal() : null);
+  const porCuenta = ids.map(id => {
+    const extra = detalle ? pedidosDetalle(id) : null;
+    return { id, extra, cmds: [["GET", P + "cuenta:" + id], ["HGETALL", P + "uso:" + id + ":" + mes], ...(extra ? extra.cmds : [])] };
+  });
+  const r = await kvPipe(porCuenta.flatMap(x => x.cmds));
+  const demo = normCodigo(process.env.CODIGO_DEMO);
+  let i = 0;
+  const cuentas = porCuenta.map(x => {
+    const t = r.slice(i, i + x.cmds.length);
+    i += x.cmds.length;
+    const c = json(t[0]) || (x.id === "principal" ? cuentaPrincipal() : null);
     if (!c) return null;
-    const u = hashAObjeto(r[ids.length + i]);
-    return { ...publicaCuenta(c), usoMes: { practicas: Number(u.practicas) || 0, turnos: Number(u.turnos) || 0 } };
+    const u = hashAObjeto(t[1]);
+    const salida = { ...publicaCuenta(c), usoMes: { practicas: Number(u.practicas) || 0, turnos: Number(u.turnos) || 0 } };
+    if (!x.extra) return salida;
+    // La de la demo pública se marca: no cuenta para la meta del piloto.
+    return { ...salida, ...x.extra.leer(t.slice(2)), esDemo: Boolean(demo && c.codigoAlumnos && normCodigo(c.codigoAlumnos) === demo) };
   }).filter(Boolean);
   return { cuentas, mes };
 }

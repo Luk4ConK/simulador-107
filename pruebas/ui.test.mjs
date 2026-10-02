@@ -319,25 +319,49 @@ try {
     await page.fill("#login-cod", "ADMIN-DE-PRUEBA-99");
     await page.click("#login-go");
     await page.waitForSelector("#v-panel:not([hidden])");
-    assert.equal(await page.locator('#tabs button[data-t="cuentas"]').isVisible(), true, "el administrador ve la pestaña de clientes");
+    assert.equal(await page.locator('#tabs button[data-t="cuentas"]').textContent(), "Instructores");
+    assert.equal(await page.locator('#tabs button[data-t="cuentas"]').isVisible(), true, "el administrador ve la pestaña de instructores");
 
-    // Alta de un cliente: sale el mensaje de bienvenida con sus códigos.
+    // Instructores: la meta del piloto arriba y una fila por cuenta, con su uso.
     await page.click('#tabs button[data-t="cuentas"]');
     await page.waitForFunction(() => /Curso RCP Norte/.test(document.querySelector("#cl-tabla").textContent));
+    assert.equal(await page.locator("#cl-tiles .tile").count(), 4);
+    assert.match(await page.locator("#cl-tiles").textContent(), /Meta del piloto/);
+    assert.match(await page.locator("#cl-tabla").textContent(), /tu cuenta/);
+    const [planilla] = await Promise.all([page.waitForEvent("download"), page.click("#cl-csv")]);
+    const csvCuentas = await new Promise((ok, mal) => { planilla.createReadStream().then(s => { let t = ""; s.on("data", c => t += c); s.on("end", () => ok(t)); s.on("error", mal); }); });
+    assert.match(csvCuentas, /dias_de_clase/);
+    assert.match(csvCuentas, /Curso RCP Norte/);
+
+    // Alta de un instructor: salen sus códigos y el mensaje de bienvenida.
     await page.click("#cl-nueva");
+    assert.equal(await page.locator("#dc-codigos").isVisible(), false, "una cuenta nueva no tiene códigos hasta guardarla");
     await page.fill("#dc-nombre", "Instituto del Litoral");
     await page.click("#dc-guardar");
     await page.waitForSelector("#dc-bienvenida:not([hidden])");
+    assert.equal(await page.locator("#dc-codigos").isVisible(), true);
     const bienvenida = await page.locator("#dc-msj").textContent();
     assert.match(bienvenida, /\/panel/);
     assert.match(bienvenida, /INS-[A-Z0-9]{10}/);
     assert.match(bienvenida, /\/\?c=INS-|\/\?c=[A-Z]{3}-/);
+    // Cambiarle el código de instructor: el mensaje sale con el nuevo.
+    const viejo = bienvenida.match(/INS-[A-Z0-9]{10}/)[0];
+    await page.click("#dc-regen-inst");
+    await page.waitForFunction(v => /INS-[A-Z0-9]{10}/.test(document.querySelector("#dc-inst").textContent) && !document.querySelector("#dc-msj").textContent.includes(v), viejo);
     await page.click("#dc-cerrar");
 
-    // Mira la cuenta del curso de la prueba anterior.
-    await page.waitForFunction(() => [...document.querySelectorAll("#p-cambiar option")].some(o => o.textContent === "Curso RCP Norte"));
-    await page.selectOption("#p-cambiar", { label: "Curso RCP Norte" });
+    // La ficha del curso de la prueba anterior: cómo la usa, sus códigos, y de ahí a su panel.
+    await page.locator("#cl-tabla tr", { hasText: "Curso RCP Norte" }).click();
+    await page.waitForSelector("#dlg-cuenta[open] #dc-uso:not([hidden])");
+    assert.equal(await page.locator("#dc-meses .mes").count(), 6, "una columna por mes, seis meses");
+    assert.match(await page.locator("#dc-tiles").textContent(), /Días de clase/);
+    assert.match(await page.locator("#dc-tiles").textContent(), /Hasta dar la ubicación/);
+    await page.click("#dc-ver-inst");
+    assert.match(await page.locator("#dc-inst").textContent(), /^INS-[A-Z0-9]{10}$/);
+    await page.click("#dc-ver-panel");
     await page.waitForFunction(() => document.querySelector("#p-cuenta").textContent === "Curso RCP Norte");
+    await page.waitForFunction(() => /Grupo 3/.test(document.querySelector("#al-tabla").textContent));
+    assert.notEqual(await page.locator("#p-cambiar").inputValue(), "principal", "el selector queda en la cuenta que se mira");
 
     // Clase en vivo: la clase sigue abierta y el grupo 3 terminó con 100.
     await page.click('#tabs button[data-t="clase"]');
@@ -450,6 +474,10 @@ try {
     assert.equal(await inst.locator("#p-cuenta").textContent(), "Curso RCP Norte");
     await inst.click('#tabs button[data-t="cuenta"]');
     await inst.waitForFunction(c => document.querySelector("#cu-alumnos").textContent === c, curso.codigoAlumnos);
+    // Sus propios números, los mismos que ve el administrador en la ficha.
+    assert.equal(await inst.locator("#cu-meses .mes").count(), 6);
+    assert.match(await inst.locator("#cu-tiles").textContent(), /Días de clase/);
+    assert.match(await inst.locator("#cu-tiles").textContent(), /Vencimiento/);
     await inst.context().close();
   });
 

@@ -103,15 +103,25 @@ Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pan
 
 ## El panel del instructor
 
-Se entra desde la página principal, en *Soy instructor*, o directo en **https://simulador-107.vercel.app/panel**. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
+Se entra desde la página principal, en *Soy instructor*, o directo en **https://simulador.kalulab.store/panel**. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
 
 - **Clase en vivo.** Abrís una clase y te da un código de seis caracteres para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima en cada escenario que se está llamando y, al final, qué criterio costó más en toda la clase. Al cerrar la clase, los grupos que estaban en una llamada la terminan y reciben su devolución, y el resumen queda a la vista para el cierre; el de una clase anterior se vuelve a ver con «ver resumen».
 - **Prácticas.** Cada llamada queda con su transcripción. Podés revisarla criterio por criterio (a ciegas: lo que dijo la IA se ve recién después de marcar lo tuyo), borrarla o descargar todo en una planilla.
 - **Alumnos.** La evolución del puntaje de cada grupo o alumno.
 - **Calidad.** Cuánto coincide la IA con los instructores (kappa de Cohen), con las revisiones a ciegas.
 - **Escenarios.** Escenarios propios de la cuenta, que ven todos sus alumnos en cualquier celular.
-- **Mi cuenta.** Los códigos de alumnos y de instructor, y cómo cambiarlos.
-- **Clientes, Contactos y Uso y costos** (sólo el administrador): altas de instructores e instituciones con su mensaje de bienvenida, lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los pedidos que se quedaron sin respuesta (si aparecen más de dos días por mes, es la señal para pasar al plan pago de Gemini).
+- **Mi cuenta.** Cómo se usa la cuenta (prácticas del mes contra el cupo, días de clase, puntaje promedio y tiempo hasta la ubicación, mes por mes) y los códigos de alumnos y de instructor, con cómo cambiarlos.
+- **Instructores** (sólo el administrador). Todas las cuentas, una por instructor o institución: las prácticas del mes contra su cupo, las de los últimos 90 días, los días de clase (días con 3 prácticas o más), la última práctica, el vencimiento y si está activa. Arriba, la meta del piloto (5 instructores o instituciones con 2 días de clase o más) y las pruebas que vencen esa semana. Tocando una fila se abre su ficha: el puntaje promedio y el tiempo hasta la ubicación de sus alumnos, sus prácticas mes por mes, sus códigos, el mensaje de bienvenida y sus datos. También se descarga todo en una planilla.
+- **Contactos y Uso y costos** (sólo el administrador): lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los pedidos que se quedaron sin respuesta (si aparecen más de dos días por mes, es la señal para pasar al plan pago de Gemini).
+
+## Dar de alta a un instructor
+
+1. Entrá al panel con tu código de administrador y abrí *Instructores*.
+2. Tocá *Nuevo instructor o institución* y completá el nombre, el contacto, el tipo y el plan. La prueba gratuita ya viene con 30 prácticas por mes y vence a los 30 días.
+3. Tocá *Guardar*. Se crean solos sus dos códigos: el de instructor, para entrar a su panel, y el de sus alumnos.
+4. Copiá el mensaje de bienvenida y mandáselo por mail o por WhatsApp: tiene los links y los dos códigos.
+
+Si pierde su código, o lo tiene alguien que no debería, abrí su ficha y tocá *Cambiar este código*: el viejo deja de andar en el momento y el mensaje sale con el nuevo. Para cortarle el acceso del todo, destildá *Cuenta activa* y guardá. Para ver sus prácticas y sus alumnos como los ve él, tocá *Ver sus alumnos y prácticas* en su ficha.
 
 ## Qué le pasás a los alumnos
 

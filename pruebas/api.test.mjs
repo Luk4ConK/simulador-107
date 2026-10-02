@@ -469,6 +469,71 @@ test("reintento de la devolución con el id que armó la app: no duplica la prá
   } finally { quitar(); }
 });
 
+test("estadísticas de cada cuenta: días de clase, promedios, última práctica y códigos desde la ficha", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { chat, datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const cuenta = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Escuela Este", plan: "instructor", cupoMensual: 150 } }, admin)).cuerpo.cuenta;
+    const alumno = { "x-codigo": cuenta.codigoAlumnos };
+    const practica = (id, t) => ({ modo: "evaluar", practicaId: id, prompt: "- ubicacion (U)", rubrica: [{ id: "ubicacion", label: "U", peso: 1, critico: true }],
+      registro: { grupo: "Grupo " + id.slice(-1), transcripcion: [{ w: "op", t: 0, x: "107" }, { w: "yo", t, x: "Estoy en San Martín 2850" }] } });
+    // Tres prácticas el mismo día: un día de clase. Dieron la ubicación a los 4, 6 y 8 s.
+    for (const [id, t] of [["estadistica01", 4000], ["estadistica02", 6000], ["estadistica03", 8000]]) {
+      const ev = await llamar(chat, practica(id, t), alumno);
+      assert.equal(ev.statusCode, 200, JSON.stringify(ev.cuerpo));
+    }
+    // El reintento de una devolución que ya se había guardado no vuelve a sumar.
+    await llamar(chat, practica("estadistica01", 4000), alumno);
+    await llamar(datos, { accion: "sala-crear", nombre: "Martes" }, { "x-panel": cuenta.codigoInstructor });
+
+    const c = (await llamar(datos, { accion: "cuentas", detalle: true }, admin)).cuerpo.cuentas.find(x => x.id === cuenta.id);
+    assert.equal(c.usoMes.practicas, 3);
+    assert.equal(c.practicas90, 3);
+    assert.equal(c.clases90, 1);
+    assert.deepEqual(c.dias, { conPracticas: 1, deClase: 1, deClase90: 1, minimo: 3 });
+    assert.ok(Date.now() - c.ultimaPractica < 60000);
+    assert.equal(c.meses.length, 6);
+    const mes = c.meses.at(-1);
+    assert.equal(mes.mes, new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 7));
+    assert.deepEqual([mes.practicas, mes.puntajeSuma, mes.puntajeN, mes.ubicSumaMs, mes.ubicN], [3, 300, 3, 18000, 3]);
+    assert.equal(c.esDemo, false);
+    // Una cuenta sin prácticas, en cero y sin errores.
+    const vacia = (await llamar(datos, { accion: "cuentas", detalle: true }, admin)).cuerpo.cuentas.find(x => x.id === "principal");
+    assert.deepEqual([vacia.practicas90, vacia.dias.deClase, vacia.ultimaPractica], [0, 0, null]);
+    // El selector de cuentas pide la lista sin detalle: no viajan las estadísticas.
+    assert.equal((await llamar(datos, { accion: "cuentas" }, admin)).cuerpo.cuentas.find(x => x.id === cuenta.id).meses, undefined);
+    // El instructor ve las mismas en «Mi cuenta».
+    const panel = (await llamar(datos, { accion: "panel" }, { "x-panel": cuenta.codigoInstructor })).cuerpo;
+    assert.equal(panel.estadisticas.dias.deClase, 1);
+    assert.equal(panel.estadisticas.meses.at(-1).ubicN, 3);
+
+    // El administrador le cambia el código de instructor desde la ficha: el viejo deja de
+    // andar en el momento y el nuevo abre el panel de esa cuenta.
+    const r = await llamar(datos, { accion: "codigo-regenerar", tipo: "instructor", cuentaId: cuenta.id }, admin);
+    assert.equal(r.statusCode, 200, JSON.stringify(r.cuerpo));
+    assert.notEqual(r.cuerpo.cuenta.codigoInstructor, cuenta.codigoInstructor);
+    assert.equal((await llamar(datos, { accion: "panel" }, { "x-panel": cuenta.codigoInstructor })).statusCode, 401);
+    const nuevo = await llamar(datos, { accion: "panel" }, { "x-panel": r.cuerpo.cuenta.codigoInstructor });
+    assert.equal(nuevo.cuerpo.cuenta.nombre, "Escuela Este");
+  } finally { quitar(); }
+});
+
+test("la cuenta de la demo pública se marca y no cuenta para la meta del piloto", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const demo = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Demo pública", plan: "prueba", cupoMensual: 50 } }, admin)).cuerpo.cuenta;
+    process.env.CODIGO_DEMO = demo.codigoAlumnos.toLowerCase();
+    const cuentas = (await llamar(datos, { accion: "cuentas", detalle: true }, admin)).cuerpo.cuentas;
+    assert.equal(cuentas.find(c => c.id === demo.id).esDemo, true);
+    assert.equal(cuentas.find(c => c.id === "principal").esDemo, false);
+  } finally { quitar(); }
+});
+
 test("uso: los pedidos que se quedaron sin respuesta también se cuentan", async () => {
   entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99", CODIGO_ACCESO: "GV2027" });
   const cuota = {};

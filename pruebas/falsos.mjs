@@ -59,11 +59,17 @@ export function crearRedis() {
     SCARD: k => { const e = de(k, "set"); return e ? e.v.size : 0; },
     ZADD: (k, ...sm) => { const e = de(k, "zset", true); let n = 0; for (let i = 0; i < sm.length; i += 2) { if (!e.v.has(sm[i + 1])) n++; e.v.set(sm[i + 1], num(sm[i])); } return n; },
     ZREM: (k, ...ms) => { const e = de(k, "zset"); if (!e) return 0; return ms.reduce((n, m) => n + (e.v.delete(m) ? 1 : 0), 0); },
-    ZREVRANGE: (k, a, b) => {
+    ZREVRANGE: (k, a, b, ...op) => {
       const e = de(k, "zset"); if (!e) return [];
-      const l = ordenZ(e.v).reverse().map(x => x[0]);
+      const l = ordenZ(e.v).reverse();
       const fin = num(b) < 0 ? l.length + num(b) : num(b);
-      return l.slice(num(a), fin + 1);
+      const tramo = l.slice(num(a), fin + 1);
+      return op.some(o => String(o).toUpperCase() === "WITHSCORES") ? tramo.flatMap(([m, sc]) => [m, String(sc)]) : tramo.map(x => x[0]);
+    },
+    ZCOUNT: (k, min, max) => {
+      const e = de(k, "zset"); if (!e) return 0;
+      const [lo, hi] = rango(min, max);
+      return [...e.v.values()].filter(sc => sc >= lo && sc <= hi).length;
     },
     ZREVRANGEBYSCORE: (k, max, min, ...op) => {
       const e = de(k, "zset"); if (!e) return [];

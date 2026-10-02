@@ -95,6 +95,7 @@
   .link{background:none; border:0; padding:0; color:var(--ink-2); text-decoration:underline; text-underline-offset:3px; font-size:13.5px}
   .err{color:var(--bad); font-size:13.5px; min-height:20px}
   .ok{color:var(--ok)}
+  .atencion{color:var(--warn)} .mal{color:var(--bad)}
 
   /* login */
   .login{max-width:380px; margin:12vh auto 0; display:grid; gap:14px; text-align:center}
@@ -166,6 +167,15 @@
   .marcas span{flex:1; max-width:24px; text-align:center; color:var(--warn)}
   .ejes{display:flex; justify-content:space-between; font-size:11px; color:var(--ink-3)}
 
+  /* prácticas por mes de una cuenta: una columna por mes, con el mes y la cantidad abajo */
+  .meses{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:10px; align-items:end; max-width:520px}
+  .mes{display:grid; gap:3px; justify-items:center; font-size:12px; color:var(--ink-2)}
+  .mes .pista{height:96px; width:100%; max-width:44px; display:flex; align-items:flex-end; border-bottom:1px solid var(--line)}
+  .mes .pista i{display:block; width:100%; background:var(--serie); border-radius:4px 4px 0 0; min-height:1px}
+  .mes:hover .pista i,.mes:focus .pista i{filter:brightness(1.15)}
+  .mes b{font-weight:600; color:var(--ink); font-size:13px}
+  .cod-ficha{font-family:var(--mono); font-size:21px; letter-spacing:.1em; margin:6px 0 10px; word-break:break-all}
+
   .tip{position:fixed; z-index:50; pointer-events:none; background:var(--ink); color:var(--surface); border-radius:8px; padding:7px 9px; font-size:12.5px; max-width:260px}
   .tip b{font-size:14px}
 
@@ -214,7 +224,7 @@
       <button role="tab" data-t="calidad" aria-selected="false">Calidad</button>
       <button role="tab" data-t="escenarios" aria-selected="false">Escenarios</button>
       <button role="tab" data-t="cuenta" aria-selected="false">Mi cuenta</button>
-      <button role="tab" data-t="cuentas" aria-selected="false" data-admin hidden>Clientes</button>
+      <button role="tab" data-t="cuentas" aria-selected="false" data-admin hidden>Instructores</button>
       <button role="tab" data-t="contactos" aria-selected="false" data-admin hidden>Contactos</button>
       <button role="tab" data-t="uso" aria-selected="false" data-admin hidden>Uso y costos</button>
     </nav>
@@ -336,6 +346,11 @@
     <!-- ---------- cuenta ---------- -->
     <div class="tab" id="t-cuenta" hidden>
       <div class="grid g3" id="cu-tiles"></div>
+      <div class="card" style="margin-top:12px">
+        <h3 style="font-size:15px">Prácticas por mes</h3>
+        <p class="small muted" style="margin:2px 0 12px">Tocá o pasá por encima de cada mes para ver el puntaje promedio y cuánto tardaron en dar la ubicación.</p>
+        <div class="meses" id="cu-meses"></div>
+      </div>
       <div class="grid g2" style="margin-top:12px">
         <div class="card">
           <span class="lbl">Código para tus alumnos</span>
@@ -353,10 +368,13 @@
       <p class="small muted" style="margin-top:14px">Las prácticas se borran solas a los 13 meses. Si un alumno pide que se borre la suya, abrila desde «Prácticas» y tocá «Borrar». Más en la <a href="privacidad.html">política de privacidad</a>.</p>
     </div>
 
-    <!-- ---------- clientes (admin) ---------- -->
+    <!-- ---------- instructores e instituciones (admin) ---------- -->
     <div class="tab" id="t-cuentas" hidden>
-      <div class="fila"><h2 style="font-size:17px">Clientes</h2><span class="sp"></span><button class="btn pri" id="cl-nueva">Nueva cuenta</button></div>
+      <div class="fila"><h2 style="font-size:17px">Instructores e instituciones</h2><span class="sp"></span><button class="btn" id="cl-csv">Descargar planilla (CSV)</button><button class="btn pri" id="cl-nueva">Nuevo instructor o institución</button></div>
+      <p class="sec small" style="margin-top:6px">Cada instructor o institución es una cuenta con dos códigos: el de instructor, para entrar a su panel, y el de sus alumnos. Los dos se crean solos al guardar la cuenta, y queda armado el mensaje para mandarle. Tocá una fila para abrir su ficha: cómo la usa, sus códigos y sus datos.</p>
+      <div class="grid g3" id="cl-tiles" style="margin-top:12px"></div>
       <div class="card scroll" style="margin-top:12px"><table class="tabla" id="cl-tabla"></table></div>
+      <p class="small muted" style="margin-top:8px" id="cl-nota"></p>
     </div>
 
     <!-- ---------- contactos (admin) ---------- -->
@@ -399,25 +417,54 @@
   </div>
 </dialog>
 
-<!-- alta y edición de clientes -->
+<!-- ficha de un instructor o institución: cómo la usa, sus códigos, el mensaje y sus datos -->
 <dialog id="dlg-cuenta">
-  <div class="dlg-cab"><div class="sp"><h2 style="font-size:18px" id="dc-titulo">Nueva cuenta</h2></div><button class="btn" id="dc-cerrar">Cerrar</button></div>
+  <div class="dlg-cab"><div class="sp"><h2 style="font-size:18px" id="dc-titulo">Nuevo instructor o institución</h2><div class="small sec" id="dc-sub"></div></div><button class="btn" id="dc-cerrar">Cerrar</button></div>
   <div class="dlg-cuerpo">
-    <div class="grid g2">
-      <label class="f"><span>Nombre (instructor o institución)</span><input id="dc-nombre"></label>
-      <label class="f"><span>Contacto (mail o WhatsApp)</span><input id="dc-contacto"></label>
-      <label class="f"><span>Tipo</span><select id="dc-tipo"><option value="instructor">Instructor independiente</option><option value="institucion">Institución</option><option value="ong">ONG / cortesía</option></select></label>
-      <label class="f"><span>Plan</span><select id="dc-plan"><option value="prueba">Prueba gratuita</option><option value="instructor">Instructor</option><option value="institucion">Institución</option><option value="cortesia">Cortesía</option></select></label>
-      <label class="f"><span>Prácticas por mes (0 = sin tope)</span><input id="dc-cupo" type="number" min="0" value="30"></label>
-      <label class="f"><span>Vence (vacío = no vence)</span><input id="dc-vence" type="date"></label>
+    <div id="dc-uso" hidden>
+      <span class="lbl">Cómo la usa</span>
+      <div class="grid g3" id="dc-tiles" style="margin-top:8px"></div>
+      <div class="card" style="margin-top:12px">
+        <h3 style="font-size:15px">Prácticas por mes</h3>
+        <p class="small muted" style="margin:2px 0 12px">Tocá o pasá por encima de cada mes para ver el puntaje promedio y cuánto tardaron en dar la ubicación.</p>
+        <div class="meses" id="dc-meses"></div>
+      </div>
+      <div class="fila" style="margin-top:12px"><button class="btn" id="dc-ver-panel">Ver sus alumnos y prácticas</button></div>
     </div>
-    <label class="chk"><input type="checkbox" id="dc-activa" checked> Cuenta activa</label>
-    <label class="f"><span>Notas internas (lo que se acordó, forma de pago…)</span><textarea id="dc-notas" rows="3"></textarea></label>
-    <div class="fila"><button class="btn pri" id="dc-guardar">Guardar</button><span class="err" id="dc-err"></span></div>
+    <div id="dc-codigos" hidden>
+      <span class="lbl">Códigos</span>
+      <div class="grid g2" style="margin-top:8px">
+        <div class="card">
+          <span class="small sec">Código de instructor: con este entra a su panel</span>
+          <p class="cod-ficha num" id="dc-inst">••••••••••</p>
+          <div class="fila"><button class="btn" id="dc-ver-inst">Mostrar</button><button class="link" id="dc-regen-inst">Cambiar este código</button></div>
+        </div>
+        <div class="card">
+          <span class="small sec">Código de sus alumnos</span>
+          <p class="cod-ficha num" id="dc-alumnos">—</p>
+          <div class="fila"><button class="btn" id="dc-copiar-alumnos">Copiar link para alumnos</button><button class="link" id="dc-regen-alumnos">Cambiar este código</button></div>
+        </div>
+      </div>
+      <p class="small muted" style="margin-top:8px">Si perdió su código, o lo tiene alguien que no debería, cambialo: el viejo deja de andar en el momento y el mensaje de abajo sale con el nuevo. Para cortarle el acceso del todo, destildá «Cuenta activa» y guardá.</p>
+    </div>
     <div id="dc-bienvenida" hidden>
       <span class="lbl">Mensaje de bienvenida para mandarle</span>
-      <pre class="msj" id="dc-msj"></pre>
+      <pre class="msj" id="dc-msj" style="margin-top:8px"></pre>
       <div class="fila" style="margin-top:8px"><button class="btn" id="dc-copiar">Copiar mensaje</button></div>
+    </div>
+    <div>
+      <span class="lbl">Datos de la cuenta</span>
+      <div class="grid g2" style="margin-top:8px">
+        <label class="f"><span>Nombre (instructor o institución)</span><input id="dc-nombre"></label>
+        <label class="f"><span>Contacto (mail o WhatsApp)</span><input id="dc-contacto"></label>
+        <label class="f"><span>Tipo</span><select id="dc-tipo"><option value="instructor">Instructor independiente</option><option value="institucion">Institución</option><option value="ong">ONG / cortesía</option></select></label>
+        <label class="f"><span>Plan</span><select id="dc-plan"><option value="prueba">Prueba gratuita</option><option value="instructor">Instructor</option><option value="institucion">Institución</option><option value="cortesia">Cortesía</option></select></label>
+        <label class="f"><span>Prácticas por mes (0 = sin tope)</span><input id="dc-cupo" type="number" min="0" value="30"></label>
+        <label class="f"><span>Vence (vacío = no vence)</span><input id="dc-vence" type="date"></label>
+      </div>
+      <label class="chk" style="margin-top:12px"><input type="checkbox" id="dc-activa" checked> Cuenta activa (si la destildás, sus dos códigos dejan de andar)</label>
+      <label class="f" style="margin-top:12px"><span>Notas internas (lo que se acordó, forma de pago…)</span><textarea id="dc-notas" rows="3"></textarea></label>
+      <div class="fila" style="margin-top:12px"><button class="btn pri" id="dc-guardar">Guardar</button><span class="err" id="dc-err"></span></div>
     </div>
   </div>
 </dialog>
@@ -476,6 +523,10 @@
      escritos (etiquetas o tabla). */
   const tip = $("#tip");
   function mostrarTip(ev, fuerte, resto){
+    // Dentro de una ficha abierta, el tooltip tiene que ir adentro del diálogo: el diálogo
+    // se dibuja por encima de todo el resto de la página.
+    const capa = document.querySelector("dialog[open]") || document.body;
+    if(tip.parentNode !== capa) capa.append(tip);
     vaciar(tip).append(h("b", { text:fuerte }), resto ? h("div", { text:resto }) : "");
     tip.hidden = false;
     const x = Math.min(window.innerWidth - 270, ev.clientX + 12), y = ev.clientY + 14;
@@ -561,14 +612,18 @@
       sel.value = P.cuentaId || "principal";
     }catch(e){}
   }
-  $("#p-cambiar").addEventListener("change", async e => {
+  // El administrador mira el panel de otra cuenta, en la pestaña en la que estaba o en la
+  // que se pide (la ficha de un instructor abre sus alumnos).
+  async function cambiarCuenta(id, tab){
     // Las clases de la cuenta anterior no son de ésta: mirarlas daría «sin_sala».
-    P.cuentaId = e.target.value; P.sala = null; P.salaVista = null; P.filtroSala = null;
+    P.cuentaId = id; P.sala = null; P.salaVista = null; P.filtroSala = null;
+    $("#p-cambiar").value = id;
     P.info = await api("panel");
     pintarCabecera();
     await cargarEscenarios();
-    irA(P.tab);
-  });
+    irA(tab || P.tab);
+  }
+  $("#p-cambiar").addEventListener("change", e => cambiarCuenta(e.target.value));
 
   /* ---------------- pestañas ---------------- */
   $("#tabs").addEventListener("click", e => { const b = e.target.closest("button[data-t]"); if(b) irA(b.dataset.t); });
@@ -862,18 +917,23 @@
     const ids = []; const etiquetas = {};
     lista.forEach(p => (p.rubrica || []).forEach(c => { if(!ids.includes(c.id)){ ids.push(c.id); etiquetas[c.id] = c.label; } }));
     const cab = ["fecha","alumno_o_grupo","clase","escenario","quien_llama","dificultad","duracion_s","puntaje_ia","topeado","puntaje_instructor","revision_a_ciegas","t_ubicacion_s","t_rcp_s","modelo_evaluador"].concat(ids.map(id => "ia_" + id), ids.map(id => "instructor_ciego_" + id));
+    const filas = lista.map(p => [new Date(p.fecha).toISOString(), p.grupo || p.alias, p.sala || "", p.escenario && p.escenario.titulo, p.perfil, p.dificultad,
+      Math.round((p.duracionMs||0)/1000), p.puntaje, p.topeado ? "si" : "no", p.puntajeInstructor, p.revisionCiega ? "si" : (p.revision ? "no" : ""), p.tUbicacionMs == null ? "" : Math.round(p.tUbicacionMs/1000),
+      p.tRcpMs == null ? "" : Math.round(p.tRcpMs/1000), p.modeloEvaluador].concat(ids.map(id => (p.items || {})[id] || ""), ids.map(id => (p.revisionCiega || {})[id] || "")));
+    descargarCsv("practicas-simulador107-" + new Date().toISOString().slice(0,10) + ".csv", cab, filas);
+  });
+  // Una planilla que abren Excel y Sheets: con BOM para los acentos, y sin nada que
+  // empiece como una fórmula.
+  function descargarCsv(nombre, cab, filas){
     const esc = v => {
       let s = v == null ? "" : String(v);
       if(/^[=+\-@]/.test(s)) s = "'" + s;   // que Excel no lo tome como fórmula
       return /[",;\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
     };
-    const filas = lista.map(p => [new Date(p.fecha).toISOString(), p.grupo || p.alias, p.sala || "", p.escenario && p.escenario.titulo, p.perfil, p.dificultad,
-      Math.round((p.duracionMs||0)/1000), p.puntaje, p.topeado ? "si" : "no", p.puntajeInstructor, p.revisionCiega ? "si" : (p.revision ? "no" : ""), p.tUbicacionMs == null ? "" : Math.round(p.tUbicacionMs/1000),
-      p.tRcpMs == null ? "" : Math.round(p.tRcpMs/1000), p.modeloEvaluador].concat(ids.map(id => (p.items || {})[id] || ""), ids.map(id => (p.revisionCiega || {})[id] || "")));
     const csv = "﻿" + [cab].concat(filas).map(f => f.map(esc).join(",")).join("\n");
-    const a = h("a", { href: URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })), download: "practicas-simulador107-" + new Date().toISOString().slice(0,10) + ".csv" });
+    const a = h("a", { href: URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })), download: nombre });
     document.body.append(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  });
+  }
 
   /* ---------------- detalle y revisión ---------------- */
   let actual = null;
@@ -1130,14 +1190,12 @@
      ===================================================================== */
   async function verCuenta(){
     try{ P.info = await api("panel"); pintarCabecera(); }catch(e){}
-    const c = P.info.cuenta, u = P.info.usoMes;
-    vaciar($("#cu-tiles")).append(
-      tile("Prácticas este mes", c.cupoMensual ? u.practicas + " de " + c.cupoMensual : String(u.practicas), c.cupoMensual ? "cupo mensual" : "sin tope", c.cupoMensual ? u.practicas / c.cupoMensual * 100 : null),
-      tile("Turnos del operador", String(u.turnos), "este mes"),
-      tile("Vencimiento", c.vence || "no vence", c.activa ? "cuenta activa" : "cuenta pausada"));
+    const c = P.info.cuenta;
+    pintarUso($("#cu-tiles"), $("#cu-meses"), c, P.info.estadisticas);
+    $("#cu-tiles").append(tile("Vencimiento", c.vence ? fechaLarga(c.vence) : "no vence", c.activa ? "cuenta activa" : "cuenta pausada"));
     $("#cu-alumnos").textContent = c.codigoAlumnos || "—";
     $("#cu-alumnos-nota").textContent = P.info.codigoEnv
-      ? "Tus alumnos también pueden entrar con el código que está cargado en Vercel (CODIGO_ACCESO)." + (c.codigoAlumnos ? "" : " Este código propio se crea al guardar la cuenta desde «Clientes».")
+      ? "Tus alumnos también pueden entrar con el código que está cargado en Vercel (CODIGO_ACCESO)." + (c.codigoAlumnos ? "" : " Este código propio se crea al guardar la cuenta desde «Instructores».")
       : "Sirve siempre (no vence con la clase). Para una clase con varios grupos, mejor abrí una «clase en vivo».";
     $("#cu-inst").textContent = c.codigoInstructor ? "••••••••••" : "—"; $("#cu-ver-inst").textContent = "Mostrar";
     $("#cu-ver-inst").hidden = !c.codigoInstructor;
@@ -1169,21 +1227,128 @@
   $("#cu-regen-inst").addEventListener("click", () => regenerar("instructor"));
 
   /* =====================================================================
-     CLIENTES (administrador)
+     INSTRUCTORES (administrador)
+     Cada instructor o institución es una cuenta con sus dos códigos. La tabla y la ficha
+     salen de contadores del servidor (pedidosDetalle en api/datos.js), sin leer prácticas.
      ===================================================================== */
   const NOMBRES_PLAN = { prueba:"Prueba", instructor:"Instructor", institucion:"Institución", cortesia:"Cortesía" };
-  async function verCuentas(){
-    const { cuentas } = await api("cuentas");
-    const t = vaciar($("#cl-tabla"));
-    t.append(cabecera(["Cuenta","Plan",["Prácticas del mes","n"],"Vence","Estado",""]));
-    cuentas.forEach(c => t.append(h("tr", {},
-      h("td", {}, h("b", { text:c.nombre }), c.contacto ? h("div", { class:"small muted", text:c.contacto }) : ""),
-      h("td", { text:NOMBRES_PLAN[c.plan] || c.plan }),
-      h("td", { class:"n", text:c.usoMes.practicas + (c.cupoMensual ? " / " + c.cupoMensual : "") }),
-      h("td", { class:"num", text:c.vence ? c.vence.split("-").reverse().join("/") : "—" }),
-      h("td", { text:c.activa ? "activa" : "pausada" }),
-      h("td", {}, h("button", { class:"link", text:"editar", onclick: () => abrirCuenta(c) })))));
+  const NOMBRES_TIPO = { instructor:"Instructor independiente", institucion:"Institución", ong:"ONG / cortesía" };
+  const MESES_CORTOS = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  // La meta de uso real del piloto (ver «01 · Plan de negocio»): 5 instructores o
+  // instituciones, además de tu cuenta y de la demo, que lo usaron en 2 días de clase o más.
+  const META_PILOTO = 5, DIAS_META = 2;
+
+  function fechaLarga(iso){ return iso ? iso.split("-").reverse().join("/") : "—"; }
+  function nombreMes(m){ const [a, n] = m.split("-").map(Number); return MESES_CORTOS[n-1] + " " + a; }
+  function haceCuanto(ts){
+    if(!ts) return "nunca";
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const dia = new Date(ts); dia.setHours(0,0,0,0);
+    const n = Math.round((hoy - dia) / 86400000);
+    if(n <= 0) return "hoy";
+    if(n === 1) return "ayer";
+    if(n < 45) return "hace " + n + " días";
+    return "hace " + Math.round(n / 30) + " meses";
   }
+  // Los promedios de los últimos tres meses: el puntaje que puso la IA y el tiempo hasta
+  // dar la ubicación. null mientras no haya prácticas evaluadas.
+  function promedios(est){
+    const ult = ((est && est.meses) || []).slice(-3);
+    const suma = campo => ult.reduce((t, m) => t + (Number(m[campo]) || 0), 0);
+    const n = suma("puntajeN"), nU = suma("ubicN");
+    return { puntaje: n ? Math.round(suma("puntajeSuma") / n) : null, n, ubicMs: nU ? suma("ubicSumaMs") / nU : null, nU };
+  }
+  // Activa, pausada, vencida o por vencer, con lo mismo que mira el servidor para dejar
+  // entrar: una cuenta vence al terminar el día de su vencimiento.
+  function estadoCuenta(c){
+    const hoy = fechaAR(0);
+    if(!c.activa) return { txt:"pausada", clase:"mal" };
+    if(c.vence && c.vence < hoy) return { txt:"vencida", clase:"mal" };
+    if(c.vence){
+      const n = Math.round((Date.parse(c.vence) - Date.parse(hoy)) / 86400000);
+      if(n <= 7) return { txt: n === 0 ? "vence hoy" : "vence en " + n + (n === 1 ? " día" : " días"), clase:"atencion" };
+    }
+    return { txt:"activa", clase:"" };
+  }
+
+  // Cómo usa una cuenta el simulador: lo mismo en la ficha del administrador y en «Mi cuenta».
+  function pintarUso(tiles, columnas, c, est){
+    est = est || { meses:[], dias:{ deClase:0, deClase90:0 } };
+    const u = est.meses.length ? est.meses[est.meses.length - 1].practicas : 0;
+    const pr = promedios(est), d = est.dias, clases = est.clases90 || 0;
+    vaciar(tiles).append(
+      tile("Prácticas este mes", c.cupoMensual ? u + " de " + c.cupoMensual : String(u), "la última, " + haceCuanto(est.ultimaPractica), c.cupoMensual ? u / c.cupoMensual * 100 : null),
+      tile("Días de clase", String(d.deClase), d.deClase90 + " en los últimos 90 días · " + clases + (clases === 1 ? " clase en vivo" : " clases en vivo")),
+      tile("Puntaje promedio", pr.puntaje == null ? "—" : String(pr.puntaje), pr.puntaje == null ? "todavía sin prácticas evaluadas" : "de " + pr.n + (pr.n === 1 ? " práctica" : " prácticas") + ", últimos 3 meses"),
+      tile("Hasta dar la ubicación", pr.ubicMs == null ? "—" : mmss(pr.ubicMs), pr.ubicMs == null ? "todavía sin datos" : "promedio de " + pr.nU + ", últimos 3 meses"));
+    columnasMeses(columnas, est.meses);
+  }
+  // Una columna por mes, una sola serie, con el mes y la cantidad escritos abajo; al pasar
+  // por encima, el puntaje promedio y el tiempo hasta la ubicación de ese mes.
+  function columnasMeses(box, meses){
+    vaciar(box);
+    const max = Math.max(1, ...meses.map(m => m.practicas));
+    meses.forEach(m => {
+      const prom = m.puntajeN ? Math.round(m.puntajeSuma / m.puntajeN) : null;
+      const fuerte = m.practicas + (m.practicas === 1 ? " práctica" : " prácticas");
+      const detalle = nombreMes(m.mes) + " · " + (prom == null ? "sin prácticas evaluadas" : "puntaje promedio " + prom) + (m.ubicN ? " · ubicación a los " + mmss(m.ubicSumaMs / m.ubicN) : "");
+      const col = h("div", { class:"mes", tabindex:"0", "aria-label": fuerte + ", " + detalle },
+        h("div", { class:"pista" }, h("i", { style:"height:" + (m.practicas / max * 100) + "%" })),
+        h("span", { text:MESES_CORTOS[Number(m.mes.slice(5)) - 1] }), h("b", { class:"num", text:String(m.practicas) }));
+      col.addEventListener("pointermove", ev => mostrarTip(ev, fuerte, detalle));
+      col.addEventListener("pointerleave", ocultarTip);
+      col.addEventListener("focus", () => { const r = col.getBoundingClientRect(); mostrarTip({ clientX:r.left, clientY:r.top }, fuerte, detalle); });
+      col.addEventListener("blur", ocultarTip);
+      box.append(col);
+    });
+  }
+
+  async function verCuentas(){
+    const { cuentas } = await api("cuentas", { detalle:true });
+    P.cuentas = cuentas;
+    const otras = cuentas.filter(c => c.id !== "principal" && !c.esDemo);
+    const activas = otras.filter(c => estadoCuenta(c).clase !== "mal");
+    const enPrueba = activas.filter(c => c.plan === "prueba").length;
+    const conUso = otras.filter(c => c.dias.deClase >= DIAS_META).length;
+    const porVencer = activas.filter(c => estadoCuenta(c).clase === "atencion").length;
+    const delMes = cuentas.reduce((s, c) => s + c.usoMes.practicas, 0);
+    vaciar($("#cl-tiles")).append(
+      tile("Cuentas activas", String(activas.length), (enPrueba ? enPrueba + " en prueba gratuita" : "ninguna en prueba gratuita") + ", sin contar la tuya"),
+      tile("Meta del piloto", conUso + " de " + META_PILOTO, "con " + DIAS_META + " días de clase o más, sin contar la tuya"),
+      tile("Prácticas este mes", delMes.toLocaleString("es-AR"), "entre todas las cuentas"),
+      tile("Por vencer", String(porVencer), porVencer ? "en los próximos 7 días: escribiles antes" : "ninguna en los próximos 7 días"));
+    const t = vaciar($("#cl-tabla"));
+    t.append(cabecera(["Instructor o institución","Plan",["Este mes","n"],["Últimos 90 días","n"],["Días de clase","n"],"Última práctica","Vence","Estado"]));
+    cuentas.forEach(c => {
+      const est = estadoCuenta(c), u = c.usoMes.practicas, cupo = c.cupoMensual;
+      const lleno = cupo && u >= cupo, casi = cupo && !lleno && u >= cupo * 0.8;
+      const marca = c.id === "principal" ? "tu cuenta" : c.esDemo ? "demo" : "";
+      t.append(h("tr", { class:"clic", tabindex:"0", onclick: () => abrirCuenta(c), onkeydown: e => { if(e.key === "Enter") abrirCuenta(c); } },
+        h("td", {}, h("b", { text:c.nombre }), marca ? h("span", { class:"badge", style:"margin-left:6px", text:marca }) : "",
+          h("div", { class:"small muted", text:[NOMBRES_TIPO[c.tipo] || c.tipo, c.contacto].filter(Boolean).join(" · ") })),
+        h("td", { text:NOMBRES_PLAN[c.plan] || c.plan }),
+        h("td", { class:"n" + (lleno ? " mal" : casi ? " atencion" : ""), text: u + (cupo ? " / " + cupo : "") + (lleno ? " · lleno" : casi ? " · casi lleno" : "") }),
+        h("td", { class:"n", text:String(c.practicas90) }),
+        h("td", { class:"n", text:String(c.dias.deClase) }),
+        h("td", { text:haceCuanto(c.ultimaPractica) }),
+        h("td", { class:"num", text:fechaLarga(c.vence) }),
+        h("td", { class:est.clase, text:est.txt })));
+    });
+    const minimo = cuentas.length ? cuentas[0].dias.minimo : 3;
+    $("#cl-nota").textContent = "Un día de clase es un día con " + minimo + " prácticas o más en la cuenta. Los días de clase y los promedios se cuentan desde octubre de 2026.";
+  }
+  // Para la rutina del mes y la planilla «03 · Seguimiento de clientes».
+  $("#cl-csv").addEventListener("click", ()=>{
+    const cab = ["cuenta","tipo","plan","contacto","estado","vence","alta","cupo_mensual","practicas_este_mes","practicas_90_dias","dias_de_clase","dias_de_clase_90_dias","clases_en_vivo_90_dias","ultima_practica","puntaje_promedio_3_meses","ubicacion_promedio_s_3_meses"];
+    const filas = (P.cuentas || []).map(c => {
+      const pr = promedios(c);
+      return [c.nombre, NOMBRES_TIPO[c.tipo] || c.tipo, NOMBRES_PLAN[c.plan] || c.plan, c.contacto, estadoCuenta(c).txt, c.vence || "", c.creada ? new Date(c.creada).toISOString().slice(0,10) : "",
+        c.cupoMensual || "", c.usoMes.practicas, c.practicas90, c.dias.deClase, c.dias.deClase90, c.clases90,
+        c.ultimaPractica ? new Date(c.ultimaPractica).toISOString().slice(0,10) : "", pr.puntaje == null ? "" : pr.puntaje, pr.ubicMs == null ? "" : Math.round(pr.ubicMs / 1000)];
+    });
+    descargarCsv("instructores-simulador107-" + new Date().toISOString().slice(0,10) + ".csv", cab, filas);
+  });
+
   let cuentaEditada = null;
   // Una fecha contada desde hoy en la hora argentina, la misma que usa el servidor para
   // los vencimientos (hoyAR en api/): con la UTC, una cuenta dada de alta después de las
@@ -1194,15 +1359,30 @@
   const PRUEBA = { cupo:30, dias:30 };
   function abrirCuenta(c){
     cuentaEditada = c || null;
-    $("#dc-titulo").textContent = c ? "Editar " + c.nombre : "Nueva cuenta";
     $("#dc-nombre").value = c ? c.nombre : ""; $("#dc-contacto").value = c ? c.contacto : "";
     $("#dc-tipo").value = c ? c.tipo : "instructor"; $("#dc-plan").value = c ? c.plan : "prueba";
     $("#dc-cupo").value = c ? c.cupoMensual : PRUEBA.cupo; $("#dc-vence").value = c ? (c.vence || "") : fechaAR(PRUEBA.dias);
     $("#dc-activa").checked = c ? c.activa : true; $("#dc-notas").value = c ? c.notas : "";
     $("#dc-err").textContent = "";
-    $("#dc-bienvenida").hidden = !(c && c.codigoAlumnos);
-    if(c && c.codigoAlumnos) $("#dc-msj").textContent = mensajeBienvenida(c);
+    pintarFicha();
     $("#dlg-cuenta").showModal();
+  }
+  // Lo de la ficha que depende de que la cuenta ya exista: cómo la usa, sus códigos y el
+  // mensaje para mandarle. Una cuenta nueva muestra sólo sus datos hasta que se guarda.
+  function pintarFicha(){
+    const c = cuentaEditada;
+    $("#dc-titulo").textContent = c ? c.nombre : "Nuevo instructor o institución";
+    $("#dc-sub").textContent = c
+      ? [NOMBRES_TIPO[c.tipo] || c.tipo, "plan " + (NOMBRES_PLAN[c.plan] || c.plan).toLowerCase(), estadoCuenta(c).txt, c.creada ? "alta el " + new Date(c.creada).toLocaleDateString("es-AR") : ""].filter(Boolean).join(" · ")
+      : "Al guardar se crean sus dos códigos y el mensaje de bienvenida para mandarle.";
+    $("#dc-uso").hidden = !(c && c.meses);
+    $("#dc-codigos").hidden = !(c && c.codigoInstructor);
+    $("#dc-bienvenida").hidden = !(c && c.codigoAlumnos);
+    if(!c) return;
+    if(c.meses) pintarUso($("#dc-tiles"), $("#dc-meses"), c, c);
+    $("#dc-inst").textContent = "••••••••••"; $("#dc-ver-inst").textContent = "Mostrar";
+    $("#dc-alumnos").textContent = c.codigoAlumnos || "—";
+    if(c.codigoAlumnos) $("#dc-msj").textContent = mensajeBienvenida(c);
   }
   function mensajeBienvenida(c){
     return [
@@ -1214,7 +1394,7 @@
       "  o en " + location.host + " con el código " + c.codigoAlumnos,
       "• Para una clase con varios grupos a la vez, abrí una «clase en vivo» en el panel: te da un código de 6 caracteres (letras y números) para proyectar y ves a todos los grupos en vivo.",
       "",
-      "Plan: " + (NOMBRES_PLAN[c.plan] || c.plan) + (c.cupoMensual ? " · " + c.cupoMensual + " prácticas por mes" : " · sin tope de prácticas") + (c.vence ? " · vigente hasta el " + c.vence : ""),
+      "Plan: " + (NOMBRES_PLAN[c.plan] || c.plan) + (c.cupoMensual ? " · " + c.cupoMensual + " prácticas por mes" : " · sin tope de prácticas") + (c.vence ? " · vigente hasta el " + fechaLarga(c.vence) : ""),
       "Cómo dar la clase con el simulador: " + origen + "/instructores#guia",
       "",
       "Cualquier duda, respondé este mensaje."
@@ -1228,16 +1408,46 @@
   });
   $("#dc-cerrar").addEventListener("click", () => $("#dlg-cuenta").close());
   $("#dc-copiar").addEventListener("click", e => copiar($("#dc-msj").textContent, e.target));
+  $("#dc-ver-inst").addEventListener("click", e => {
+    const oculto = e.target.textContent === "Mostrar";
+    $("#dc-inst").textContent = oculto ? (cuentaEditada.codigoInstructor || "—") : "••••••••••";
+    e.target.textContent = oculto ? "Ocultar" : "Mostrar";
+  });
+  $("#dc-copiar-alumnos").addEventListener("click", e => { const c = cuentaEditada; if(c && c.codigoAlumnos) copiar(origen + "/?c=" + c.codigoAlumnos, e.target); });
+  // El administrador le cambia un código a una cuenta: el viejo deja de andar en el momento.
+  async function regenerarDe(tipo){
+    const c = cuentaEditada; if(!c) return;
+    const aviso = tipo === "instructor"
+      ? "¿Cambiar el código de instructor de " + c.nombre + "? El viejo deja de andar ahora: mandale el mensaje nuevo para que pueda volver a entrar a su panel."
+      : "¿Cambiar el código de alumnos de " + c.nombre + "? El viejo deja de andar ahora: sus alumnos van a necesitar el nuevo. Las clases en vivo siguen con su propio código.";
+    if(!confirm(aviso)) return;
+    $("#dc-err").textContent = "";
+    try{
+      const { cuenta } = await api("codigo-regenerar", { tipo, cuentaId:c.id });
+      cuentaEditada = Object.assign({}, c, cuenta);
+      pintarFicha();
+      if(tipo === "instructor"){ $("#dc-inst").textContent = cuentaEditada.codigoInstructor; $("#dc-ver-inst").textContent = "Ocultar"; }
+      verCuentas();
+    }catch(e){ $("#dc-err").textContent = e.message; }
+  }
+  $("#dc-regen-inst").addEventListener("click", () => regenerarDe("instructor"));
+  $("#dc-regen-alumnos").addEventListener("click", () => regenerarDe("alumnos"));
+  $("#dc-ver-panel").addEventListener("click", () => {
+    const c = cuentaEditada; if(!c) return;
+    $("#dlg-cuenta").close();
+    cambiarCuenta(c.id, "alumnos");
+  });
   $("#dc-guardar").addEventListener("click", async ()=>{
     $("#dc-err").textContent = "";
     const datos = { id: cuentaEditada ? cuentaEditada.id : undefined, nombre:$("#dc-nombre").value, contacto:$("#dc-contacto").value, tipo:$("#dc-tipo").value,
       plan:$("#dc-plan").value, cupoMensual:Number($("#dc-cupo").value), vence:$("#dc-vence").value || null, activa:$("#dc-activa").checked, notas:$("#dc-notas").value };
     try{
       const { cuenta } = await api("cuenta-guardar", { cuenta:datos });
-      cuentaEditada = cuenta;
-      $("#dc-titulo").textContent = "Editar " + cuenta.nombre;
-      $("#dc-bienvenida").hidden = false;
-      $("#dc-msj").textContent = mensajeBienvenida(cuenta);
+      const nueva = !cuentaEditada;
+      // Lo que devuelve el servidor son los datos de la cuenta: el uso que ya se veía queda.
+      cuentaEditada = Object.assign({}, cuentaEditada || {}, cuenta);
+      pintarFicha();
+      if(nueva) $("#dc-bienvenida").scrollIntoView({ block:"nearest" });
       verCuentas(); cargarSelectorCuentas();
     }catch(e){ $("#dc-err").textContent = e.message; }
   });
