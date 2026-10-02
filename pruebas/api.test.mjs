@@ -520,6 +520,18 @@ test("estadísticas de cada cuenta: días de clase, promedios, última práctica
   } finally { quitar(); }
 });
 
+test("vercel.json: los dos proyectos se leen bien y el simulador manda /kalulab a la página de la empresa", async () => {
+  const fs = await import("node:fs");
+  const simulador = JSON.parse(fs.readFileSync(new URL("../vercel.json", import.meta.url), "utf8"));
+  const empresa = JSON.parse(fs.readFileSync(new URL("../kalulab/vercel.json", import.meta.url), "utf8"));
+  const r = simulador.redirects.find(x => x.source.startsWith("/kalulab"));
+  assert.equal(r.destination, "https://www.kalulab.store/:ruta*");
+  // La página de la empresa no tiene funciones ni cron: es sólo HTML.
+  assert.equal(empresa.functions, undefined);
+  assert.equal(empresa.crons, undefined);
+  assert.ok(fs.existsSync(new URL("../kalulab/index.html", import.meta.url)));
+});
+
 test("la cuenta de la demo pública se marca y no cuenta para la meta del piloto", async () => {
   entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
   const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });

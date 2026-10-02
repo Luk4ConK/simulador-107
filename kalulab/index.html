@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalu Lab · simuladores para entrenar emergencias</title>
+<meta name="description" content="Kalu Lab hace simuladores para cursos de primeros auxilios y de guardavidas. Su primer producto, el Simulador 107, entrena en voz alta la llamada al sistema de emergencias.">
+<meta property="og:title" content="Kalu Lab · lo que no se puede improvisar, se practica">
+<meta property="og:description" content="Simuladores para cursos de primeros auxilios y de guardavidas. El primero: el Simulador 107, para practicar la llamada a emergencias.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.kalulab.store/">
+<link rel="canonical" href="https://www.kalulab.store/">
+<meta name="theme-color" content="#08191C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2308191C'/%3E%3Crect x='5' y='5' width='54' height='54' rx='11' fill='none' stroke='%23F2703F' stroke-width='4'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='26' fill='%23E9F1F0'%3EKL%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* La página de Kalu Lab (www.kalulab.store). Es otro proyecto de Vercel, con esta carpeta
+     como raíz: no comparte archivos con el simulador, así que lleva sus estilos adentro.
+     Los tokens son los mismos de las páginas públicas del simulador (publico.css), para que
+     la empresa y su producto se vean de la misma familia. */
+  :root{
+    --ground:#E7EDEC; --surface:#FFFFFF; --surface-2:#F1F6F5;
+    --ink:#0C1B1E; --ink-2:#4C5E60; --ink-3:#75898A;
+    --line:#CEDAD9; --line-soft:#E0E9E8;
+    --accent:#C8451D; --accent-soft:#FBEAE4;
+    --deep:#08191C; --deep-2:#0F272B; --deep-3:#16363B;
+    --on-deep:#E9F1F0; --on-deep-2:#8FA9A9; --deep-line:#1E4044;
+    --r:14px;
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+      --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+      --line:#20373B; --line-soft:#1A2C2F;
+      --accent:#F2703F; --accent-soft:#2A1912;
+      --deep:#050E10; --deep-2:#0B1C1F; --deep-3:#12292D;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#091315; --surface:#0F1E21; --surface-2:#152A2E;
+    --ink:#E7EFEE; --ink-2:#9DB2B2; --ink-3:#7B9192;
+    --line:#20373B; --line-soft:#1A2C2F;
+    --accent:#F2703F; --accent-soft:#2A1912;
+    --deep:#050E10; --deep-2:#0B1C1F; --deep-3:#12292D;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--ground); color:var(--ink); font-family:var(--body); font-size:16.5px; line-height:1.6; -webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:var(--display); font-weight:700; letter-spacing:-.018em; margin:0; text-wrap:balance; line-height:1.12}
+  p{margin:0}
+  a{color:inherit; text-underline-offset:3px}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:6px}
+  .lbl{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3)}
+  .num{font-variant-numeric:tabular-nums}
+  .ancho{max-width:1080px; margin:0 auto; padding-inline:16px}
+
+  /* barra superior: la marca de la empresa a la izquierda, el acceso al panel a la derecha */
+  .barra-sup{display:flex; align-items:center; gap:12px; padding-block:16px}
+  .marca{display:flex; align-items:center; gap:10px; text-decoration:none; font-family:var(--display); font-weight:700; font-size:18px; white-space:nowrap}
+  /* El sello de la empresa va en contorno; el del producto (107), lleno. */
+  .sello{width:36px; height:36px; flex:none; border-radius:9px; border:2px solid var(--accent); display:grid; place-items:center;
+         font-family:var(--display); font-weight:700; font-size:14px; letter-spacing:-.02em}
+  .sigil{width:44px; height:44px; flex:none; border-radius:11px; background:var(--accent); display:grid; place-items:center;
+         font-family:var(--display); font-weight:700; font-size:16px; color:#fff; letter-spacing:-.03em}
+  .barra-sup nav{margin-left:auto; display:flex; gap:18px; flex-wrap:wrap; font-size:14.5px}
+  .barra-sup nav a{text-decoration:none; color:var(--on-deep-2)}
+  .barra-sup nav a:hover{color:var(--on-deep); text-decoration:underline}
+
+  /* botones */
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:12px; padding:13px 20px;
+       font-family:var(--display); font-weight:700; font-size:16px; text-decoration:none; border:1px solid transparent}
+  .btn.pri{background:var(--accent); color:#fff}
+  .btn.pri:hover{filter:brightness(1.07)}
+  .btn.sec{border-color:var(--line); background:var(--surface); color:var(--ink)}
+  .oscura .btn.sec{background:transparent; border-color:var(--deep-line); color:var(--on-deep)}
+  .acciones{display:flex; gap:12px; flex-wrap:wrap; margin-top:28px}
+
+  /* secciones */
+  .oscura{background:var(--deep); color:var(--on-deep)}
+  .oscura .lbl{color:var(--on-deep-2)}
+  .seccion{padding-block:64px}
+  .seccion + .seccion{border-top:1px solid var(--line)}
+  .seccion h2{font-size:clamp(26px, 4vw, 36px); margin-top:10px}
+  .bajada{color:var(--ink-2); font-size:17.5px; margin-top:14px; max-width:64ch}
+  .oscura .bajada{color:var(--on-deep-2)}
+
+  .hero{padding-block:8px 80px}
+  .hero .contenido{margin-top:56px; max-width:820px}
+  .hero h1{font-size:clamp(36px, 6vw, 64px); letter-spacing:-.028em; margin-top:16px}
+  .hero h1 em{font-style:normal; color:var(--accent)}
+  .hero .bajada{font-size:19px; margin-top:20px}
+
+  /* el producto */
+  .producto{display:grid; gap:18px; grid-template-columns:auto 1fr; align-items:start; margin-top:8px}
+  .producto h2{margin-top:0}
+  .rasgos{display:grid; gap:14px; grid-template-columns:repeat(3, minmax(0,1fr)); margin-top:32px}
+  .rasgo{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px}
+  .rasgo h3{font-size:19px}
+  .rasgo p{margin-top:8px; color:var(--ink-2); font-size:15.5px}
+
+  /* por qué la llamada: tres cifras con su fuente */
+  .cifras{display:grid; gap:14px; grid-template-columns:repeat(3, minmax(0,1fr)); margin-top:32px}
+  .cifra{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px}
+  .cifra .v{font-family:var(--display); font-weight:700; font-size:44px; letter-spacing:-.02em; line-height:1}
+  .cifra p{margin-top:10px; color:var(--ink-2); font-size:15.5px}
+  .cita{margin-top:10px; font-size:14px; color:var(--ink-3)}
+  .mas{margin-top:20px}
+
+  .contacto{display:grid; gap:24px; grid-template-columns:1.2fr .8fr; align-items:center}
+  .tarjeta{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:22px; display:grid; gap:10px}
+  .tarjeta a{font-weight:600}
+
+  /* pie */
+  .pie{border-top:1px solid var(--line); padding-block:28px 40px; font-size:14px; color:var(--ink-2)}
+  .pie .ancho{display:grid; gap:10px}
+  .pie nav{display:flex; gap:16px; flex-wrap:wrap}
+  .pie .legal{font-size:13px; color:var(--ink-3)}
+
+  @media (max-width: 820px){
+    .rasgos,.cifras{grid-template-columns:1fr}
+    .contacto{grid-template-columns:1fr}
+  }
+  /* En el celular la barra de arriba deja sólo el acceso al panel. */
+  @media (max-width: 640px){
+    .barra-sup nav a:not(:last-child){display:none}
+    .producto{grid-template-columns:1fr}
+    .hero .contenido{margin-top:36px}
+  }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+
+<header class="oscura hero">
+  <div class="ancho">
+    <div class="barra-sup">
+      <a class="marca" href="./"><span class="sello" aria-hidden="true">KL</span>Kalu Lab</a>
+      <nav aria-label="Secciones"><a href="#simulador">Simulador 107</a><a href="#contacto">Contacto</a><a href="https://simulador.kalulab.store/panel" id="acceso-panel">Acceso instructores</a></nav>
+    </div>
+    <div class="contenido">
+      <span class="lbl">Kalu Lab · Santa Fe, Argentina</span>
+      <h1>Lo que en una emergencia no se puede improvisar, <em>se practica</em>.</h1>
+      <p class="bajada">Hacemos herramientas de entrenamiento para cursos de primeros auxilios y de guardavidas. Empezamos por la parte que casi nunca se ensaya: la llamada al sistema de emergencias.</p>
+      <div class="acciones">
+        <a class="btn pri" href="https://simulador.kalulab.store/" id="ir-simulador">Entrar al Simulador 107 →</a>
+        <a class="btn sec" href="https://simulador.kalulab.store/instructores">Quiero usarlo en mis cursos</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="seccion" id="simulador">
+    <div class="ancho">
+      <span class="lbl">Nuestro primer producto</span>
+      <div class="producto" style="margin-top:14px">
+        <span class="sigil" aria-hidden="true">107</span>
+        <div>
+          <h2>Simulador 107</h2>
+          <p class="bajada" style="margin-top:10px">El alumno marca el 107 en su celular y habla en voz alta con un operador simulado con inteligencia artificial, que sólo sabe lo que el alumno le dice. Al cortar recibe una devolución criterio por criterio: qué datos transmitió, cuáles faltaron y cuánto tardó en dar la ubicación.</p>
+        </div>
+      </div>
+      <div class="rasgos">
+        <div class="rasgo"><h3>Para guardavidas</h3><p>El operador pregunta como a un profesional: dónde frena la ambulancia, cómo está la víctima, si ya están comprimiendo y si tienen un DEA. No le dicta maniobras: se supone que las sabe.</p></div>
+        <div class="rasgo"><h3>Para cursos de RCP</h3><p>Con personas sin formación, el operador ayuda a reconocer el paro y guía la RCP por teléfono hasta que llega la ambulancia, como indican las guías de reanimación de 2025.</p></div>
+        <div class="rasgo"><h3>Para el instructor</h3><p>Una clase en vivo con 8 grupos llamando a la vez: un código para proyectar, el tablero de todos los grupos, un resumen para el cierre y el registro de cada práctica.</p></div>
+      </div>
+      <div class="acciones">
+        <a class="btn pri" href="https://simulador.kalulab.store/">Entrar al simulador</a>
+        <a class="btn sec" href="https://simulador.kalulab.store/instructores#como">Ver cómo funciona</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion">
+    <div class="ancho">
+      <span class="lbl">Por qué empezamos por la llamada</span>
+      <h2>En los cursos se practica la RCP con maniquí. La llamada, casi nunca.</h2>
+      <p class="bajada">Llamar es el primer eslabón de la cadena de supervivencia, y el que decide cuánto tarda la ambulancia y si llega al lugar correcto. Lo que no se practica, bajo presión se olvida: la dirección exacta, por dónde entrar, quién espera al móvil.</p>
+      <div class="cifras">
+        <div class="cifra"><div class="v num">72 s</div><p>tardó en promedio la central en ubicar el lugar cuando quien llamaba lo describía de palabra, en un estudio con llamadas simuladas. Con geolocalización, 35 s.</p><p class="cita">Ecker y col., Resuscitation 2020</p></div>
+        <div class="cifra"><div class="v num">1,2 km</div><p>fue el error promedio de la ubicación descripta de palabra en ese mismo estudio. Una dirección bien dada es lo que más le sirve a la ambulancia.</p><p class="cita">Ecker y col., Resuscitation 2020</p></div>
+        <div class="cifra"><div class="v num">5,5</div><p>puntos de probabilidad de sobrevivir se pierden por cada minuto de paro sin RCP ni desfibrilación. Cada segundo de la llamada cuenta.</p><p class="cita">Larsen y col., Ann Emerg Med 1993</p></div>
+      </div>
+      <p class="mas"><a href="https://simulador.kalulab.store/fundamentos">Las fuentes y cómo se usaron →</a></p>
+    </div>
+  </section>
+
+  <section class="seccion" id="contacto">
+    <div class="ancho contacto">
+      <div>
+        <span class="lbl">Etapa piloto</span>
+        <h2>¿Das cursos de RCP o de guardavidas?</h2>
+        <p class="bajada">Kalu Lab nació de la práctica de un instructor de guardavidas y de RCP. Estamos probando el simulador sin costo con un grupo chico de instructores invitados: contanos cómo das tus clases y te lo mostramos en una videollamada de 15 minutos.</p>
+        <div class="acciones">
+          <a class="btn pri" href="https://simulador.kalulab.store/instructores#contacto">Dejar mis datos</a>
+        </div>
+      </div>
+      <div class="tarjeta">
+        <span class="lbl">Escribinos</span>
+        <a href="mailto:info@kalulab.store">info@kalulab.store</a>
+        <p style="color:var(--ink-2); font-size:15px">Respondemos dentro de las 48 horas hábiles.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="ancho">
+    <nav aria-label="Enlaces"><a href="https://simulador.kalulab.store/">Simulador 107</a><a href="https://simulador.kalulab.store/instructores">Para instructores</a><a href="https://simulador.kalulab.store/fundamentos">Fundamentos y fuentes</a><a href="https://simulador.kalulab.store/terminos">Términos</a><a href="https://simulador.kalulab.store/privacidad">Privacidad</a><a href="https://simulador.kalulab.store/panel">Acceso instructores</a></nav>
+    <p>El Simulador 107 es una simulación educativa: no llama a ningún número real. Ante una emergencia de verdad, llamá al 107 desde un teléfono.</p>
+    <p class="legal">Kalu Lab · Santa Fe, Argentina · <a href="mailto:info@kalulab.store">info@kalulab.store</a> · © <span id="anio">2026</span></p>
+  </div>
+</footer>
+
+<script>
+  // El año del pie, para que no quede viejo.
+  document.getElementById("anio").textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

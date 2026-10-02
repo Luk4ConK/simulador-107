@@ -506,6 +506,20 @@ try {
       // Sin TITULAR_NOMBRE en el entorno, la página lo dice en vez de inventarlo.
       assert.match(await page.locator("[data-titular=nombre]").first().textContent(), /falta cargar TITULAR_NOMBRE/);
     }
+    // El pie de las páginas públicas lleva a la página de la empresa.
+    assert.equal(await page.locator(".pie .legal a").first().getAttribute("href"), "https://www.kalulab.store/");
+
+    // La página de Kalu Lab (otro proyecto de Vercel, carpeta kalulab/): el botón lleva al
+    // simulador y el acceso de instructores, al panel.
+    await page.goto(base + "/kalulab/index.html");
+    assert.equal(await page.locator("#ir-simulador").getAttribute("href"), "https://simulador.kalulab.store/");
+    assert.equal(await page.locator("#acceso-panel").getAttribute("href"), "https://simulador.kalulab.store/panel");
+    assert.equal(await page.locator('a[href="mailto:info@kalulab.store"]').count(), 2);
+    assert.equal(await page.locator("#anio").textContent(), String(new Date().getFullYear()));
+    const enlacesSueltos = await page.locator("a[href]").evaluateAll(as => as.map(a => a.getAttribute("href")).filter(h => !/^(https:\/\/simulador\.kalulab\.store\/|mailto:|#|\.\/$)/.test(h)));
+    assert.deepEqual(enlacesSueltos, [], "todos los enlaces van al simulador, al mail o a la misma página");
+    await page.goto(base + "/kalulab/404.html");
+    assert.match(await page.locator("h1").textContent(), /no existe/);
     await page.context().close();
   });
 
