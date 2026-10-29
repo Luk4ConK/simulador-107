@@ -8,7 +8,7 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 
 ## La dirección
 
-**https://simulador.kalulab.store** — es la web principal y todo empieza ahí (**kalulab.store** lleva al mismo lugar, para dictarla corta; la dirección de Vercel, https://simulador-107.vercel.app, sigue andando). Mientras no esté conectado el dominio, usá la de Vercel. Abre en una entrada con dos puertas:
+**https://simulador.kalulab.store** — es la web del simulador y todo empieza ahí (la dirección de Vercel, https://simulador-107.vercel.app, sigue andando). **www.kalulab.store** es la página de Kalu Lab, con el botón para entrar al simulador: ver «La página de Kalu Lab» más abajo. Abre en una entrada con dos puertas:
 
 - **Soy alumno:** el alumno pone el código de la clase que le diste y entra a practicar.
 - **Soy instructor:** ponés tu código y entrás al panel, donde abrís las clases y ves las prácticas.
@@ -16,6 +16,19 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. La página **/activar** (por ejemplo, https://simulador-107.vercel.app/activar) revisa sola cuáles faltan, prueba que la base y la IA respondan, y tiene los pasos con los enlaces directos.
 
 **El dominio de Kalu Lab.** Al final de esa misma página están los pasos para conectar el dominio (Vercel y GoDaddy). Entrá al panel siempre por **simulador.kalulab.store/panel**: los links que arma para cada clase y los mensajes de bienvenida salen con la dirección desde la que lo abrís.
+
+## La página de Kalu Lab (www.kalulab.store)
+
+Es la página de la empresa: presenta a Kalu Lab y al Simulador 107, tiene el botón **Entrar al Simulador 107** (lleva a simulador.kalulab.store) y, arriba a la derecha y en el pie, **Acceso instructores**, que lleva al panel (simulador.kalulab.store/panel). Por ahí entrás vos también, con tu código de administrador.
+
+Está en la carpeta `kalulab` de este mismo repositorio, pero se publica como **otro proyecto de Vercel**: así la página de la empresa y el simulador no se mezclan, y cada cambio que se sube publica los dos solos. Se conecta una sola vez:
+
+1. **Un proyecto nuevo.** En https://vercel.com/new elegí este repositorio (`simulador-107`) y tocá *Import*. En *Root Directory* tocá *Edit* y elegí la carpeta `kalulab`; en *Framework Preset*, *Other*; de nombre, `kalulab-web`. Tocá *Deploy* y abrí la dirección de prueba que te da (termina en .vercel.app) para ver que esté la página.
+2. **Sacarle las direcciones al simulador.** En el proyecto `simulador-107`, *Settings* → *Domains*: borrá `kalulab.store` y `www.kalulab.store` (*Edit* → *Remove*). `simulador.kalulab.store` no se toca.
+3. **Dárselas a la página.** En el proyecto `kalulab-web`, *Settings* → *Domains*: agregá `www.kalulab.store` y después `kalulab.store`, y en esta última elegí que redirija a `www.kalulab.store`.
+4. **GoDaddy, casi seguro, no se toca**: las dos direcciones ya apuntan a Vercel. Si Vercel marca alguna como *Invalid Configuration*, te muestra el valor que espera; cambialo en GoDaddy sólo en el registro de esa dirección.
+
+Hasta que lo hagas, kalulab.store y www.kalulab.store siguen llevando directo al simulador. Los textos de la página están en `kalulab/index.html`.
 
 ---
 

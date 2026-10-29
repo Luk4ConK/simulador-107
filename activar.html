@@ -80,12 +80,22 @@
   </ol>
   <p style="color:var(--ink-3); font-size:14px">Los enlaces abren el proyecto <b>simulador-107</b> del equipo <b>sumar-salud-ong</b> en Vercel. Si alguna vez cambia de nombre o de equipo, entrá desde vercel.com y buscalo en la lista.</p>
 
-  <h2>La dirección propia: simulador.kalulab.store</h2>
-  <p>El simulador es un producto de Kalu Lab y su dirección es <b>simulador.kalulab.store</b>. Mientras la empresa no tenga su propia página, <b>kalulab.store</b> lleva al simulador, así alcanza con dictar la dirección corta. La dirección de Vercel sigue andando, así que los links viejos no se rompen. Esta página está abierta ahora en <span class="origen-txt"></span>.</p>
+  <h2>Las direcciones de Kalu Lab</h2>
+  <p>El simulador está en <b>simulador.kalulab.store</b>, y la página de la empresa, con el botón para entrar al simulador, en <b>www.kalulab.store</b>. La página de la empresa es otro proyecto de Vercel que sale de la carpeta <code>kalulab</code> de este mismo repositorio: hasta que lo conectes, kalulab.store y www.kalulab.store llevan directo al simulador. La dirección de Vercel sigue andando, así que los links viejos no se rompen. Esta página está abierta ahora en <span class="origen-txt"></span>.</p>
+
+  <h3 style="margin-top:22px">El simulador: simulador.kalulab.store</h3>
   <ol class="pasos">
-    <li><b>En Vercel,</b> abrí <a href="https://vercel.com/sumar-salud-ong/simulador-107/settings/domains" target="_blank" rel="noopener">Domains</a> y agregá <code>simulador.kalulab.store</code>. Después agregá <code>kalulab.store</code> y <code>www.kalulab.store</code>, y en cada una elegí que redirija a <code>simulador.kalulab.store</code>. Vercel muestra, para cada dirección, el registro DNS que necesita.</li>
-    <li><b>En GoDaddy,</b> donde está el dominio: <i>Mis productos</i> → <i>kalulab.store</i> → <i>DNS</i>. Cargá exactamente lo que muestra Vercel: el registro <b>CNAME</b> de nombre <code>simulador</code>, el registro <b>A</b> de nombre <code>@</code> (borrá antes los registros A que puso GoDaddy para la página de «Próximo lanzamiento») y el <b>CNAME</b> de <code>www</code>.</li>
-    <li>En unos minutos, a veces unas horas, Vercel los marca como válidos y les pone el candado solo. Los links que arma el panel (el de cada clase y los mensajes de bienvenida) toman solos la dirección desde la que lo abrís: entrá al panel por <b>simulador.kalulab.store/panel</b>.</li>
+    <li><b>En Vercel,</b> abrí <a href="https://vercel.com/sumar-salud-ong/simulador-107/settings/domains" target="_blank" rel="noopener">Domains</a> y agregá <code>simulador.kalulab.store</code>. Vercel muestra el registro DNS que necesita.</li>
+    <li><b>En GoDaddy,</b> donde está el dominio: <i>Mis productos</i> → <i>kalulab.store</i> → <i>DNS</i>. Cargá exactamente lo que muestra Vercel: el registro <b>CNAME</b> de nombre <code>simulador</code>.</li>
+    <li>En unos minutos, a veces unas horas, Vercel la marca como válida y le pone el candado solo. Los links que arma el panel (el de cada clase y los mensajes de bienvenida) toman solos la dirección desde la que lo abrís: entrá al panel por <b>simulador.kalulab.store/panel</b>.</li>
+  </ol>
+
+  <h3 style="margin-top:22px">La página de Kalu Lab: www.kalulab.store</h3>
+  <ol class="pasos">
+    <li><b>Un proyecto nuevo en Vercel.</b> En <a href="https://vercel.com/new" target="_blank" rel="noopener">vercel.com/new</a>, elegí este mismo repositorio (<code>simulador-107</code>) y tocá <i>Import</i>. En <i>Root Directory</i> tocá <i>Edit</i> y elegí la carpeta <code>kalulab</code>; en <i>Framework Preset</i>, <i>Other</i>; de nombre, <code>kalulab-web</code>. Tocá <i>Deploy</i>: en un minuto te da una dirección de prueba que termina en .vercel.app. Abrila y fijate que se vea la página.</li>
+    <li><b>Sacarle las dos direcciones al simulador.</b> En el proyecto simulador-107, <a href="https://vercel.com/sumar-salud-ong/simulador-107/settings/domains" target="_blank" rel="noopener">Domains</a>: borrá <code>kalulab.store</code> y <code>www.kalulab.store</code> (en cada una, <i>Edit</i> → <i>Remove</i>). No toques <code>simulador.kalulab.store</code>.</li>
+    <li><b>Dárselas a la página.</b> En el proyecto kalulab-web, <i>Settings</i> → <i>Domains</i>: agregá <code>www.kalulab.store</code> y después <code>kalulab.store</code>, y en esta última elegí que redirija a <code>www.kalulab.store</code>.</li>
+    <li><b>En GoDaddy, casi seguro, no hay que tocar nada:</b> las dos direcciones ya apuntan a Vercel. Si Vercel marca alguna como <i>Invalid Configuration</i>, te muestra el valor que espera: cambialo en GoDaddy, en el registro de esa dirección y en ningún otro.</li>
   </ol>
 </main>
 

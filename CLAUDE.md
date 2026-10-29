@@ -30,14 +30,25 @@ La web es **https://simulador-107.vercel.app** (equipo `sumar-salud-ong`, proyec
 `simulador-107` en Vercel; producción sale de `main`). Si no la encontrás, está en el campo
 *website* del repositorio y en los *deployments* de GitHub.
 
-**Dominio (octubre de 2026):** la dirección del simulador es `simulador.kalulab.store`, y
-`kalulab.store` y `www.kalulab.store` redirigen ahí desde Vercel (Settings → Domains),
-mientras Kalu Lab no tenga página propia. Se decidió así para que la dirección que
-reciben alumnos e instituciones (links, QR, la app instalada) no cambie el día que la
-empresa tenga su página en la raíz. No se resuelve con un rewrite
-por host en `vercel.json`: en Vercel el archivo `index.html` le gana a cualquier rewrite de
-`/`. La página de la empresa, cuando exista, va en otro proyecto de Vercel con el dominio
-raíz. Los pasos de DNS (GoDaddy) están en `/activar`.
+**Dominio (octubre de 2026):** la dirección del simulador es `simulador.kalulab.store`.
+Se decidió así para que la dirección que reciben alumnos e instituciones (links, QR, la
+app instalada) no cambie el día que la empresa tenga su página en la raíz. No se resuelve
+con un rewrite por host en `vercel.json`: en Vercel el archivo `index.html` le gana a
+cualquier rewrite de `/`. Los pasos de DNS (GoDaddy) están en `/activar`.
+
+**La página de la empresa** (`www.kalulab.store`, con `kalulab.store` redirigiendo ahí) es
+la carpeta `kalulab/`: HTML estático con sus estilos adentro, publicado como **otro
+proyecto de Vercel** (`kalulab-web`, Root Directory `kalulab`, del mismo repositorio). No
+lee nada del simulador: todos sus enlaces son absolutos a `simulador.kalulab.store`
+(botón «Entrar al Simulador 107», «Acceso instructores» → `/panel`, términos,
+privacidad, contacto). Su `vercel.json` es propio (sólo cabeceras); el de la raíz no la
+alcanza. Como el proyecto del simulador también publica esa carpeta, el `vercel.json` de
+la raíz redirige `/kalulab/*` a `www.kalulab.store` (no se usó `.vercelignore` para no
+depender de cómo lo lee un proyecto con Root Directory). Hasta que el titular cree el
+proyecto y le pase los dominios, `kalulab.store` y `www` siguen redirigiendo al
+simulador desde Vercel. El pie de las páginas públicas enlaza «Kalu Lab» a la página de
+la empresa; el de la entrada (`index.html`) no, porque lo reemplaza tal cual
+`herramientas/copia-claude.mjs`.
 
 **Marca:** la entrada, los pies de página y los textos legales dicen que el simulador es
 un producto de Kalu Lab (nombre comercial del titular; los datos del titular siguen
@@ -107,6 +118,7 @@ vercel.json           maxDuration de las funciones, direcciones cortas, cabecera
 icons/                íconos de la app
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
 herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
+kalulab/              la página de Kalu Lab (www.kalulab.store): otro proyecto de Vercel, con esta carpeta de raíz
 README.md             guía de despliegue, escrita para el usuario
 ```
 

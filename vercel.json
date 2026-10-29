@@ -6,6 +6,9 @@
   "crons": [
     { "path": "/api/datos?vivo=1", "schedule": "0 15 * * *" }
   ],
+  "redirects": [
+    { "source": "/kalulab/:ruta*", "destination": "https://www.kalulab.store/:ruta*", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/panel", "destination": "/panel.html" },
     { "source": "/instructores", "destination": "/instructores.html" },
