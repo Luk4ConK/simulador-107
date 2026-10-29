@@ -26,8 +26,8 @@ Gemini. Micrófono, voz del operador y evaluación andando en el celular.
 
 Vercel está conectado a este repositorio: **todo push despliega solo**, conservando la
 URL y las variables de entorno. No hay build: es HTML estático más una función.
-La web es **https://simulador-107.vercel.app** (equipo `sumar-salud-ong`, proyecto
-`simulador-107` en Vercel; producción sale de `main`). Si no la encontrás, está en el campo
+La web es **https://simulador.kalulab.store** desde el 29/10/2026 (equipo
+`sumar-salud-ong`, proyecto `simulador-107` en Vercel; producción sale de `main`). Si no la encontrás, está en el campo
 *website* del repositorio y en los *deployments* de GitHub.
 
 **Dominio (octubre de 2026):** la dirección del simulador es `simulador.kalulab.store`.
@@ -38,7 +38,7 @@ cualquier rewrite de `/`. Los pasos de DNS (GoDaddy) están en `/activar`.
 
 **La página de Kalu Lab** (`www.kalulab.store`, con `kalulab.store` redirigiendo ahí) es
 la carpeta `kalulab/`: HTML estático con sus estilos adentro, publicado como **otro
-proyecto de Vercel** (`kalulab-web`, Root Directory `kalulab`, del mismo repositorio).
+proyecto de Vercel** (`simulador-107-kalulab`, Root Directory `kalulab`, del mismo repositorio; conectado el 29/10/2026).
 Desde el 29/10/2026 es un **selector de proyectos** (pedido del titular; dirección visual
 "Señal nocturna", elegida entre tres): un bloque para el Simulador 107 (naranja), otro para
 el **Portal de Alumnos de la Formación de Guardavidas de Sumar Salud** (agua, con la
@@ -54,9 +54,7 @@ de `kalulab/index.html` manda al simulador si la página se abre como app instal
 (`display-mode: standalone`), y `kalulab/sw.js` es un service worker de retiro: reemplaza
 al viejo del simulador en ese origen, borra su caché y se da de baja. Como el proyecto del simulador también publica esa carpeta, el `vercel.json` de
 la raíz redirige `/kalulab/*` a `www.kalulab.store` (no se usó `.vercelignore` para no
-depender de cómo lo lee un proyecto con Root Directory). Hasta que el titular cree el
-proyecto y le pase los dominios, `kalulab.store` y `www` siguen redirigiendo al
-simulador desde Vercel. El pie de las páginas públicas enlaza «Kalu Lab» a la página de
+depender de cómo lo lee un proyecto con Root Directory). El pie de las páginas públicas enlaza «Kalu Lab» a la página de
 la empresa; el de la entrada (`index.html`) no, porque lo reemplaza tal cual
 `herramientas/copia-claude.mjs`.
 
