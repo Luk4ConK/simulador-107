@@ -509,15 +509,29 @@ try {
     // El pie de las páginas públicas lleva a la página de la empresa.
     assert.equal(await page.locator(".pie .legal a").first().getAttribute("href"), "https://www.kalulab.store/");
 
-    // La página de Kalu Lab (otro proyecto de Vercel, carpeta kalulab/): el botón lleva al
-    // simulador y el acceso de instructores, al panel.
+    // La página de Kalu Lab (otro proyecto de Vercel, carpeta kalulab/) elige entre los
+    // proyectos: el simulador con su acceso de instructores, y el portal de alumnos.
     await page.goto(base + "/kalulab/index.html");
     assert.equal(await page.locator("#ir-simulador").getAttribute("href"), "https://simulador.kalulab.store/");
     assert.equal(await page.locator("#acceso-panel").getAttribute("href"), "https://simulador.kalulab.store/panel");
-    assert.equal(await page.locator('a[href="mailto:info@kalulab.store"]').count(), 2);
-    assert.equal(await page.locator("#anio").textContent(), String(new Date().getFullYear()));
-    const enlacesSueltos = await page.locator("a[href]").evaluateAll(as => as.map(a => a.getAttribute("href")).filter(h => !/^(https:\/\/simulador\.kalulab\.store\/|mailto:|#|\.\/$)/.test(h)));
-    assert.deepEqual(enlacesSueltos, [], "todos los enlaces van al simulador, al mail o a la misma página");
+    assert.equal(await page.locator("#ir-portal").getAttribute("href"), "https://portal.kalulab.store/");
+    assert.match(await page.locator(".proyecto.portal").innerText(), /Sumar Salud/);
+    assert.equal(await page.locator(".proximamente a").count(), 0, "el proyecto que viene no lleva a ningún lado");
+    const enlacesSueltos = await page.locator("a[href]").evaluateAll(as => as.map(a => a.getAttribute("href")).filter(h => !/^(https:\/\/(simulador|portal)\.kalulab\.store\/|mailto:info@kalulab\.store$)/.test(h)));
+    assert.deepEqual(enlacesSueltos, [], "todos los enlaces van al simulador, al portal o al mail");
+    // Un link de clase viejo (www.kalulab.store/?c=…) sigue llegando a la clase en el simulador.
+    await page.route("https://simulador.kalulab.store/**", r => r.fulfill({ contentType: "text/html", body: "simulador" }));
+    await page.goto(base + "/kalulab/index.html?c=CLASE-1");
+    await page.waitForURL("https://simulador.kalulab.store/**");
+    assert.equal(page.url(), "https://simulador.kalulab.store/?c=CLASE-1");
+    // La app del simulador instalada cuando vivía en www.kalulab.store abre el simulador.
+    const instalada = await page.context().newPage();
+    await instalada.addInitScript(() => { const mm = window.matchMedia.bind(window); window.matchMedia = q => /standalone/.test(q) ? { matches: true, media: q } : mm(q); });
+    await instalada.route("https://simulador.kalulab.store/**", r => r.fulfill({ contentType: "text/html", body: "simulador" }));
+    await instalada.goto(base + "/kalulab/index.html");
+    await instalada.waitForURL("https://simulador.kalulab.store/**");
+    assert.equal(instalada.url(), "https://simulador.kalulab.store/");
+    await instalada.close();
     await page.goto(base + "/kalulab/404.html");
     assert.match(await page.locator("h1").textContent(), /no existe/);
     await page.context().close();
