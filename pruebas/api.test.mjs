@@ -530,6 +530,19 @@ test("vercel.json: los dos proyectos se leen bien y el simulador manda /kalulab 
   assert.equal(empresa.functions, undefined);
   assert.equal(empresa.crons, undefined);
   assert.ok(fs.existsSync(new URL("../kalulab/index.html", import.meta.url)));
+  // Los links de clase viejos (www.kalulab.store/?c=… y ?sala=…), las páginas del simulador y
+  // su API siguen llegando al simulador, ahora en simulador.kalulab.store.
+  const destino = (fuente, clave) => empresa.redirects.find(x => x.source === fuente && (!clave || x.has?.[0]?.key === clave))?.destination;
+  assert.equal(destino("/", "c"), "https://simulador.kalulab.store/?c=:c");
+  assert.equal(destino("/", "sala"), "https://simulador.kalulab.store/?sala=:sala");
+  assert.ok(empresa.redirects.every(x => x.permanent === false), "nada permanente: el navegador no se lo guarda");
+  const paginas = empresa.redirects.find(x => x.source.startsWith("/:pagina"));
+  for (const p of ["panel", "instructores", "fundamentos", "terminos", "privacidad", "activar"]) assert.match(p, new RegExp("^" + paginas.source.match(/\((.*)\)/)[1] + "$"));
+  assert.equal(destino("/api/:ruta*"), "https://simulador.kalulab.store/api/:ruta*");
+  // El sw.js de la página de Kalu Lab sólo da de baja al del simulador que quedó instalado acá.
+  const sw = fs.readFileSync(new URL("../kalulab/sw.js", import.meta.url), "utf8");
+  assert.match(sw, /unregister\(\)/);
+  assert.doesNotMatch(sw, /addEventListener\(["']fetch/);
 });
 
 test("la cuenta de la demo pública se marca y no cuenta para la meta del piloto", async () => {

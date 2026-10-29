@@ -1,6 +1,16 @@
 {
   "cleanUrls": true,
+  "redirects": [
+    { "source": "/", "has": [{ "type": "query", "key": "c", "value": "(?<c>.*)" }], "destination": "https://simulador.kalulab.store/?c=:c", "permanent": false },
+    { "source": "/", "has": [{ "type": "query", "key": "sala", "value": "(?<sala>.*)" }], "destination": "https://simulador.kalulab.store/?sala=:sala", "permanent": false },
+    { "source": "/:pagina(panel|instructores|fundamentos|terminos|privacidad|activar)", "destination": "https://simulador.kalulab.store/:pagina", "permanent": false },
+    { "source": "/api/:ruta*", "destination": "https://simulador.kalulab.store/api/:ruta*", "permanent": false }
+  ],
   "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
     {
       "source": "/(.*)",
       "headers": [

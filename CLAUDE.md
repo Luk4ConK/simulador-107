@@ -36,13 +36,23 @@ app instalada) no cambie el día que la empresa tenga su página en la raíz. No
 con un rewrite por host en `vercel.json`: en Vercel el archivo `index.html` le gana a
 cualquier rewrite de `/`. Los pasos de DNS (GoDaddy) están en `/activar`.
 
-**La página de la empresa** (`www.kalulab.store`, con `kalulab.store` redirigiendo ahí) es
+**La página de Kalu Lab** (`www.kalulab.store`, con `kalulab.store` redirigiendo ahí) es
 la carpeta `kalulab/`: HTML estático con sus estilos adentro, publicado como **otro
-proyecto de Vercel** (`kalulab-web`, Root Directory `kalulab`, del mismo repositorio). No
-lee nada del simulador: todos sus enlaces son absolutos a `simulador.kalulab.store`
-(botón «Entrar al Simulador 107», «Acceso instructores» → `/panel`, términos,
-privacidad, contacto). Su `vercel.json` es propio (sólo cabeceras); el de la raíz no la
-alcanza. Como el proyecto del simulador también publica esa carpeta, el `vercel.json` de
+proyecto de Vercel** (`kalulab-web`, Root Directory `kalulab`, del mismo repositorio).
+Desde el 29/10/2026 es un **selector de proyectos** (pedido del titular; dirección visual
+"Señal nocturna", elegida entre tres): un bloque para el Simulador 107 (naranja), otro para
+el **Portal de Alumnos de la Formación de Guardavidas de Sumar Salud** (agua, con la
+corchera de su identidad; `portal.kalulab.store`, otro repositorio del titular) y un
+"Próximamente" para el proyecto que viene. Sumar Salud aparece ahí sólo como dueña de su
+portal, por pedido explícito del titular: no cambia que no sea parte del simulador. No
+lee nada del simulador: todos sus enlaces son absolutos. Su `vercel.json` es propio y el
+de la raíz no la alcanza: además de las cabeceras, **redirige al simulador lo que antes
+vivía en www** (`/?c=`, `/?sala=`, `/panel`, `/instructores`, `/fundamentos`,
+`/terminos`, `/privacidad`, `/activar`, `/api/*`), porque mientras el simulador estuvo en
+www los links de clase salieron con esa dirección. Por lo mismo, un script en el `<head>`
+de `kalulab/index.html` manda al simulador si la página se abre como app instalada
+(`display-mode: standalone`), y `kalulab/sw.js` es un service worker de retiro: reemplaza
+al viejo del simulador en ese origen, borra su caché y se da de baja. Como el proyecto del simulador también publica esa carpeta, el `vercel.json` de
 la raíz redirige `/kalulab/*` a `www.kalulab.store` (no se usó `.vercelignore` para no
 depender de cómo lo lee un proyecto con Root Directory). Hasta que el titular cree el
 proyecto y le pase los dominios, `kalulab.store` y `www` siguen redirigiendo al
@@ -118,7 +128,7 @@ vercel.json           maxDuration de las funciones, direcciones cortas, cabecera
 icons/                íconos de la app
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
 herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
-kalulab/              la página de Kalu Lab (www.kalulab.store): otro proyecto de Vercel, con esta carpeta de raíz
+kalulab/              la página de Kalu Lab (www.kalulab.store), el selector de proyectos: otro proyecto de Vercel, con esta carpeta de raíz
 README.md             guía de despliegue, escrita para el usuario
 ```
 
