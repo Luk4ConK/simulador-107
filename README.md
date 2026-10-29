@@ -19,16 +19,23 @@ Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola 
 
 ## La página de Kalu Lab (www.kalulab.store)
 
-Es la página de la empresa: presenta a Kalu Lab y al Simulador 107, tiene el botón **Entrar al Simulador 107** (lleva a simulador.kalulab.store) y, arriba a la derecha y en el pie, **Acceso instructores**, que lleva al panel (simulador.kalulab.store/panel). Por ahí entrás vos también, con tu código de administrador.
+Es la puerta de entrada a tus proyectos: **Elegí un proyecto**, con un bloque para cada uno.
 
-Está en la carpeta `kalulab` de este mismo repositorio, pero se publica como **otro proyecto de Vercel**: así la página de la empresa y el simulador no se mezclan, y cada cambio que se sube publica los dos solos. Se conecta una sola vez:
+- **Simulador 107**: el botón **Entrar al simulador** lleva a simulador.kalulab.store, y **Acceso instructores** al panel (simulador.kalulab.store/panel). Por ahí entrás vos también, con tu código de administrador.
+- **Portal de Alumnos** de la Formación de Guardavidas de Sumar Salud: lleva a portal.kalulab.store. Es otro proyecto, con su propio repositorio.
+- **Próximamente**: el lugar del proyecto que viene. Cuando esté listo, se cambia en `kalulab/index.html`.
+
+**Los links viejos siguen andando.** Mientras el simulador vivía en www.kalulab.store, los links de clase salían como `www.kalulab.store/?c=…` o `?sala=…`. La página los manda solos al simulador, igual que `/panel`, `/instructores` y las demás páginas del simulador (`kalulab/vercel.json`). Si alguien tenía instalada la app del simulador desde www, al abrirla también lo lleva al simulador, y `kalulab/sw.js` le borra la copia vieja que había quedado guardada.
+
+Está en la carpeta `kalulab` de este mismo repositorio, pero se publica como **otro proyecto de Vercel**: así la página de Kalu Lab y el simulador no se mezclan, y cada cambio que se sube publica los dos solos. Se conecta una sola vez, **después de unir esta rama a la principal** (si no, el proyecto nuevo no encuentra la carpeta):
 
 1. **Un proyecto nuevo.** En https://vercel.com/new elegí este repositorio (`simulador-107`) y tocá *Import*. En *Root Directory* tocá *Edit* y elegí la carpeta `kalulab`; en *Framework Preset*, *Other*; de nombre, `kalulab-web`. Tocá *Deploy* y abrí la dirección de prueba que te da (termina en .vercel.app) para ver que esté la página.
-2. **Sacarle las direcciones al simulador.** En el proyecto `simulador-107`, *Settings* → *Domains*: borrá `kalulab.store` y `www.kalulab.store` (*Edit* → *Remove*). `simulador.kalulab.store` no se toca.
-3. **Dárselas a la página.** En el proyecto `kalulab-web`, *Settings* → *Domains*: agregá `www.kalulab.store` y después `kalulab.store`, y en esta última elegí que redirija a `www.kalulab.store`.
-4. **GoDaddy, casi seguro, no se toca**: las dos direcciones ya apuntan a Vercel. Si Vercel marca alguna como *Invalid Configuration*, te muestra el valor que espera; cambialo en GoDaddy sólo en el registro de esa dirección.
+2. **Que el simulador atienda en su dirección.** En el proyecto `simulador-107`, *Settings* → *Domains*: en `simulador.kalulab.store` tocá *Edit* y, si dice que redirige a otra dirección, sacale la redirección (que quede conectada a *Production*). Abrí https://simulador.kalulab.store y fijate que se vea el simulador y que la dirección no cambie.
+3. **Sacarle las otras direcciones al simulador.** En ese mismo lugar, borrá `kalulab.store` y `www.kalulab.store` (*Edit* → *Remove*).
+4. **Dárselas a la página.** En el proyecto `kalulab-web`, *Settings* → *Domains*: agregá `www.kalulab.store` y después `kalulab.store`, y en esta última elegí que redirija a `www.kalulab.store`.
+5. **GoDaddy, casi seguro, no se toca**: las direcciones ya apuntan a Vercel. Si Vercel marca alguna como *Invalid Configuration*, te muestra el valor que espera; cambialo en GoDaddy sólo en el registro de esa dirección.
 
-Hasta que lo hagas, kalulab.store y www.kalulab.store siguen llevando directo al simulador. Los textos de la página están en `kalulab/index.html`.
+Hasta que lo hagas, kalulab.store y www.kalulab.store siguen llevando directo al simulador.
 
 ---
 
