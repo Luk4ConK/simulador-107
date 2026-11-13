@@ -183,7 +183,8 @@
   .vacio{color:var(--ink-3); font-size:14px; padding:14px 0}
   .chk{display:flex; gap:8px; align-items:flex-start; font-size:13.5px}
   .chk input{margin-top:3px}
-  .guion li{margin-bottom:6px}
+  .datos{display:grid; grid-template-columns:max-content 1fr; gap:4px 14px; font-size:13.5px}
+  .datos dt{color:var(--ink-3)} .datos dd{margin:0}
   pre.msj{white-space:pre-wrap; background:var(--surface-2); border:1px solid var(--line-soft); border-radius:10px; padding:12px; font-family:var(--body); font-size:13.5px; margin:0}
   @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important}}
 </style>
@@ -222,7 +223,6 @@
       <button role="tab" data-t="practicas" aria-selected="false">Prácticas</button>
       <button role="tab" data-t="alumnos" aria-selected="false">Alumnos</button>
       <button role="tab" data-t="calidad" aria-selected="false">Calidad</button>
-      <button role="tab" data-t="escenarios" aria-selected="false">Escenarios</button>
       <button role="tab" data-t="cuenta" aria-selected="false">Mi cuenta</button>
       <button role="tab" data-t="cuentas" aria-selected="false" data-admin hidden>Instructores</button>
       <button role="tab" data-t="contactos" aria-selected="false" data-admin hidden>Contactos</button>
@@ -241,9 +241,16 @@
           <label class="f"><span>Dura</span><select id="cn-horas"><option value="1">1 hora</option><option value="2">2 horas</option><option value="3" selected>3 horas</option><option value="4">4 horas</option><option value="6">6 horas</option><option value="12">12 horas</option></select></label>
           <label class="f"><span>Quién llama</span><select id="cn-perfil"><option value="">Que elija cada grupo</option><option value="guardavidas">Guardavidas</option><option value="lego">Persona sin formación (curso de RCP)</option></select></label>
         </div>
-        <details style="margin-top:12px"><summary class="small sec">Elegir qué escenarios ven (opcional: si no marcás ninguno, ven todos)</summary>
-          <div id="cn-escenarios" class="grid g2" style="margin-top:10px"></div>
-        </details>
+        <!-- Ya no hay escenarios: el operador se adapta al caso que cuenta cada grupo. La
+             consigna es opcional y la ven los alumnos y el evaluador, nunca el operador. -->
+        <div class="grid" style="margin-top:12px">
+          <label class="f"><span>Consigna (opcional)</span><textarea id="cn-consigna" rows="3" maxlength="400" placeholder="Ej.: en la pileta del club, un nene de 6 años estuvo debajo del agua; lo sacaste y no responde."></textarea></label>
+          <div class="grid g2">
+            <label class="f"><span>Dirección o lugar de la consigna (opcional)</span><input id="cn-lugar" maxlength="120" placeholder="Club Náutico, Av. Almirante Brown 5200"></label>
+            <label class="f"><span>Localidad (opcional)</span><input id="cn-zona" maxlength="60" placeholder="Santa Fe capital"></label>
+          </div>
+          <p class="small muted">La consigna y el lugar los ven los alumnos y el evaluador, nunca el operador: los grupos igual tienen que contarle el caso y darle la dirección. Usá un lugar público (el club, la pileta, la escuela), no un domicilio particular. La localidad es la que conoce el operador al atender; sola no ubica a nadie. Si dejás la consigna vacía, cada grupo inventa su caso.</p>
+        </div>
         <div class="fila" style="margin-top:14px"><button class="btn pri" id="cn-abrir">Abrir la clase</button><span class="err" id="cn-err"></span></div>
       </div>
 
@@ -253,6 +260,11 @@
           <div class="codigo-grande num" id="cv-codigo">——————</div>
           <p class="sec" style="text-align:center" id="cv-entrar">Entrá a <b id="cv-host"></b> y escribí el código, o abrí el link: <button class="link" id="cv-copiar">copiar link para mandar al grupo</button></p>
           <div class="fila" style="margin-top:12px"><h2 style="font-size:17px" id="cv-nombre"></h2><span class="sp"></span><button class="btn" id="cv-volver" hidden>Volver · abrir otra clase</button><button class="btn peligro" id="cv-cerrar">Cerrar la clase</button></div>
+        </div>
+        <!-- Lo que ven los grupos al entrar. El operador no lo sabe. -->
+        <div class="sect" id="cv-consigna-wrap" hidden>
+          <span class="lbl">Consigna de la clase</span>
+          <div class="card" id="cv-consigna"></div>
         </div>
         <div class="sect">
           <div class="fila"><span class="lbl">Grupos</span><span class="sp"></span><span class="small muted" id="cv-act">Se actualiza solo cada 10 segundos</span></div>
@@ -267,10 +279,11 @@
             <p class="small muted" style="margin:2px 0 12px">Porcentaje de llamadas con el criterio logrado. Arriba, lo que más costó: por ahí conviene arrancar el debriefing.</p>
             <div class="barras" id="cv-barras"></div>
           </div>
-        </div>
-        <div class="sect" id="cv-guion-wrap" hidden>
-          <span class="lbl">Guion para cantar la evolución</span>
-          <div class="card"><div id="cv-guion"></div></div>
+          <div class="card" style="margin-top:12px" id="cv-casos-wrap" hidden>
+            <h3 style="font-size:15px">Casos de esta clase</h3>
+            <p class="small muted" style="margin:2px 0 12px">Qué tipo de caso detectó la app en cada llamada evaluada. Los criterios propios de un caso aparecen arriba sólo en las llamadas de ese caso.</p>
+            <div class="barras" id="cv-casos"></div>
+          </div>
         </div>
       </div>
 
@@ -284,6 +297,7 @@
     <div class="tab" id="t-practicas" hidden>
       <div class="fila">
         <input class="inp" id="pr-buscar" placeholder="Buscar por alumno o grupo" style="max-width:260px">
+        <select class="inp" id="pr-caso" style="max-width:220px" aria-label="Filtrar por tipo de caso"><option value="">Todos los casos</option></select>
         <select class="inp" id="pr-rango" style="max-width:190px"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="400">Todo el registro</option></select>
         <span class="sp"></span>
         <button class="btn" id="pr-csv">Descargar planilla (CSV)</button>
@@ -307,42 +321,6 @@
       <div class="card scroll" style="margin-top:12px"><table class="tabla" id="ca-tabla"></table><p class="vacio" id="ca-vacio" hidden>Todavía no revisaste ninguna práctica. Abrí una desde «Prácticas», marcá cada criterio y guardá.</p></div>
     </div>
 
-    <!-- ---------- escenarios ---------- -->
-    <div class="tab" id="t-escenarios" hidden>
-      <div class="grid g2">
-        <div class="card">
-          <h2 style="font-size:17px" id="es-titulo">Cargar un escenario para tus alumnos</h2>
-          <p class="sec small" style="margin-top:4px">Lo ven todos los alumnos de tu cuenta, en cualquier celular. La ubicación tiene que ser real: es justamente lo que el alumno tiene que saber transmitir.</p>
-          <div class="grid" style="margin-top:12px">
-            <label class="f"><span>Nombre</span><input id="es-title" placeholder="Río · calambre en la correntada"></label>
-            <div class="grid g2">
-              <label class="f"><span>Quién llama</span><select id="es-perfil"><option value="guardavidas">Guardavidas</option><option value="lego">Persona sin formación</option></select></label>
-              <label class="f"><span>Guía del operador</span><select id="es-guia"></select></label>
-            </div>
-            <div class="grid g2">
-              <label class="f"><span>Familia</span><input id="es-fam" placeholder="Ahogamiento · PCR · Trauma"></label>
-              <label class="f" id="es-victima-wrap" hidden><span>Víctima</span><select id="es-victima"><option value="adulto">Adulto</option><option value="nino">Chico (1 año o más)</option><option value="lactante">Bebé (menos de 1 año)</option></select></label>
-            </div>
-            <label class="f"><span>Bajada de la tarjeta</span><input id="es-card" placeholder="Lo sacaste del agua; respira con dificultad."></label>
-            <label class="f"><span>Situación que ve el alumno</span><textarea id="es-scene" rows="5"></textarea></label>
-            <label class="f"><span>Ubicación real donde está parado</span><textarea id="es-addr" rows="2" placeholder="Calle y altura o referencia, y por dónde entra la ambulancia"></textarea></label>
-            <label class="f"><span>Localidad que conoce el operador</span><input id="es-zona" value="Santa Fe capital"></label>
-            <label class="f"><span>Guion para el instructor (una línea por cambio: «Al minuto: …»)</span><textarea id="es-notas" rows="4"></textarea></label>
-            <div class="fila"><button class="btn pri" id="es-guardar">Guardar escenario</button><button class="link" id="es-nuevo" hidden>Cargar otro nuevo</button><span class="err" id="es-err"></span></div>
-          </div>
-        </div>
-        <div>
-          <span class="lbl">Escenarios de tu cuenta</span>
-          <div class="grid" id="es-lista" style="margin-top:10px"></div>
-          <p class="vacio" id="es-vacio">Todavía no cargaste escenarios propios.</p>
-          <div class="sect">
-            <span class="lbl">Guiones de los escenarios fijos</span>
-            <div class="grid" id="es-fijos" style="margin-top:10px"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ---------- cuenta ---------- -->
     <div class="tab" id="t-cuenta" hidden>
       <div class="grid g3" id="cu-tiles"></div>
@@ -350,6 +328,18 @@
         <h3 style="font-size:15px">Prácticas por mes</h3>
         <p class="small muted" style="margin:2px 0 12px">Tocá o pasá por encima de cada mes para ver el puntaje promedio y cuánto tardaron en dar la ubicación.</p>
         <div class="meses" id="cu-meses"></div>
+      </div>
+      <div class="grid g2" style="margin-top:12px">
+        <div class="card">
+          <h3 style="font-size:15px">Casos practicados</h3>
+          <p class="small muted" style="margin:2px 0 12px">Qué tipo de caso detectó la app en las prácticas de los últimos seis meses.</p>
+          <div class="barras" id="cu-casos"></div>
+        </div>
+        <div class="card">
+          <span class="lbl">Localidad de la cuenta</span>
+          <p style="font-size:18px; font-weight:600; margin-top:6px" id="cu-zona">—</p>
+          <p class="sec small" id="cu-zona-nota">Es la localidad que conoce el operador cuando atiende a tus alumnos. Sola no ubica a nadie: el alumno igual tiene que dar la dirección. La cambia el administrador.</p>
+        </div>
       </div>
       <div class="grid g2" style="margin-top:12px">
         <div class="card">
@@ -404,6 +394,9 @@
     <button class="btn" id="d-cerrar">Cerrar</button>
   </div>
   <div class="dlg-cuerpo">
+    <!-- El caso lo clasificó la app; la consigna y el lugar son lo que sabía el alumno. Nada
+         de esto es juicio de la IA, así que se ve también a ciegas. -->
+    <div class="card" id="d-caso"></div>
     <div class="grid g3" id="d-tiles"></div>
     <div>
       <span class="lbl">Criterios · la IA y tu revisión</span>
@@ -428,6 +421,11 @@
         <h3 style="font-size:15px">Prácticas por mes</h3>
         <p class="small muted" style="margin:2px 0 12px">Tocá o pasá por encima de cada mes para ver el puntaje promedio y cuánto tardaron en dar la ubicación.</p>
         <div class="meses" id="dc-meses"></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <h3 style="font-size:15px">Casos practicados</h3>
+        <p class="small muted" style="margin:2px 0 12px">Qué tipo de caso detectó la app en sus prácticas de los últimos seis meses.</p>
+        <div class="barras" id="dc-casos"></div>
       </div>
       <div class="fila" style="margin-top:12px"><button class="btn" id="dc-ver-panel">Ver sus alumnos y prácticas</button></div>
     </div>
@@ -461,6 +459,7 @@
         <label class="f"><span>Plan</span><select id="dc-plan"><option value="prueba">Prueba gratuita</option><option value="instructor">Instructor</option><option value="institucion">Institución</option><option value="cortesia">Cortesía</option></select></label>
         <label class="f"><span>Prácticas por mes (0 = sin tope)</span><input id="dc-cupo" type="number" min="0" value="30"></label>
         <label class="f"><span>Vence (vacío = no vence)</span><input id="dc-vence" type="date"></label>
+        <label class="f"><span>Localidad (la conoce el operador al atender)</span><input id="dc-zona" maxlength="60" placeholder="Santa Fe capital"></label>
       </div>
       <label class="chk" style="margin-top:12px"><input type="checkbox" id="dc-activa" checked> Cuenta activa (si la destildás, sus dos códigos dejan de andar)</label>
       <label class="f" style="margin-top:12px"><span>Notas internas (lo que se acordó, forma de pago…)</span><textarea id="dc-notas" rows="3"></textarea></label>
@@ -471,13 +470,64 @@
 
 <div class="tip" id="tip" hidden></div>
 
+<!-- Los tipos de caso (CASOS, ORDEN_CASOS) salen del mismo archivo que usa la app. -->
+<script src="/protocolos.js"></script>
 <script>
 (function(){
   "use strict";
   const $ = s => document.querySelector(s);
   // salaVista: una clase cerrada que se está mirando (su resumen), que tiene prioridad
   // sobre la clase abierta. filtroSala: la clase de la que se listan las prácticas.
-  const P = { codigo:"", info:null, cuentaId:null, tab:"clase", sala:null, salaVista:null, filtroSala:null, timer:null, practicas:[], truncado:false, contenido:null, escenarios:[] };
+  const P = { codigo:"", info:null, cuentaId:null, tab:"clase", sala:null, salaVista:null, filtroSala:null, timer:null, practicas:[], truncado:false };
+
+  /* ---------------- tipos de caso ----------------
+     Ya no hay escenarios: el operador se adapta al caso que cuenta el alumno y la app lo
+     clasifica en uno de los tipos de CASOS (protocolos.js). Si ese archivo no cargó, el
+     panel sigue andando con los nombres que trae cada práctica. */
+  const TIPOS = typeof CASOS === "object" && CASOS ? CASOS : {};
+  const ORDEN = typeof ORDEN_CASOS !== "undefined" && Array.isArray(ORDEN_CASOS) ? ORDEN_CASOS : Object.keys(TIPOS);
+  const VIEJOS = "_anteriores", SIN_CASO = "_sin";
+  const VICTIMAS = { adulto:"adulto", nino:"chico", lactante:"bebé" };
+  function nombreCaso(id){ return (TIPOS[id] && TIPOS[id].nombre) || id || ""; }
+  // De qué tipo es una práctica, para el filtro y la columna. Sirve con la lista (resumen:
+  // caso es el nombre y casoId el id), con la práctica completa (caso es un objeto) y con
+  // las de antes de noviembre de 2026, que tienen un escenario y van todas juntas.
+  function tipoDe(p){
+    if(p.casoId) return p.casoId;
+    if(p.caso && typeof p.caso === "object") return p.caso.id || SIN_CASO;
+    if(p.escenario) return VIEJOS;
+    if(typeof p.caso === "string" && p.caso){
+      const id = ORDEN.find(k => norm(nombreCaso(k)) === norm(p.caso));
+      if(id) return id;
+      // Un nombre que no es de ningún tipo es el título de un escenario viejo; lo que
+      // escribe la app para un caso que nunca se clasificó dice «sin clasificar».
+      return /sin clasificar/.test(norm(p.caso)) ? SIN_CASO : VIEJOS;
+    }
+    return SIN_CASO;
+  }
+  // Lo que se muestra: el nombre del tipo, o el título del escenario de una práctica vieja.
+  function textoCaso(p){
+    const t = tipoDe(p);
+    if(t === VIEJOS) return (p.escenario && p.escenario.titulo) || (typeof p.caso === "string" ? p.caso : "") || "Escenario anterior";
+    if(t === SIN_CASO) return "sin clasificar";
+    return (p.caso && typeof p.caso === "object" && p.caso.nombre) || nombreCaso(t) || (typeof p.caso === "string" ? p.caso : t);
+  }
+  function etiquetaTipo(t){ return t === VIEJOS ? "Escenarios anteriores" : t === SIN_CASO ? "Sin clasificar" : nombreCaso(t); }
+  // Barras simples de cuántas prácticas hubo de cada tipo, de la más practicada a la menos.
+  function barrasCasos(box, conteo, vacio){
+    vaciar(box);
+    const filas = Object.entries(conteo || {}).map(([id, n]) => ({ id, n:Number(n) || 0 })).filter(f => f.n > 0)
+      .sort((a, b) => b.n - a.n || ORDEN.indexOf(a.id) - ORDEN.indexOf(b.id));
+    if(!filas.length){ box.append(h("p", { class:"vacio", text:vacio || "Todavía no hay prácticas con el tipo de caso registrado." })); return; }
+    const max = Math.max(...filas.map(f => f.n));
+    filas.forEach(f => {
+      const nombre = etiquetaTipo(f.id);
+      const pista = h("div", { class:"pista" }, h("span", { class:"base" }), h("i", { style:"width:" + (f.n / max * 100) + "%" }));
+      pista.addEventListener("pointermove", ev => mostrarTip(ev, String(f.n), nombre));
+      pista.addEventListener("pointerleave", ocultarTip);
+      box.append(h("div", { class:"barra" }, h("span", { text:nombre }), pista, h("span", { class:"val num", text: f.n + (f.n === 1 ? " práctica" : " prácticas") })));
+    });
+  }
 
   /* ---------------- utilidades ---------------- */
   // Todo lo que viene de la base (nombres, transcripciones) se pinta con textContent.
@@ -534,33 +584,10 @@
   }
   function ocultarTip(){ tip.hidden = true; }
 
-  /* ---------------- contenido de la app ----------------
-     Los escenarios fijos y sus guiones viven en index.html (una sola fuente). El panel los
-     lee de ahí, con el mismo recorte balanceado que usan las pruebas. */
-  async function cargarContenido(){
-    try{
-      const html = await (await fetch("index.html", { cache:"no-store" })).text();
-      const js = html.match(/<script>([\s\S]*?)<\/script>/)[1];
-      const bloque = inicio => {
-        const i = js.indexOf(inicio); if(i < 0) throw new Error("no está " + inicio);
-        let j = i, prof = 0, empezo = false, cad = null;
-        for(; j < js.length; j++){
-          const c = js[j];
-          if(cad){ if(c === "\\"){ j++; continue; } if(c === cad) cad = null; continue; }
-          if(c === '"' || c === "'" || c === "`"){ cad = c; continue; }
-          if(c === "/" && js[j+1] === "*"){ j = js.indexOf("*/", j) + 1; continue; }
-          if(c === "/" && js[j+1] === "/"){ j = js.indexOf("\n", j); continue; }
-          if(c === "{" || c === "["){ prof++; empezo = true; }
-          if(c === "}" || c === "]"){ prof--; if(empezo && prof === 0) break; }
-        }
-        return js.slice(i, j+1) + ";";
-      };
-      P.contenido = new Function(bloque("const SCENARIOS = [") + "\nreturn { SCENARIOS };")();
-    }catch(e){ P.contenido = { SCENARIOS: [] }; }
-  }
-
   /* ---------------- entrada ---------------- */
-  async function entrar(codigo, recordar){
+  // desdePuerta: se entró solo, con el código que dejó la entrada de la raíz. Si fue por la
+  // puerta de administración, el panel abre en Instructores, que es a lo que se viene.
+  async function entrar(codigo, recordar, desdePuerta){
     P.codigo = codigo;
     const d = await api("panel");
     P.info = d;
@@ -573,7 +600,9 @@
     $("#p-cambiar-wrap").hidden = !d.esAdmin;
     pintarCabecera();
     if(d.esAdmin) cargarSelectorCuentas();
-    await Promise.all([cargarContenido(), cargarEscenarios()]);
+    let puerta = "";
+    try{ puerta = sessionStorage.getItem("sim107_puerta") || ""; }catch(e){}
+    if(desdePuerta && d.esAdmin && puerta === "admin") P.tab = "cuentas";
     irA(P.tab);
   }
 
@@ -600,7 +629,7 @@
   });
   $("#login-cod").addEventListener("keydown", e => { if(e.key === "Enter") $("#login-go").click(); });
   $("#p-salir").addEventListener("click", ()=>{
-    try{ localStorage.removeItem("sim107_panel"); sessionStorage.removeItem("sim107_panel"); }catch(e){}
+    try{ localStorage.removeItem("sim107_panel"); sessionStorage.removeItem("sim107_panel"); sessionStorage.removeItem("sim107_puerta"); }catch(e){}
     location.reload();
   });
 
@@ -617,10 +646,10 @@
   async function cambiarCuenta(id, tab){
     // Las clases de la cuenta anterior no son de ésta: mirarlas daría «sin_sala».
     P.cuentaId = id; P.sala = null; P.salaVista = null; P.filtroSala = null;
+    delete $("#cn-zona").dataset.tocada;
     $("#p-cambiar").value = id;
     P.info = await api("panel");
     pintarCabecera();
-    await cargarEscenarios();
     irA(tab || P.tab);
   }
   $("#p-cambiar").addEventListener("change", e => cambiarCuenta(e.target.value));
@@ -632,7 +661,7 @@
     document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.t === t)));
     document.querySelectorAll(".tab").forEach(d => d.hidden = d.id !== "t-" + t);
     clearInterval(P.timer);
-    ({ clase:verClase, practicas:verPracticas, alumnos:verAlumnos, calidad:verCalidad, escenarios:verEscenarios,
+    ({ clase:verClase, practicas:verPracticas, alumnos:verAlumnos, calidad:verCalidad,
        cuenta:verCuenta, cuentas:verCuentas, contactos:verContactos, uso:verUso }[t] || (()=>{}))();
   }
 
@@ -666,21 +695,20 @@
   function pintarFormularioClase(){
     const hoy = new Date().toLocaleDateString("es-AR", { weekday:"long", day:"numeric", month:"numeric" });
     if(!$("#cn-nombre").value) $("#cn-nombre").placeholder = "Clase del " + hoy;
-    const box = vaciar($("#cn-escenarios"));
-    const perfil = $("#cn-perfil").value;
-    const todos = (P.contenido.SCENARIOS || []).concat(P.escenarios || []);
-    todos.filter(s => !perfil || (s.perfil || "guardavidas") === perfil).forEach(s => {
-      box.append(h("label", { class:"chk" }, h("input", { type:"checkbox", value:s.id }), h("span", {}, h("b", { text:s.title }), h("br"), h("span", { class:"muted", text:(s.perfil === "lego" ? "Sin formación" : "Guardavidas") + " · " + s.fam }))));
-    });
+    // La localidad arranca con la de la cuenta, mientras el instructor no la cambie.
+    const zona = $("#cn-zona");
+    if(!zona.dataset.tocada) zona.value = (P.info && P.info.cuenta && P.info.cuenta.zona) || "";
   }
-  $("#cn-perfil").addEventListener("change", pintarFormularioClase);
+  $("#cn-zona").addEventListener("input", e => { e.target.dataset.tocada = "1"; });
 
   $("#cn-abrir").addEventListener("click", async ()=>{
     $("#cn-err").textContent = "";
-    const escenarios = [...document.querySelectorAll("#cn-escenarios input:checked")].map(i => i.value);
     try{
-      const { sala } = await api("sala-crear", { nombre: $("#cn-nombre").value.trim() || $("#cn-nombre").placeholder, horas: Number($("#cn-horas").value), perfil: $("#cn-perfil").value || null, escenarios: escenarios.length ? escenarios : null });
+      const { sala } = await api("sala-crear", { nombre: $("#cn-nombre").value.trim() || $("#cn-nombre").placeholder, horas: Number($("#cn-horas").value), perfil: $("#cn-perfil").value || null,
+        consigna: $("#cn-consigna").value.trim(), lugar: $("#cn-lugar").value.trim(), zona: $("#cn-zona").value.trim() });
       P.sala = sala.codigo; P.salaVista = null;
+      // La próxima clase arranca con el formulario limpio (la localidad, otra vez la de la cuenta).
+      $("#cn-consigna").value = ""; $("#cn-lugar").value = ""; delete $("#cn-zona").dataset.tocada;
       verClase();
     }catch(e){ $("#cn-err").textContent = "No se pudo abrir la clase (" + (e.code || e.status) + ")."; }
   });
@@ -726,6 +754,7 @@
     $("#cv-cerrar").hidden = cerrada; $("#cv-volver").hidden = !cerrada; $("#cv-entrar").hidden = cerrada;
     const resta = Math.max(0, d.sala.vence - Date.now());
     $("#cv-restante").textContent = cerrada ? "Clase cerrada" : "Cierra sola en " + faltan(resta);
+    pintarConsigna(d.sala);
 
     // Tablero: el estado más reciente de cada grupo, y su último puntaje.
     const box = vaciar($("#cv-grupos"));
@@ -746,7 +775,9 @@
       const tarjeta = h("button", { class:"grupo", type:"button", disabled: g.practicaId ? null : true, onclick: g.practicaId ? () => abrirPractica(g.practicaId) : null },
         h("div", { class:"fila" }, h("h3", { text:g.grupo }), h("span", { class:"sp" }), g.puntaje != null ? h("span", { class:"pts num", text:String(g.puntaje) }) : ""),
         h("span", { class:"estado", "data-e":g.estado }, h("i"), g.estado + (hace > 0 ? " · hace " + hace + " min" : " · recién")),
-        h("span", { class:"small muted", text:g.escenario || "" }));
+        // El tipo de caso que detectó la app en la llamada de ese grupo (g.escenario: el
+        // estado que dejó una pestaña con la versión anterior, durante el despliegue).
+        h("span", { class:"small muted", text: g.caso || g.escenario || (g.estado === "en llamada" ? "caso todavía sin clasificar" : "") }));
       box.append(tarjeta);
     });
 
@@ -764,27 +795,22 @@
         tile("Puntaje promedio", String(prom), "sobre 100"),
         tile("Tiempo hasta la ubicación", ubic != null ? mmss(ubic) : "—", "promedio, minutos:segundos"));
       barrasCriterios($("#cv-barras"), hechas);
+      const casos = {};
+      hechas.forEach(p => { const t = tipoDe(p); casos[t] = (casos[t] || 0) + 1; });
+      $("#cv-casos-wrap").hidden = false;
+      barrasCasos($("#cv-casos"), casos);
     }
 
-    // Un guion por cada escenario que tienen ahora los grupos (su último estado), primero
-    // los que están por llamar o llamando. Antes salía uno solo, el del escenario más usado
-    // contando las prácticas ya hechas: con rotación, el de la ronda anterior le ganaba al
-    // que se estaba llamando y el instructor cantaba la evolución equivocada. Con la clase
-    // cerrada, sólo los de los grupos que todavía están en una llamada.
-    const todos = (P.contenido.SCENARIOS || []).concat(P.escenarios || []);
-    const activo = g => g.estado === "en llamada" || (!cerrada && g.estado === "conectado");
-    const porTitulo = new Map();
-    grupos.forEach(g => { if(g.escenario){ if(!porTitulo.has(g.escenario)) porTitulo.set(g.escenario, []); porTitulo.get(g.escenario).push(g); } });
-    const escs = [...porTitulo.entries()]
-      .map(([t, gs]) => ({ esc: todos.find(s => s.title === t), gs, vivos: gs.filter(activo).length }))
-      .filter(x => x.esc && x.esc.notasInstructor && x.esc.notasInstructor.length && (!cerrada || x.vivos > 0))
-      .sort((a, b) => b.vivos - a.vivos);
-    $("#cv-guion-wrap").hidden = !escs.length;
-    const gb = vaciar($("#cv-guion"));
-    escs.forEach(({ esc, gs }, i) => gb.append(
-      h("h3", { style:"font-size:15px" + (i ? "; margin-top:14px" : ""), text: esc.title + " · " + gs.map(g => g.grupo + (activo(g) ? "" : " (" + g.estado + ")")).join(", ") }),
-      h("ul", { class:"guion" }, esc.notasInstructor.map(n => h("li", { text:n })))));
     return sigue;
+  }
+
+  // La consigna, el lugar y la localidad de la clase: lo que ven los grupos al entrar.
+  // Reemplaza al guion de la evolución de cada escenario, que ya no existe: sin escenario
+  // no se sabe de antemano qué va a contar cada grupo.
+  function pintarConsigna(sala){
+    const filas = [["Consigna", sala.consigna], ["Lugar", sala.lugar], ["Localidad", sala.zona]].filter(f => f[1]);
+    $("#cv-consigna-wrap").hidden = !(sala.consigna || sala.lugar);
+    vaciar($("#cv-consigna")).append(h("dl", { class:"datos" }, filas.map(([k, v]) => [h("dt", { text:k }), h("dd", { text:v })])));
   }
 
   function tile(etiqueta, valor, detalle, medidor){
@@ -830,7 +856,7 @@
         // El resumen por criterio de una clase anterior, el mismo que se ve en vivo.
         h("button", { class:"link", text:"ver resumen", onclick: () => { clearInterval(P.timer); P.salaVista = s.codigo; verClase().then(() => $("#clase-viva").scrollIntoView({ block:"start" })); } }),
         " · ",
-        h("button", { class:"link", text:"ver sus prácticas", onclick: () => { $("#pr-buscar").value = ""; P.filtroSala = s.codigo; irA("practicas"); } })))));
+        h("button", { class:"link", text:"ver sus prácticas", onclick: () => { $("#pr-buscar").value = ""; $("#pr-caso").value = ""; P.filtroSala = s.codigo; irA("practicas"); } })))));
   }
 
   /* =====================================================================
@@ -867,15 +893,29 @@
     let lista;
     try{ lista = await cargarPracticas(Number($("#pr-rango").value), P.filtroSala); }
     catch(e){ pintarSinBase($("#pr-tabla"), e); return; }
+    pintarFiltroCasos(lista);
     pintarPracticas(lista);
   }
   $("#pr-rango").addEventListener("change", verPracticas);
   $("#pr-buscar").addEventListener("input", () => pintarPracticas(P.practicas));
+  $("#pr-caso").addEventListener("change", () => pintarPracticas(P.practicas));
 
-  // La misma búsqueda para la tabla y para la planilla.
+  // El filtro por tipo de caso ofrece sólo los que hay en el período, en el orden de
+  // CASOS. Las prácticas de antes de noviembre de 2026 (con escenario) van todas juntas.
+  function pintarFiltroCasos(lista){
+    const sel = $("#pr-caso"), antes = sel.value;
+    const hay = new Set(lista.map(tipoDe));
+    const tipos = ORDEN.filter(id => hay.has(id)).concat([...hay].filter(id => id !== VIEJOS && id !== SIN_CASO && !ORDEN.includes(id)));
+    if(hay.has(SIN_CASO)) tipos.push(SIN_CASO);
+    if(hay.has(VIEJOS)) tipos.push(VIEJOS);
+    vaciar(sel).append(h("option", { value:"", text:"Todos los casos" }), tipos.map(id => h("option", { value:id, text:etiquetaTipo(id) })));
+    sel.value = tipos.includes(antes) ? antes : "";
+  }
+
+  // La misma búsqueda (nombre y tipo de caso) para la tabla y para la planilla.
   function filtrarBusqueda(lista){
-    const q = norm($("#pr-buscar").value);
-    return lista.filter(p => !q || norm(p.alias).includes(q) || norm(p.grupo).includes(q));
+    const q = norm($("#pr-buscar").value), caso = $("#pr-caso").value;
+    return lista.filter(p => (!q || norm(p.alias).includes(q) || norm(p.grupo).includes(q)) && (!caso || tipoDe(p) === caso));
   }
 
   function pintarPracticas(lista){
@@ -887,7 +927,7 @@
     if(P.filtroSala){
       t.append(h("caption", { style:"text-align:left; padding-bottom:8px" }, "Sólo la clase " + P.filtroSala + " · ", h("button", { class:"link", text:"ver todas", onclick: () => { P.filtroSala = null; verPracticas(); } })));
     }
-    t.append(cabecera(["Fecha","Alumno o grupo","Escenario","Quién llama",["IA","n"],["Instructor","n"],["Ubicación","n"],["RCP","n"],""]));
+    t.append(cabecera(["Fecha","Alumno o grupo","Caso","Quién llama",["IA","n"],["Instructor","n"],["Ubicación","n"],["RCP","n"],""]));
     filas.forEach(p => {
       // A ciegas también en la tabla: el puntaje de la IA (un 40 delata que faltó un dato
       // crítico) y el tiempo hasta la ubicación (sale del turno que la IA juzgó como el de
@@ -897,7 +937,7 @@
       const oculto = "Se ve después de tu revisión a ciegas";
       t.append(h("tr", { class:"clic", onclick: () => abrirPractica(p.id) },
         h("td", { class:"num", text:fecha(p.fecha) }), h("td", { text:p.grupo || p.alias }),
-        h("td", { text:(p.escenario && p.escenario.titulo) || "" }), h("td", { text:p.perfil === "lego" ? "Sin formación" : "Guardavidas" }),
+        h("td", { text:textoCaso(p), class: tipoDe(p) === VIEJOS ? "muted" : null, title: tipoDe(p) === VIEJOS ? "Práctica de antes de noviembre de 2026, con escenario prediseñado" : null }), h("td", { text:p.perfil === "lego" ? "Sin formación" : "Guardavidas" }),
         h("td", { class:"n", text: ciegaFila ? "oculto" : p.puntaje == null ? (p.error ? "sin devolución" : "—") : String(p.puntaje), title: ciegaFila ? oculto : null }),
         h("td", { class:"n", text:p.puntajeInstructor == null ? "" : String(p.puntajeInstructor) }),
         h("td", { class:"n", text: ciegaFila ? "oculto" : mmss(p.tUbicacionMs), title: ciegaFila ? oculto : null }), h("td", { class:"n", text:p.perfil === "lego" ? mmss(p.tRcpMs) : "" }),
@@ -916,8 +956,8 @@
     const lista = filtrarBusqueda(P.practicas);
     const ids = []; const etiquetas = {};
     lista.forEach(p => (p.rubrica || []).forEach(c => { if(!ids.includes(c.id)){ ids.push(c.id); etiquetas[c.id] = c.label; } }));
-    const cab = ["fecha","alumno_o_grupo","clase","escenario","quien_llama","dificultad","duracion_s","puntaje_ia","topeado","puntaje_instructor","revision_a_ciegas","t_ubicacion_s","t_rcp_s","modelo_evaluador"].concat(ids.map(id => "ia_" + id), ids.map(id => "instructor_ciego_" + id));
-    const filas = lista.map(p => [new Date(p.fecha).toISOString(), p.grupo || p.alias, p.sala || "", p.escenario && p.escenario.titulo, p.perfil, p.dificultad,
+    const cab = ["fecha","alumno_o_grupo","clase","caso","caso_id","quien_llama","dificultad","duracion_s","puntaje_ia","topeado","puntaje_instructor","revision_a_ciegas","t_ubicacion_s","t_rcp_s","modelo_evaluador"].concat(ids.map(id => "ia_" + id), ids.map(id => "instructor_ciego_" + id));
+    const filas = lista.map(p => [new Date(p.fecha).toISOString(), p.grupo || p.alias, p.sala || "", textoCaso(p), tipoDe(p) === VIEJOS || tipoDe(p) === SIN_CASO ? "" : tipoDe(p), p.perfil, p.dificultad,
       Math.round((p.duracionMs||0)/1000), p.puntaje, p.topeado ? "si" : "no", p.puntajeInstructor, p.revisionCiega ? "si" : (p.revision ? "no" : ""), p.tUbicacionMs == null ? "" : Math.round(p.tUbicacionMs/1000),
       p.tRcpMs == null ? "" : Math.round(p.tRcpMs/1000), p.modeloEvaluador].concat(ids.map(id => (p.items || {})[id] || ""), ids.map(id => (p.revisionCiega || {})[id] || "")));
     descargarCsv("practicas-simulador107-" + new Date().toISOString().slice(0,10) + ".csv", cab, filas);
@@ -942,7 +982,8 @@
     try{ p = (await api("practica", { id })).practica; }catch(e){ alert("No se pudo abrir (" + (e.code||e.status) + ")."); return; }
     actual = p;
     const ev = p.evaluacion || {};
-    $("#d-titulo").textContent = (p.grupo || p.alias) + " · " + (p.escenario && p.escenario.titulo || "");
+    $("#d-titulo").textContent = (p.grupo || p.alias) + " · " + textoCaso(p);
+    pintarCasoPractica(p);
     $("#d-meta").textContent = fecha(p.fecha) + " · " + (p.perfil === "lego" ? "persona sin formación" : "guardavidas") + " · operador " + (p.dificultad || "") + " · duración " + mmss(p.duracionMs) + (p.cortoPor === "tiempo" ? " · terminó por tiempo" : " · cortó " + (p.cortoPor || "")) + (p.modeloEvaluador ? " · evaluó " + p.modeloEvaluador : "");
     const items = {}; (ev.items || []).forEach(i => { if(i && i.id) items[i.id] = i; });
     const rev = (p.revision && p.revision.items) || {};
@@ -963,7 +1004,8 @@
       tIA,
       tile("Tu puntaje", p.revision ? String(p.revision.puntaje) : "—", p.revision ? "revisada el " + fecha(p.revision.fecha) : "todavía sin revisar"),
       tUb,
-      p.perfil === "lego" ? tile("Empezó la RCP", mmss(p.tRcpMs), "minutos:segundos desde que atendió") : "");
+      // La RCP se informa sólo si hubo paro (o en una práctica vieja, que siempre lo tenía).
+      p.perfil === "lego" && (p.tRcpMs != null || !p.caso || typeof p.caso !== "object" || p.caso.paro) ? tile("Empezó la RCP", mmss(p.tRcpMs), "minutos:segundos desde que atendió") : "");
     const box = vaciar($("#d-crit"));
     (p.rubrica || []).forEach(c => {
       const it = items[c.id] || { estado:"falto", comentario:"" };
@@ -991,6 +1033,26 @@
     $("#dlg").showModal();
   }
   let ciega = false;
+  // Qué caso fue y qué sabía el alumno. Va fuera de lo que se oculta a ciegas: el tipo de
+  // caso lo clasificó la app, y la consigna y el lugar son lo que el alumno tenía delante.
+  // Con el lugar a la vista se puede juzgar si la dirección que dio era la de la consigna.
+  function pintarCasoPractica(p){
+    const c = p.caso && typeof p.caso === "object" ? p.caso : null, clase = p.clase || {};
+    const filas = [];
+    if(c){
+      filas.push(["Caso", (c.nombre || nombreCaso(c.id) || "sin clasificar") + (c.fam ? " · " + c.fam : "")]);
+      if(c.origen) filas.push(["Escaló desde", nombreCaso(c.origen)]);
+      filas.push(["Hubo paro", c.paro ? "sí" : "no"]);
+      filas.push(["Víctima", VICTIMAS[c.victima] || "no se supo"]);
+    } else if(p.escenario){
+      filas.push(["Escenario anterior", (p.escenario.titulo || "") + (p.escenario.fam ? " · " + p.escenario.fam : "")]);
+    } else filas.push(["Caso", textoCaso(p)]);
+    if(clase.consigna) filas.push(["Consigna", clase.consigna]);
+    if(clase.lugar) filas.push(["Lugar de la consigna", clase.lugar]);
+    if(clase.zona) filas.push(["Localidad", clase.zona]);
+    vaciar($("#d-caso")).append(h("dl", { class:"datos" }, filas.map(([k, v]) => [h("dt", { text:k }), h("dd", { text:v })])),
+      !clase.lugar && c ? h("p", { class:"small muted", style:"margin-top:8px", text:"Sin lugar en la consigna: la dirección se juzga por si una ambulancia la encontraría (calle y altura o esquina, o una referencia inequívoca, y la localidad)." }) : "");
+  }
   function mostrarIA(){ ciega = false; $("#dlg").classList.remove("ciega"); $("#d-ciega").hidden = true; }
   $("#d-ver-ia").addEventListener("click", mostrarIA);
   $("#d-cerrar").addEventListener("click", () => $("#dlg").close());
@@ -1037,7 +1099,7 @@
         h("td", { class:"n", text: pts.length ? String(pts[pts.length-1].puntaje) : "—" }),
         h("td", {}, sparkline(pts)),
         h("td", { class:"n", text: ubic.length ? mmss(ubic.reduce((s,p)=>s+p.tUbicacionMs,0)/ubic.length) : "—" }),
-        h("td", {}, h("button", { class:"link", text:"ver", onclick: () => { $("#pr-buscar").value = a.nombre; P.filtroSala = null; irA("practicas"); } }))));
+        h("td", {}, h("button", { class:"link", text:"ver", onclick: () => { $("#pr-buscar").value = a.nombre; $("#pr-caso").value = ""; P.filtroSala = null; irA("practicas"); } }))));
     });
   }
 
@@ -1066,7 +1128,7 @@
       // Área de toque generosa (12px de radio) para el tooltip; el punto visible es el final.
       const hit = document.createElementNS(NS, "circle");
       hit.setAttribute("cx", x(i)); hit.setAttribute("cy", y(p.puntaje)); hit.setAttribute("r", 12); hit.setAttribute("fill", "transparent");
-      hit.addEventListener("pointermove", ev => mostrarTip(ev, String(p.puntaje), fecha(p.fecha) + " · " + ((p.escenario && p.escenario.titulo) || "")));
+      hit.addEventListener("pointermove", ev => mostrarTip(ev, String(p.puntaje), fecha(p.fecha) + " · " + textoCaso(p)));
       hit.addEventListener("pointerleave", ocultarTip);
       svg.append(hit);
     });
@@ -1128,70 +1190,15 @@
   }
 
   /* =====================================================================
-     ESCENARIOS
-     ===================================================================== */
-  const GUIAS_POR_PERFIL = {
-    guardavidas: [["", "Sin guía (sólo lo básico)"], ["ahogamiento", "Ahogamiento (grados de Szpilman)"], ["pcr", "Paro sin ahogamiento"], ["trauma", "Trauma (zambullida, golpe)"]],
-    lego: [["lego-rcp", "RCP guiada, sólo compresiones (adulto)"], ["lego-ahogamiento", "RCP guiada con ventilaciones (chico o ahogado)"]]
-  };
-  let editando = null;
-  function pintarGuias(){
-    const perfil = $("#es-perfil").value;
-    const sel = vaciar($("#es-guia"));
-    GUIAS_POR_PERFIL[perfil].forEach(([v, t]) => sel.append(h("option", { value:v, text:t })));
-    $("#es-victima-wrap").hidden = perfil !== "lego";
-  }
-  $("#es-perfil").addEventListener("change", pintarGuias);
-
-  async function cargarEscenarios(){
-    try{ P.escenarios = (await api("escenarios")).escenarios; }catch(e){ P.escenarios = []; }
-  }
-  async function verEscenarios(){
-    pintarGuias();
-    await cargarEscenarios();
-    const box = vaciar($("#es-lista"));
-    $("#es-vacio").hidden = P.escenarios.length > 0;
-    P.escenarios.forEach(s => box.append(h("div", { class:"card" },
-      h("div", { class:"fila" }, h("b", { text:s.title }), h("span", { class:"sp" }), h("span", { class:"badge", text:s.perfil === "lego" ? "Sin formación" : "Guardavidas" })),
-      h("p", { class:"small sec", text:s.card }),
-      h("div", { class:"fila", style:"margin-top:6px" }, h("button", { class:"link", text:"Editar", onclick: () => editarEscenario(s) }),
-        h("button", { class:"link", text:"Borrar", onclick: async () => { if(confirm("¿Borrar «" + s.title + "»?")){ await api("escenario-borrar", { id:s.id }); verEscenarios(); } } })))));
-    const fijos = vaciar($("#es-fijos"));
-    (P.contenido.SCENARIOS || []).forEach(s => fijos.append(h("details", { class:"card" },
-      h("summary", {}, h("b", { text:s.title }), h("span", { class:"muted small", text:" · " + (s.perfil === "lego" ? "sin formación" : "guardavidas") })),
-      h("p", { class:"small sec", style:"margin-top:8px", text:s.scene }),
-      h("p", { class:"small", style:"margin-top:6px" }, h("b", { text:"Ubicación: " }), s.addr),
-      h("ul", { class:"guion small", style:"margin-top:8px" }, (s.notasInstructor || []).map(n => h("li", { text:n }))))));
-  }
-
-  function editarEscenario(s){
-    editando = s ? s.id : null;
-    $("#es-titulo").textContent = s ? "Editar escenario" : "Cargar un escenario para tus alumnos";
-    $("#es-nuevo").hidden = !s;
-    $("#es-title").value = s ? s.title : ""; $("#es-perfil").value = s ? s.perfil : "guardavidas"; pintarGuias();
-    $("#es-guia").value = s ? (s.guia || "") : ""; $("#es-fam").value = s ? s.fam : ""; $("#es-victima").value = s ? (s.victima || "adulto") : "adulto";
-    $("#es-card").value = s ? s.card : ""; $("#es-scene").value = s ? s.scene : ""; $("#es-addr").value = s ? s.addr : "";
-    $("#es-zona").value = s ? s.zona : "Santa Fe capital"; $("#es-notas").value = s ? (s.notasInstructor || []).join("\n") : "";
-    $("#es-err").textContent = "";
-    window.scrollTo({ top:0, behavior:"smooth" });
-  }
-  $("#es-nuevo").addEventListener("click", () => editarEscenario(null));
-  $("#es-guardar").addEventListener("click", async ()=>{
-    $("#es-err").textContent = "";
-    const previo = editando ? P.escenarios.find(x => x.id === editando) : null;
-    const esc = { id: editando || undefined, creado: previo && previo.creado, title:$("#es-title").value, perfil:$("#es-perfil").value, guia:$("#es-guia").value, fam:$("#es-fam").value,
-      victima:$("#es-victima").value, card:$("#es-card").value, scene:$("#es-scene").value, addr:$("#es-addr").value, zona:$("#es-zona").value, notasInstructor:$("#es-notas").value };
-    try{ await api("escenario-guardar", { escenario:esc }); editarEscenario(null); verEscenarios(); }
-    catch(e){ $("#es-err").textContent = e.message; }
-  });
-
-  /* =====================================================================
      MI CUENTA
      ===================================================================== */
   async function verCuenta(){
     try{ P.info = await api("panel"); pintarCabecera(); }catch(e){}
     const c = P.info.cuenta;
-    pintarUso($("#cu-tiles"), $("#cu-meses"), c, P.info.estadisticas);
+    pintarUso($("#cu-tiles"), $("#cu-meses"), c, P.info.estadisticas, $("#cu-casos"));
+    $("#cu-zona").textContent = c.zona || "sin cargar";
+    $("#cu-zona-nota").textContent = "Es la localidad que conoce el operador cuando atiende a tus alumnos. Sola no ubica a nadie: el alumno igual tiene que dar la dirección. "
+      + (P.info.esAdmin ? "Se cambia desde la ficha de la cuenta, en «Instructores»." : "Si hay que cambiarla, pedíselo al administrador.");
     $("#cu-tiles").append(tile("Vencimiento", c.vence ? fechaLarga(c.vence) : "no vence", c.activa ? "cuenta activa" : "cuenta pausada"));
     $("#cu-alumnos").textContent = c.codigoAlumnos || "—";
     $("#cu-alumnos-nota").textContent = P.info.codigoEnv
@@ -1272,7 +1279,9 @@
   }
 
   // Cómo usa una cuenta el simulador: lo mismo en la ficha del administrador y en «Mi cuenta».
-  function pintarUso(tiles, columnas, c, est){
+  // casos (opcional): dónde dibujar «Casos practicados», con los contadores por tipo de
+  // caso de los últimos seis meses (est.casos, de pedidosDetalle).
+  function pintarUso(tiles, columnas, c, est, casos){
     est = est || { meses:[], dias:{ deClase:0, deClase90:0 } };
     const u = est.meses.length ? est.meses[est.meses.length - 1].practicas : 0;
     const pr = promedios(est), d = est.dias, clases = est.clases90 || 0;
@@ -1282,6 +1291,7 @@
       tile("Puntaje promedio", pr.puntaje == null ? "—" : String(pr.puntaje), pr.puntaje == null ? "todavía sin prácticas evaluadas" : "de " + pr.n + (pr.n === 1 ? " práctica" : " prácticas") + ", últimos 3 meses"),
       tile("Hasta dar la ubicación", pr.ubicMs == null ? "—" : mmss(pr.ubicMs), pr.ubicMs == null ? "todavía sin datos" : "promedio de " + pr.nU + ", últimos 3 meses"));
     columnasMeses(columnas, est.meses);
+    if(casos) barrasCasos(casos, est.casos, "Todavía no hay prácticas con el tipo de caso registrado: se cuenta desde noviembre de 2026.");
   }
   // Una columna por mes, una sola serie, con el mes y la cantidad escritos abajo; al pasar
   // por encima, el puntaje promedio y el tiempo hasta la ubicación de ese mes.
@@ -1363,6 +1373,7 @@
     $("#dc-tipo").value = c ? c.tipo : "instructor"; $("#dc-plan").value = c ? c.plan : "prueba";
     $("#dc-cupo").value = c ? c.cupoMensual : PRUEBA.cupo; $("#dc-vence").value = c ? (c.vence || "") : fechaAR(PRUEBA.dias);
     $("#dc-activa").checked = c ? c.activa : true; $("#dc-notas").value = c ? c.notas : "";
+    $("#dc-zona").value = c ? (c.zona || "") : "";
     $("#dc-err").textContent = "";
     pintarFicha();
     $("#dlg-cuenta").showModal();
@@ -1379,7 +1390,7 @@
     $("#dc-codigos").hidden = !(c && c.codigoInstructor);
     $("#dc-bienvenida").hidden = !(c && c.codigoAlumnos);
     if(!c) return;
-    if(c.meses) pintarUso($("#dc-tiles"), $("#dc-meses"), c, c);
+    if(c.meses) pintarUso($("#dc-tiles"), $("#dc-meses"), c, c, $("#dc-casos"));
     $("#dc-inst").textContent = "••••••••••"; $("#dc-ver-inst").textContent = "Mostrar";
     $("#dc-alumnos").textContent = c.codigoAlumnos || "—";
     if(c.codigoAlumnos) $("#dc-msj").textContent = mensajeBienvenida(c);
@@ -1440,7 +1451,7 @@
   $("#dc-guardar").addEventListener("click", async ()=>{
     $("#dc-err").textContent = "";
     const datos = { id: cuentaEditada ? cuentaEditada.id : undefined, nombre:$("#dc-nombre").value, contacto:$("#dc-contacto").value, tipo:$("#dc-tipo").value,
-      plan:$("#dc-plan").value, cupoMensual:Number($("#dc-cupo").value), vence:$("#dc-vence").value || null, activa:$("#dc-activa").checked, notas:$("#dc-notas").value };
+      plan:$("#dc-plan").value, cupoMensual:Number($("#dc-cupo").value), vence:$("#dc-vence").value || null, activa:$("#dc-activa").checked, notas:$("#dc-notas").value, zona:$("#dc-zona").value.trim() };
     try{
       const { cuenta } = await api("cuenta-guardar", { cuenta:datos });
       const nueva = !cuentaEditada;
@@ -1548,7 +1559,7 @@
   (async function(){
     let guardado = "";
     try{ guardado = sessionStorage.getItem("sim107_panel") || localStorage.getItem("sim107_panel") || ""; }catch(e){}
-    if(guardado){ try{ await entrar(guardado, false); return; }catch(e){} }
+    if(guardado){ try{ await entrar(guardado, false, true); return; }catch(e){} }
     $("#login-cod").focus();
   })();
 })();

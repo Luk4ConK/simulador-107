@@ -162,35 +162,107 @@ export function evaluadorPorDefecto(prompt) {
 
 // Un operador que sigue al pie de la letra el ESTADO DE LA LLAMADA que arma la app.
 // Marca como datos las palabras clave que dijo el alumno; así se puede manejar la
-// llamada entera desde una prueba.
+// llamada entera desde una prueba. Como el operador de verdad, es ciego a la escena: todo
+// lo que declara sale de lo que dijo el alumno, nunca de la consigna ni de otro lado.
 const CLAVES = [
-  ["ubicacion", /(costanera|calle|altura|bv\.|puesto|ruta|quinta|gimnasio|piso)/i],
-  ["motivo", /(saqu|sac[oó]|desplom|cay[oó]|se tir[oó]|ahog)/i],
-  ["victimas", /(años|hombre|mujer|nene|chico|dos )/i],
-  ["estado", /(no responde|no respira|respira|inconsciente)/i],
-  ["acciones", /(comprim|ventil|rcp)/i],
-  ["material", /(dea|desfibrilador|bolso)/i],
-  ["acceso", /(bajada|portón|port[oó]n|espera|esperando|entrada)/i],
+  ["ubicacion", /(costanera|calle|avenida|altura|bv\.|puesto|ruta|quinta|gimnasio|piso|club|plaza|\b\d{3,5}\b)/i],
+  ["motivo", /(saqu|sac[oó]|desplom|cay[oó]|se tir[oó]|ahog|sangr|cort[oó]|quem|desmay|convuls|atragant|golpe|dolor|duele)/i],
+  ["victimas", /(años|hombre|mujer|nene|nena|chico|marido|hij[oa]|dos )/i],
+  ["estado", /(responde|respira|inconsciente|consciente|despiert)/i],
+  ["acciones", /(comprim|ventil|rcp|presi[oó]n|apret|enfri|acost|de costado)/i],
+  ["material", /(dea|desfibrilador|bolso|botiqu[ií]n|gasas|ap[oó]sitos|torniquete|canilla)/i],
+  ["acceso", /(bajada|port[oó]n|espera|esperando|entrada)/i],
   ["identificacion", /(soy |guardavidas|me llamo)/i],
-  ["conciencia", /(no responde|no contesta|no reacciona)/i],
-  ["respiracion", /(no respira|ronca|boquea|ruido)/i],
+  ["conciencia", /(responde|contesta|reacciona|despiert|consciente|abri[oó] los ojos|me habla)/i],
+  ["respiracion", /(respira|ronca|boquea|ruido)/i],
   ["dea", /(dea|desfibrilador)/i],
-  ["telefono", /(\d{6,}|tel[eé]fono)/i]
+  ["telefono", /(\d{6,}|tel[eé]fono)/i],
+  // Los datos propios de algunos casos (CASOS.x.<perfil>.esenciales y extras, en protocolos.js).
+  // El que no está acá no se declara nunca, y la app deja de exigirlo sola (S.sinPropio).
+  ["sangrado", /(chorro|empapa|del brazo|de la pierna|de la cabeza)/i],
+  ["quemadura_zona", /(la mano|el brazo|la pierna|la cara|agua hirviendo|aceite)/i],
+  ["recupero", /(se despert[oó]|abri[oó] los ojos|ya habla|volvi[oó] en s[ií])/i],
+  ["dea_result", /(descarga|no indic)/i]
 ];
+// La marca [[CASO:id]] que el operador manda siempre (ver protocolos.js): el falso reconoce
+// los tipos por palabra clave, en el orden de prioridad de ORDEN_CASOS, y si no,
+// [[CASO:0]] ("todavía no sé"). Agrega `paro` sólo si el alumno dijo que no responde Y que
+// no respira, como se le pide al operador de verdad. Igual la app no le cree la marca sin
+// más: clasifica con lo que dijo el alumno (ver clasificar() en index.html).
+const CLAVES_CASO = [
+  ["ahogamiento", /(se ahog|del agua|en el agua|pileta|playa)/i],
+  ["atragantamiento", /atragant/i],
+  ["paro", /(un paro|en paro|no tiene pulso|se desplom)/i],
+  ["hemorragia", /sangr/i],
+  ["alergia", /(alergi|picadura|abeja)/i],
+  ["parto", /(parto|pariendo|contracciones)/i],
+  ["acv", /(acv|se le torci[oó] la boca|no puede hablar)/i],
+  ["pecho", /(dolor en el pecho|duele el pecho|infarto)/i],
+  ["respiratorio", /(asma|inhalador|le falta el aire)/i],
+  ["convulsion", /convuls/i],
+  ["glucemia", /(diab[eé]tic|az[uú]car|glucemia)/i],
+  ["intoxicacion", /(intoxic|pastillas|veneno|lavandina)/i],
+  ["temperatura", /(golpe de calor|insolaci|hipotermia)/i],
+  ["trauma", /(lo atropell|chocaron|se cay[oó] de|fractur|se golpe[oó])/i],
+  ["quemadura", /quem[oóa]/i],
+  ["inconsciente", /(inconsciente|no responde|no reacciona)/i],
+  ["desmayo", /desmay/i]
+];
+const dijoParo = t => /no respira/i.test(t) && /(no responde|no reacciona|inconsciente)/i.test(t);
+// Lo que le pasa la app en el estado, numerado ("  1. texto"), desde `desde` hasta el
+// primer renglón que ya no es de la lista.
+function listaNumerada(estado, desde) {
+  const i = estado.indexOf(desde);
+  if (i < 0) return [];
+  const items = [];
+  for (const linea of estado.slice(i).split("\n").slice(1)) {
+    const m = linea.match(/^\s+\d+\. (.*)$/);
+    if (!m) { if (items.length) break; continue; }
+    items.push(m[1]);
+  }
+  return items;
+}
 export function operadorPorDefecto(sistema, contenidos) {
   const estado = sistema.slice(sistema.lastIndexOf("ESTADO DE LA LLAMADA"));
-  const dichos = contenidos.filter(c => c.role === "user").map(c => c.parts[0].text).join(" ");
+  // Lo que dijo el alumno, sin los silencios que inventa la app para los sondeos.
+  const dichos = contenidos.filter(c => c.role === "user").map(c => c.parts[0].text).filter(t => !t.startsWith("[silencio")).join(" ");
+  const propios = contenidos.filter(c => c.role === "model").map(c => c.parts[0].text).join(" ");
   const validos = (sistema.match(/Identificadores válidos: ([^.]+)\./) || [, ""])[1].split(",").map(x => x.trim().split(" ")[0]).filter(Boolean);
   const tengo = CLAVES.filter(([id, re]) => validos.includes(id) && re.test(dichos)).map(([id]) => id);
-  const marcas = "\n[[DATOS:" + tengo.join(",") + "]]";
+  const paro = dijoParo(dichos);
+  // rcp se declara sólo si la app lo ofrece (lego con paro) y el alumno dijo que comprime.
+  if (validos.includes("rcp") && /(comprimiendo|empujando|haciendo rcp)/i.test(dichos)) tengo.push("rcp");
+  let caso = (CLAVES_CASO.find(([, re]) => re.test(dichos)) || ["0"])[0];
+  if (caso === "0" && paro) caso = "paro";
+  let marcas = "\n[[DATOS:" + tengo.join(",") + "]]\n[[CASO:" + caso + (paro && caso !== "0" ? ",paro" : "") + "]]";
+  // El grado sólo se manda cuando la app pasó la escala (hoy, en un ahogamiento).
+  if (/\[\[GRADO:n\]\]/.test(estado)) marcas += "\n[[GRADO:" + (paro ? 6 : /respira/i.test(dichos) ? 1 : 0) + "]]";
+
   if (/SE TERMINÓ/.test(estado)) return "Sin la dirección no puedo mandarte la ambulancia. Averiguala y volvé a llamar al 107." + marcas + "\n[[CERRAR]]";
-  if (/LA AMBULANCIA ESTÁ LLEGANDO/.test(estado)) return "La ambulancia ya está ahí. Seguí comprimiendo hasta que los paramédicos se hagan cargo. Voy a cortar." + marcas + "\n[[CERRAR]]";
-  if (/te toca CERRAR/.test(estado)) return "El móvil ya está en camino. Voy a cortar: si cambia la situación, volvé a llamar al 107." + marcas + "\n[[CERRAR]]";
-  if (/decile en una frase corta que la ambulancia ya sale/.test(estado)) return "La ambulancia ya sale. Seguí así, fuerte y rápido." + marcas;
-  if (/YA ESTÁ HACIENDO LA RCP/.test(estado)) return "Muy bien, seguí así, fuerte y rápido." + marcas;
-  if (/YA TENÉS LO ESENCIAL/.test(estado)) return "La ambulancia ya sale. Poné el teléfono en altavoz y empezá a empujar fuerte en el medio del pecho." + marcas;
-  if (/YA TENÉS TODO LO ESENCIAL/.test(estado)) return "El SEM ya está en camino, llega en unos 6 minutos. ¿Quién sos?" + marcas + "\n[[GRADO:6]]";
-  if (/TODAVÍA TE FALTA LO ESENCIAL/.test(estado)) return "Entendido. ¿Qué más me podés decir?" + marcas + "\n[[GRADO:0]]";
+  if (/LA AMBULANCIA ESTÁ LLEGANDO/.test(estado)) {
+    return "La ambulancia ya está ahí. " + (/siga comprimiendo/.test(estado) ? "Seguí comprimiendo" : "Seguí con lo que estás haciendo")
+      + " hasta que los paramédicos se hagan cargo. Voy a cortar." + marcas + "\n[[CERRAR]]";
+  }
+  if (/te toca CERRAR/.test(estado)) {
+    // Lego sin paro, en un cuadro donde no se queda en línea: la despedida dice en qué
+    // caso hay que volver a llamar, que la app le pasa en la instrucción.
+    const alarma = (estado.match(/vuelva a llamar al 107 (.+?)\. Terminá con/) || [])[1];
+    if (alarma) return "La ambulancia va en camino. Voy a cortar: volvé a llamar al 107 " + alarma + "." + marcas + "\n[[CERRAR]]";
+    return "El móvil ya está en camino. Voy a cortar: si cambia la situación, volvé a llamar al 107." + marcas + "\n[[CERRAR]]";
+  }
+  const anuncio = /(avisale|decile) en una frase corta que la ambulancia ya sale/.test(estado) ? "La ambulancia ya sale. " : "";
+  if (/YA ESTÁ HACIENDO LA RCP/.test(estado)) return anuncio + "Muy bien, seguí así, fuerte y rápido." + marcas;
+  if (/NO ES UN PARO, así que no hay RCP/.test(estado)) {
+    // Primeros auxilios: la primera indicación de la lista que todavía no dio. Las que
+    // dicen SÓLO SI no las da: nadie le contó esa condición.
+    const toca = listaNumerada(estado, "NO ES UN PARO, así que no hay RCP").find(x => !x.startsWith("SÓLO SI") && !propios.includes(x));
+    return anuncio + (toca || "¿Cómo sigue?") + marcas;
+  }
+  if (/Ya le diste las indicaciones/.test(estado)) return anuncio + "¿Cómo sigue la persona?" + marcas;
+  if (/ES UN PARO \(no responde y no respira normalmente\)/.test(estado)) return anuncio + "Poné el teléfono en altavoz y empezá a empujar fuerte en el medio del pecho." + marcas;
+  if (/ES UN PARO y todavía no empezó a comprimir/.test(estado)) return "Empezá ya a empujar fuerte y rápido en el medio del pecho. ¿Dónde estás?" + marcas;
+  if (/YA TENÉS TODO LO ESENCIAL/.test(estado)) return "El SEM ya está en camino, llega en unos 6 minutos. ¿Quién sos?" + marcas;
+  if (/TODAVÍA TE FALTA LO ESENCIAL/.test(estado)) return "Entendido. ¿Qué más me podés decir?" + marcas;
   return "Recibido." + marcas;
 }
 

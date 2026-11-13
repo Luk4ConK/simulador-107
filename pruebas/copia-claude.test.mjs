@@ -106,13 +106,18 @@ try {
     await page.waitForSelector("#v-setup:not([hidden])");
     assert.match(await page.locator("#v-setup").innerText(), /Copia para trabajar dentro de Claude/);
     assert.equal(await page.locator("#row-pausa").isHidden(), true, "sin manos libres");
-    assert.ok(await page.locator(".card").count() >= 6);
-
-    await page.click('.card[data-id="ahogamiento-puro"]');
-    await page.click("#btn-brief");
-    await page.waitForSelector("#v-brief:not([hidden])");
-    assert.match(await page.locator("#v-brief").innerText(), /la llamada se escribe/);
+    // Sin escenarios armados: no hay tarjetas ni briefing, la configuración va directo al teclado.
+    assert.equal(await page.locator(".card, #btn-brief, #v-brief, #scenarios").count(), 0, "no quedan restos de los escenarios");
+    assert.match(await page.locator("#v-setup").innerText(), /No hay escenarios armados/);
+    assert.equal(await page.locator("#aviso-direccion").isVisible(), true, "el aviso sobre la dirección está");
+    assert.match(await page.locator("#v-setup").innerText(), /la llamada se escribe/);
+    assert.equal(await page.locator("#consigna-setup").isHidden(), true, "sin clase no hay consigna");
     await page.click("#btn-call");
+    await page.waitForSelector("#v-dial:not([hidden])");
+    await page.click("#dial-volver");
+    await page.waitForSelector("#v-setup:not([hidden])");
+    await page.click("#btn-call");
+    await page.waitForSelector("#v-dial:not([hidden])");
     await marcar(page, "107");
     await page.waitForSelector("#typer:not([hidden])", { timeout: 10000 });
     assert.equal(await page.locator("#toggle-type").isHidden(), true, "no se ofrece volver a hablar");
@@ -136,7 +141,10 @@ try {
     await page.click("#save");
     await page.waitForFunction(() => window.__descargas.length === 1);
     const d = await page.evaluate(() => window.__descargas[0]);
-    assert.match(d.filename, /^107-ahogamiento-puro-\d{4}-\d{2}-\d{2}\.txt$/);
+    assert.match(await page.locator("#deb-caso").innerText(), /ahogamiento · con paro/i);
+    assert.equal(await page.locator("#deb-items .item").count(), 13, "diez criterios más los tres propios del ahogamiento");
+    assert.match(d.filename, /^informe-107-ahogamiento-\d{4}-\d{2}-\d{2}\.txt$/);
+    assert.ok(!/undefined/.test(d.filename + d.data), "el informe no tiene undefined");
     assert.match(d.data, /Puntaje: 100\/100/);
     const n = await page.evaluate(() => window.__llamadas);
     assert.ok(n.sample >= 5 && n.json === 1, "operador y devolución pasan por Claude");
@@ -148,10 +156,8 @@ try {
     await page.goto(base + "/");
     await page.waitForSelector("#v-setup:not([hidden])");
     await page.click('#perfil button[data-v="lego"]');
-    await page.click('.card[data-id="lego-gimnasio"]');
-    await page.click("#btn-brief");
-    await page.waitForSelector("#v-brief:not([hidden])");
     await page.click("#btn-call");
+    await page.waitForSelector("#v-dial:not([hidden])");
     await marcar(page, "107");
     await page.waitForSelector("#typer:not([hidden])", { timeout: 10000 });
     await page.waitForFunction(() => document.querySelectorAll(".msg.op:not(.live)").length >= 1, null, { timeout: 10000 });

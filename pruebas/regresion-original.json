@@ -1,0 +1,828 @@
+{
+ "nota": "Copia de la rúbrica y de las guías de index.html ANTES de sacar los escenarios (noviembre de 2026). La usa rubrica.test.mjs para la regresión de protocolos.js. No se edita a mano.",
+ "CHECKS": [
+  {
+   "id": "ubicacion",
+   "label": "Ubicación exacta y cómo llegar",
+   "peso": 20,
+   "critico": true,
+   "logrado": "Dio calle y altura, o una referencia que un móvil puede buscar sin volver a preguntar, MÁS por dónde se entra: portón, bajada, número de puesto, piso.",
+   "parcial": "Dio una referencia aproximada que todavía obliga al operador a repreguntar, o dijo el lugar pero no cómo se entra."
+  },
+  {
+   "id": "motivo",
+   "label": "Qué pasó, en una frase",
+   "peso": 10,
+   "critico": false,
+   "logrado": "En las primeras frases se entiende el tipo de emergencia: lo sacó del agua, se desplomó, se golpeó.",
+   "parcial": "Se entiende recién después de que el operador repregunta, o quedó en una etiqueta vaga como 'se descompensó'."
+  },
+  {
+   "id": "victimas",
+   "label": "Cuántas víctimas y edad aproximada",
+   "peso": 8,
+   "critico": false,
+   "logrado": "Dijo cuántas personas son y una edad aproximada de cada una.",
+   "parcial": "Dijo una cosa y no la otra, o tardó en aclarar que había más de una víctima."
+  },
+  {
+   "id": "estado",
+   "label": "Si responde y si respira",
+   "peso": 15,
+   "critico": true,
+   "logrado": "Dijo si responde y si respira normalmente, en términos observables. Si hay boqueo o respiración agónica, lo transmitió como que NO respira.",
+   "parcial": "Dio sólo una de las dos cosas, o se escudó en una etiqueta ('está en paro', 'está mal') sin el dato observable detrás."
+  },
+  {
+   "id": "material",
+   "label": "Qué material tienen en el lugar, sobre todo el DEA",
+   "peso": 10,
+   "critico": false,
+   "logrado": "Dijo con qué cuentan: si hay DEA y si está colocado, y si tienen bolsa-válvula-máscara, mascarilla de bolsillo u otro equipamiento. Si NO hay DEA, también lo dijo, que es lo que cambia el despacho. (El oxígeno no se le pide: en Argentina no está en el alcance del guardavidas.)",
+   "parcial": "Habló del material sólo cuando se lo preguntaron y sin precisar, o no aclaró si el DEA estaba puesto."
+  },
+  {
+   "id": "riesgos",
+   "label": "Riesgos y accesos para el móvil",
+   "peso": 8,
+   "critico": false,
+   "logrado": "Avisó con qué se va a encontrar el móvil: gente alrededor, agua, tránsito, portón cerrado, escaleras, y quién lo va a estar esperando.",
+   "parcial": "Mencionó algo al pasar, sin que sirva para preparar la llegada."
+  },
+  {
+   "id": "identificacion",
+   "label": "Quién llama y teléfono de contacto",
+   "peso": 7,
+   "critico": false,
+   "logrado": "Dio su nombre, aclaró que es guardavidas y dejó un teléfono de retorno.",
+   "parcial": "Dio el nombre pero no el rol, o no dejó teléfono."
+  },
+  {
+   "id": "indicaciones",
+   "label": "Contestó concreto lo que le preguntaron",
+   "peso": 10,
+   "critico": false,
+   "logrado": "Respondió con el dato que le pedían, sin evadir ni irse por las ramas, y avisó por su cuenta cuando algo cambió.",
+   "parcial": "Contestó a medias, o hizo esperar al operador repitiendo cosas que ya había dicho."
+  },
+  {
+   "id": "cierre",
+   "label": "No cortó antes que el operador",
+   "peso": 8,
+   "critico": false,
+   "logrado": "Se mantuvo en línea hasta que el operador cerró, y quedó claro quién espera al móvil.",
+   "parcial": "Cortó una vez despachado, pero sin que el operador cerrara la llamada."
+  },
+  {
+   "id": "comunicacion",
+   "label": "Habló claro y sin divagar",
+   "peso": 10,
+   "critico": false,
+   "logrado": "Frases cortas, una idea por vez, sin gritar y sin perderse en detalles que no cambian el despacho.",
+   "parcial": "Se entendió, pero con vueltas, repeticiones o datos irrelevantes que demoraron el despacho."
+  }
+ ],
+ "CHECKS_LEGO": [
+  {
+   "id": "ubicacion",
+   "label": "Dónde es, para que llegue la ambulancia",
+   "peso": 20,
+   "critico": true,
+   "logrado": "Dio algo que una ambulancia puede encontrar sin volver a preguntar: calle y altura, o un lugar conocido con una referencia, y la localidad o el barrio. Si no sabía la dirección, la armó con referencias (ruta, comercio, cartel, color del portón) o la consiguió preguntando.",
+   "parcial": "Dio una referencia aproximada que obligó al operador a repreguntar, o la dio recién después de varias preguntas."
+  },
+  {
+   "id": "motivo",
+   "label": "Qué pasó, con lo que vio",
+   "peso": 8,
+   "critico": false,
+   "logrado": "En las primeras frases se entiende qué pasó, contado con lo que vio: se desplomó, lo sacaron del agua, no reacciona.",
+   "parcial": "Se entendió recién cuando el operador insistió, o dio un diagnóstico ('le dio un infarto') en vez de lo que vio."
+  },
+  {
+   "id": "conciencia",
+   "label": "Si responde",
+   "peso": 10,
+   "critico": false,
+   "logrado": "Dijo si la persona responde o no cuando le hablan o la tocan.",
+   "parcial": "Lo dijo con dudas, o recién cuando se lo preguntaron más de una vez."
+  },
+  {
+   "id": "respiracion",
+   "label": "Si respira normalmente, contado con honestidad",
+   "peso": 15,
+   "critico": true,
+   "logrado": "Dijo si respira normalmente describiendo lo que ve. Si boqueaba, roncaba o hacía ruidos raros, lo contó así, sin decir que respiraba bien. Si no sabía, lo dijo en vez de inventar.",
+   "parcial": "Dijo 'respira' o 'no sé' sin describir lo que veía, o tardó mucho en contestarlo."
+  },
+  {
+   "id": "rcp",
+   "label": "Siguió la RCP guiada",
+   "peso": 20,
+   "critico": false,
+   "logrado": "Aceptó las indicaciones, dijo que empezó a comprimir enseguida y siguió sin parar hasta que llegó la ambulancia o el operador indicó otra cosa. Si la víctima empezó a respirar, lo avisó.",
+   "parcial": "Empezó tarde, discutió o dudó mucho antes de empezar, o paró sin que se lo indicaran."
+  },
+  {
+   "id": "altavoz",
+   "label": "Teléfono en altavoz",
+   "peso": 5,
+   "critico": false,
+   "logrado": "Puso el teléfono en altavoz (lo dijo o lo confirmó) para tener las dos manos libres.",
+   "parcial": "Lo hizo recién cuando se lo pidieron varias veces."
+  },
+  {
+   "id": "dea",
+   "label": "Pidió el desfibrilador (DEA)",
+   "peso": 8,
+   "critico": false,
+   "logrado": "Dijo si hay un DEA cerca y mandó a alguien a buscarlo; si llegó, siguió las indicaciones para usarlo. Si no había, lo dijo.",
+   "parcial": "Mencionó el DEA sin mandar a buscarlo, o recién cuando el operador insistió."
+  },
+  {
+   "id": "ayuda",
+   "label": "Pidió ayuda a la gente de alrededor",
+   "peso": 6,
+   "critico": false,
+   "logrado": "Le dio una tarea concreta a otras personas: buscar el DEA, esperar a la ambulancia en la entrada, relevarlo en las compresiones. Si estaba solo, lo dijo.",
+   "parcial": "Pidió ayuda en general, sin tareas concretas."
+  },
+  {
+   "id": "telefono",
+   "label": "Dejó un teléfono por si se corta",
+   "peso": 3,
+   "critico": false,
+   "logrado": "Dio un número de teléfono de contacto.",
+   "parcial": "Lo dio incompleto o dijo que después lo pasaba."
+  },
+  {
+   "id": "linea",
+   "label": "No cortó",
+   "peso": 5,
+   "critico": false,
+   "logrado": "Se quedó en línea hasta que llegó la ambulancia o el operador cerró la llamada.",
+   "parcial": "Amenazó con cortar o se alejó del teléfono sin avisar."
+  }
+ ],
+ "rubricas": {
+  "guardavidas/ahogamiento": [
+   {
+    "id": "ubicacion",
+    "label": "Ubicación exacta y cómo llegar",
+    "peso": 20,
+    "critico": true,
+    "logrado": "Dio calle y altura, o una referencia que un móvil puede buscar sin volver a preguntar, MÁS por dónde se entra: portón, bajada, número de puesto, piso.",
+    "parcial": "Dio una referencia aproximada que todavía obliga al operador a repreguntar, o dijo el lugar pero no cómo se entra."
+   },
+   {
+    "id": "motivo",
+    "label": "Qué pasó, en una frase",
+    "peso": 10,
+    "critico": false,
+    "logrado": "En las primeras frases se entiende el tipo de emergencia: lo sacó del agua, se desplomó, se golpeó.",
+    "parcial": "Se entiende recién después de que el operador repregunta, o quedó en una etiqueta vaga como 'se descompensó'."
+   },
+   {
+    "id": "victimas",
+    "label": "Cuántas víctimas y edad aproximada",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Dijo cuántas personas son y una edad aproximada de cada una.",
+    "parcial": "Dijo una cosa y no la otra, o tardó en aclarar que había más de una víctima."
+   },
+   {
+    "id": "estado",
+    "label": "Si responde y si respira",
+    "peso": 15,
+    "critico": true,
+    "logrado": "Dijo si responde y si respira normalmente, en términos observables. Si hay boqueo o respiración agónica, lo transmitió como que NO respira.",
+    "parcial": "Dio sólo una de las dos cosas, o se escudó en una etiqueta ('está en paro', 'está mal') sin el dato observable detrás."
+   },
+   {
+    "id": "material",
+    "label": "Qué material tienen en el lugar, sobre todo el DEA",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo con qué cuentan: si hay DEA y si está colocado, y si tienen bolsa-válvula-máscara, mascarilla de bolsillo u otro equipamiento. Si NO hay DEA, también lo dijo, que es lo que cambia el despacho. (El oxígeno no se le pide: en Argentina no está en el alcance del guardavidas.)",
+    "parcial": "Habló del material sólo cuando se lo preguntaron y sin precisar, o no aclaró si el DEA estaba puesto."
+   },
+   {
+    "id": "riesgos",
+    "label": "Riesgos y accesos para el móvil",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Avisó con qué se va a encontrar el móvil: gente alrededor, agua, tránsito, portón cerrado, escaleras, y quién lo va a estar esperando.",
+    "parcial": "Mencionó algo al pasar, sin que sirva para preparar la llegada."
+   },
+   {
+    "id": "identificacion",
+    "label": "Se identificó como guardavidas y dijo su puesto",
+    "peso": 5,
+    "critico": false,
+    "logrado": "Dijo su nombre, que es el guardavidas en servicio y desde qué puesto o sector llama.",
+    "parcial": "Se identificó por arriba, sin dejar claro que es el guardavidas del lugar ni desde dónde."
+   },
+   {
+    "id": "indicaciones",
+    "label": "Contestó concreto lo que le preguntaron",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Respondió con el dato que le pedían, sin evadir ni irse por las ramas, y avisó por su cuenta cuando algo cambió.",
+    "parcial": "Contestó a medias, o hizo esperar al operador repitiendo cosas que ya había dicho."
+   },
+   {
+    "id": "cierre",
+    "label": "No cortó antes que el operador",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Se mantuvo en línea hasta que el operador cerró, y quedó claro quién espera al móvil.",
+    "parcial": "Cortó una vez despachado, pero sin que el operador cerrara la llamada."
+   },
+   {
+    "id": "comunicacion",
+    "label": "Habló claro y sin divagar",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Frases cortas, una idea por vez, sin gritar y sin perderse en detalles que no cambian el despacho.",
+    "parcial": "Se entendió, pero con vueltas, repeticiones o datos irrelevantes que demoraron el despacho."
+   },
+   {
+    "id": "sumersion",
+    "label": "Tiempo de sumersión",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Dio el tiempo aproximado que la víctima estuvo bajo el agua, aunque fuera estimado.",
+    "parcial": "Lo mencionó muy vago ('un rato', 'poco') sin un número aproximado."
+   },
+   {
+    "id": "clasificacion",
+    "label": "Clasificó la víctima o dio los signos para clasificarla",
+    "peso": 12,
+    "critico": false,
+    "logrado": "Dio el grado directamente, o describió tos, espuma (poca o mucha) y pulso radial de manera que el operador pudo clasificar.",
+    "parcial": "Dio algún signo suelto, insuficiente para ubicar el grado."
+   },
+   {
+    "id": "maniobras",
+    "label": "Informó qué maniobras estaba haciendo",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo qué venía haciendo y desde cuándo: ventilaciones de rescate, compresiones, cuántos ciclos o cuánto tiempo llevaba.",
+    "parcial": "Dijo que estaba atendiendo sin precisar qué maniobra ni desde cuándo."
+   }
+  ],
+  "guardavidas/paro": [
+   {
+    "id": "ubicacion",
+    "label": "Ubicación exacta y cómo llegar",
+    "peso": 20,
+    "critico": true,
+    "logrado": "Dio calle y altura, o una referencia que un móvil puede buscar sin volver a preguntar, MÁS por dónde se entra: portón, bajada, número de puesto, piso.",
+    "parcial": "Dio una referencia aproximada que todavía obliga al operador a repreguntar, o dijo el lugar pero no cómo se entra."
+   },
+   {
+    "id": "motivo",
+    "label": "Qué pasó, en una frase",
+    "peso": 10,
+    "critico": false,
+    "logrado": "En las primeras frases se entiende el tipo de emergencia: lo sacó del agua, se desplomó, se golpeó.",
+    "parcial": "Se entiende recién después de que el operador repregunta, o quedó en una etiqueta vaga como 'se descompensó'."
+   },
+   {
+    "id": "victimas",
+    "label": "Cuántas víctimas y edad aproximada",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Dijo cuántas personas son y una edad aproximada de cada una.",
+    "parcial": "Dijo una cosa y no la otra, o tardó en aclarar que había más de una víctima."
+   },
+   {
+    "id": "estado",
+    "label": "Si responde y si respira",
+    "peso": 15,
+    "critico": true,
+    "logrado": "Dijo si responde y si respira normalmente, en términos observables. Si hay boqueo o respiración agónica, lo transmitió como que NO respira.",
+    "parcial": "Dio sólo una de las dos cosas, o se escudó en una etiqueta ('está en paro', 'está mal') sin el dato observable detrás."
+   },
+   {
+    "id": "material",
+    "label": "Qué material tienen en el lugar, sobre todo el DEA",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo con qué cuentan: si hay DEA y si está colocado, y si tienen bolsa-válvula-máscara, mascarilla de bolsillo u otro equipamiento. Si NO hay DEA, también lo dijo, que es lo que cambia el despacho. (El oxígeno no se le pide: en Argentina no está en el alcance del guardavidas.)",
+    "parcial": "Habló del material sólo cuando se lo preguntaron y sin precisar, o no aclaró si el DEA estaba puesto."
+   },
+   {
+    "id": "riesgos",
+    "label": "Riesgos y accesos para el móvil",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Avisó con qué se va a encontrar el móvil: gente alrededor, agua, tránsito, portón cerrado, escaleras, y quién lo va a estar esperando.",
+    "parcial": "Mencionó algo al pasar, sin que sirva para preparar la llegada."
+   },
+   {
+    "id": "identificacion",
+    "label": "Quién llama y teléfono de contacto",
+    "peso": 7,
+    "critico": false,
+    "logrado": "Dio su nombre, aclaró que es guardavidas y dejó un teléfono de retorno.",
+    "parcial": "Dio el nombre pero no el rol, o no dejó teléfono."
+   },
+   {
+    "id": "indicaciones",
+    "label": "Contestó concreto lo que le preguntaron",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Respondió con el dato que le pedían, sin evadir ni irse por las ramas, y avisó por su cuenta cuando algo cambió.",
+    "parcial": "Contestó a medias, o hizo esperar al operador repitiendo cosas que ya había dicho."
+   },
+   {
+    "id": "cierre",
+    "label": "No cortó antes que el operador",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Se mantuvo en línea hasta que el operador cerró, y quedó claro quién espera al móvil.",
+    "parcial": "Cortó una vez despachado, pero sin que el operador cerrara la llamada."
+   },
+   {
+    "id": "comunicacion",
+    "label": "Habló claro y sin divagar",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Frases cortas, una idea por vez, sin gritar y sin perderse en detalles que no cambian el despacho.",
+    "parcial": "Se entendió, pero con vueltas, repeticiones o datos irrelevantes que demoraron el despacho."
+   },
+   {
+    "id": "tiempo",
+    "label": "Si lo vio desplomarse y hace cuánto",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Dijo que lo vio desplomarse (o que no lo vio) y hace cuánto pasó, aunque fuera aproximado.",
+    "parcial": "Dio una de las dos cosas, o muy vago ('hace un rato')."
+   },
+   {
+    "id": "maniobras",
+    "label": "Informó qué maniobras estaba haciendo",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo qué venía haciendo y desde cuándo: compresiones, ventilaciones, DEA colocado o en camino.",
+    "parcial": "Dijo que estaba atendiendo sin precisar qué hacía ni desde cuándo."
+   }
+  ],
+  "guardavidas/trauma": [
+   {
+    "id": "ubicacion",
+    "label": "Ubicación exacta y cómo llegar",
+    "peso": 20,
+    "critico": true,
+    "logrado": "Dio calle y altura, o una referencia que un móvil puede buscar sin volver a preguntar, MÁS por dónde se entra: portón, bajada, número de puesto, piso.",
+    "parcial": "Dio una referencia aproximada que todavía obliga al operador a repreguntar, o dijo el lugar pero no cómo se entra."
+   },
+   {
+    "id": "motivo",
+    "label": "Qué pasó, en una frase",
+    "peso": 10,
+    "critico": false,
+    "logrado": "En las primeras frases se entiende el tipo de emergencia: lo sacó del agua, se desplomó, se golpeó.",
+    "parcial": "Se entiende recién después de que el operador repregunta, o quedó en una etiqueta vaga como 'se descompensó'."
+   },
+   {
+    "id": "victimas",
+    "label": "Cuántas víctimas y edad aproximada",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Dijo cuántas personas son y una edad aproximada de cada una.",
+    "parcial": "Dijo una cosa y no la otra, o tardó en aclarar que había más de una víctima."
+   },
+   {
+    "id": "estado",
+    "label": "Si responde y si respira",
+    "peso": 15,
+    "critico": true,
+    "logrado": "Dijo si responde y si respira normalmente, en términos observables. Si hay boqueo o respiración agónica, lo transmitió como que NO respira.",
+    "parcial": "Dio sólo una de las dos cosas, o se escudó en una etiqueta ('está en paro', 'está mal') sin el dato observable detrás."
+   },
+   {
+    "id": "material",
+    "label": "Qué material tienen en el lugar, sobre todo el DEA",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo con qué cuentan: si hay DEA y si está colocado, y si tienen bolsa-válvula-máscara, mascarilla de bolsillo u otro equipamiento. Si NO hay DEA, también lo dijo, que es lo que cambia el despacho. (El oxígeno no se le pide: en Argentina no está en el alcance del guardavidas.)",
+    "parcial": "Habló del material sólo cuando se lo preguntaron y sin precisar, o no aclaró si el DEA estaba puesto."
+   },
+   {
+    "id": "riesgos",
+    "label": "Riesgos y accesos para el móvil",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Avisó con qué se va a encontrar el móvil: gente alrededor, agua, tránsito, portón cerrado, escaleras, y quién lo va a estar esperando.",
+    "parcial": "Mencionó algo al pasar, sin que sirva para preparar la llegada."
+   },
+   {
+    "id": "identificacion",
+    "label": "Quién llama y teléfono de contacto",
+    "peso": 7,
+    "critico": false,
+    "logrado": "Dio su nombre, aclaró que es guardavidas y dejó un teléfono de retorno.",
+    "parcial": "Dio el nombre pero no el rol, o no dejó teléfono."
+   },
+   {
+    "id": "indicaciones",
+    "label": "Contestó concreto lo que le preguntaron",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Respondió con el dato que le pedían, sin evadir ni irse por las ramas, y avisó por su cuenta cuando algo cambió.",
+    "parcial": "Contestó a medias, o hizo esperar al operador repitiendo cosas que ya había dicho."
+   },
+   {
+    "id": "cierre",
+    "label": "No cortó antes que el operador",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Se mantuvo en línea hasta que el operador cerró, y quedó claro quién espera al móvil.",
+    "parcial": "Cortó una vez despachado, pero sin que el operador cerrara la llamada."
+   },
+   {
+    "id": "comunicacion",
+    "label": "Habló claro y sin divagar",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Frases cortas, una idea por vez, sin gritar y sin perderse en detalles que no cambian el despacho.",
+    "parcial": "Se entendió, pero con vueltas, repeticiones o datos irrelevantes que demoraron el despacho."
+   },
+   {
+    "id": "mecanismo",
+    "label": "Cómo se lastimó",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo el mecanismo: se tiró de cabeza en poca profundidad, se golpeó contra el fondo o las piedras, cayó.",
+    "parcial": "Dijo que se golpeó sin decir cómo, o lo dijo recién cuando se lo preguntaron dos veces."
+   },
+   {
+    "id": "neurologico",
+    "label": "Si mueve y siente brazos y piernas",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo qué mueve y qué no, y si siente, en términos observables.",
+    "parcial": "Dijo 'no se puede mover' sin precisar qué ni si siente."
+   },
+   {
+    "id": "inmovilizacion",
+    "label": "Qué están haciendo con la columna",
+    "peso": 6,
+    "critico": false,
+    "logrado": "Dijo que le sostienen la cabeza alineada, que no lo mueven, y con qué cuentan (o que no tienen tabla ni collar).",
+    "parcial": "Lo mencionó a medias o sin aclarar si lo movieron."
+   }
+  ],
+  "lego/paro": [
+   {
+    "id": "ubicacion",
+    "label": "Dónde es, para que llegue la ambulancia",
+    "peso": 20,
+    "critico": true,
+    "logrado": "Dio algo que una ambulancia puede encontrar sin volver a preguntar: calle y altura, o un lugar conocido con una referencia, y la localidad o el barrio. Si no sabía la dirección, la armó con referencias (ruta, comercio, cartel, color del portón) o la consiguió preguntando.",
+    "parcial": "Dio una referencia aproximada que obligó al operador a repreguntar, o la dio recién después de varias preguntas."
+   },
+   {
+    "id": "motivo",
+    "label": "Qué pasó, con lo que vio",
+    "peso": 8,
+    "critico": false,
+    "logrado": "En las primeras frases se entiende qué pasó, contado con lo que vio: se desplomó, lo sacaron del agua, no reacciona.",
+    "parcial": "Se entendió recién cuando el operador insistió, o dio un diagnóstico ('le dio un infarto') en vez de lo que vio."
+   },
+   {
+    "id": "conciencia",
+    "label": "Si responde",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo si la persona responde o no cuando le hablan o la tocan.",
+    "parcial": "Lo dijo con dudas, o recién cuando se lo preguntaron más de una vez."
+   },
+   {
+    "id": "respiracion",
+    "label": "Si respira normalmente, contado con honestidad",
+    "peso": 15,
+    "critico": true,
+    "logrado": "Dijo si respira normalmente describiendo lo que ve. Si boqueaba, roncaba o hacía ruidos raros, lo contó así, sin decir que respiraba bien. Si no sabía, lo dijo en vez de inventar.",
+    "parcial": "Dijo 'respira' o 'no sé' sin describir lo que veía, o tardó mucho en contestarlo."
+   },
+   {
+    "id": "rcp",
+    "label": "Siguió la RCP guiada",
+    "peso": 20,
+    "critico": false,
+    "logrado": "Aceptó las indicaciones, dijo que empezó a comprimir enseguida y siguió sin parar hasta que llegó la ambulancia o el operador indicó otra cosa. Si la víctima empezó a respirar, lo avisó.",
+    "parcial": "Empezó tarde, discutió o dudó mucho antes de empezar, o paró sin que se lo indicaran."
+   },
+   {
+    "id": "altavoz",
+    "label": "Teléfono en altavoz",
+    "peso": 5,
+    "critico": false,
+    "logrado": "Puso el teléfono en altavoz (lo dijo o lo confirmó) para tener las dos manos libres.",
+    "parcial": "Lo hizo recién cuando se lo pidieron varias veces."
+   },
+   {
+    "id": "dea",
+    "label": "Pidió el desfibrilador (DEA)",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Dijo si hay un DEA cerca y mandó a alguien a buscarlo; si llegó, siguió las indicaciones para usarlo. Si no había, lo dijo.",
+    "parcial": "Mencionó el DEA sin mandar a buscarlo, o recién cuando el operador insistió."
+   },
+   {
+    "id": "ayuda",
+    "label": "Pidió ayuda a la gente de alrededor",
+    "peso": 6,
+    "critico": false,
+    "logrado": "Le dio una tarea concreta a otras personas: buscar el DEA, esperar a la ambulancia en la entrada, relevarlo en las compresiones. Si estaba solo, lo dijo.",
+    "parcial": "Pidió ayuda en general, sin tareas concretas."
+   },
+   {
+    "id": "telefono",
+    "label": "Dejó un teléfono por si se corta",
+    "peso": 3,
+    "critico": false,
+    "logrado": "Dio un número de teléfono de contacto.",
+    "parcial": "Lo dio incompleto o dijo que después lo pasaba."
+   },
+   {
+    "id": "linea",
+    "label": "No cortó",
+    "peso": 5,
+    "critico": false,
+    "logrado": "Se quedó en línea hasta que llegó la ambulancia o el operador cerró la llamada.",
+    "parcial": "Amenazó con cortar o se alejó del teléfono sin avisar."
+   }
+  ],
+  "lego/ahogamiento+paro": [
+   {
+    "id": "ubicacion",
+    "label": "Dónde es, para que llegue la ambulancia",
+    "peso": 20,
+    "critico": true,
+    "logrado": "Dio algo que una ambulancia puede encontrar sin volver a preguntar: calle y altura, o un lugar conocido con una referencia, y la localidad o el barrio. Si no sabía la dirección, la armó con referencias (ruta, comercio, cartel, color del portón) o la consiguió preguntando.",
+    "parcial": "Dio una referencia aproximada que obligó al operador a repreguntar, o la dio recién después de varias preguntas."
+   },
+   {
+    "id": "motivo",
+    "label": "Qué pasó, con lo que vio",
+    "peso": 8,
+    "critico": false,
+    "logrado": "En las primeras frases se entiende qué pasó, contado con lo que vio: se desplomó, lo sacaron del agua, no reacciona.",
+    "parcial": "Se entendió recién cuando el operador insistió, o dio un diagnóstico ('le dio un infarto') en vez de lo que vio."
+   },
+   {
+    "id": "conciencia",
+    "label": "Si responde",
+    "peso": 10,
+    "critico": false,
+    "logrado": "Dijo si la persona responde o no cuando le hablan o la tocan.",
+    "parcial": "Lo dijo con dudas, o recién cuando se lo preguntaron más de una vez."
+   },
+   {
+    "id": "respiracion",
+    "label": "Si respira normalmente, contado con honestidad",
+    "peso": 15,
+    "critico": true,
+    "logrado": "Dijo si respira normalmente describiendo lo que ve. Si boqueaba, roncaba o hacía ruidos raros, lo contó así, sin decir que respiraba bien. Si no sabía, lo dijo en vez de inventar.",
+    "parcial": "Dijo 'respira' o 'no sé' sin describir lo que veía, o tardó mucho en contestarlo."
+   },
+   {
+    "id": "rcp",
+    "label": "Siguió la RCP guiada",
+    "peso": 20,
+    "critico": false,
+    "logrado": "Aceptó las indicaciones, dijo que empezó a comprimir enseguida y siguió sin parar hasta que llegó la ambulancia o el operador indicó otra cosa. Si la víctima empezó a respirar, lo avisó.",
+    "parcial": "Empezó tarde, discutió o dudó mucho antes de empezar, o paró sin que se lo indicaran."
+   },
+   {
+    "id": "altavoz",
+    "label": "Teléfono en altavoz",
+    "peso": 5,
+    "critico": false,
+    "logrado": "Puso el teléfono en altavoz (lo dijo o lo confirmó) para tener las dos manos libres.",
+    "parcial": "Lo hizo recién cuando se lo pidieron varias veces."
+   },
+   {
+    "id": "dea",
+    "label": "Pidió el desfibrilador (DEA)",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Dijo si hay un DEA cerca y mandó a alguien a buscarlo; si llegó, siguió las indicaciones para usarlo. Si no había, lo dijo.",
+    "parcial": "Mencionó el DEA sin mandar a buscarlo, o recién cuando el operador insistió."
+   },
+   {
+    "id": "ayuda",
+    "label": "Pidió ayuda a la gente de alrededor",
+    "peso": 6,
+    "critico": false,
+    "logrado": "Le dio una tarea concreta a otras personas: buscar el DEA, esperar a la ambulancia en la entrada, relevarlo en las compresiones. Si estaba solo, lo dijo.",
+    "parcial": "Pidió ayuda en general, sin tareas concretas."
+   },
+   {
+    "id": "telefono",
+    "label": "Dejó un teléfono por si se corta",
+    "peso": 3,
+    "critico": false,
+    "logrado": "Dio un número de teléfono de contacto.",
+    "parcial": "Lo dio incompleto o dijo que después lo pasaba."
+   },
+   {
+    "id": "linea",
+    "label": "No cortó",
+    "peso": 5,
+    "critico": false,
+    "logrado": "Se quedó en línea hasta que llegó la ambulancia o el operador cerró la llamada.",
+    "parcial": "Amenazó con cortar o se alejó del teléfono sin avisar."
+   },
+   {
+    "id": "ventilaciones",
+    "label": "Hizo las ventilaciones que le indicaron",
+    "peso": 8,
+    "critico": false,
+    "logrado": "Hizo las ventilaciones cuando se las indicaron y contó si el pecho subía, o avisó que no podía y siguió con compresiones sin parar.",
+    "parcial": "Dudó mucho, las hizo a medias o paró todo al no poder ventilar."
+   }
+  ]
+ },
+ "guias": {
+  "ahogamiento/guardavidas": {
+   "escala": [
+    "RESCATE: salió vivo del agua, no tose ni tiene espuma. No es ahogamiento.",
+    "GRADO 1: tose, sin espuma. Reposo, abrigo, tranquilizar. Mortalidad 0%.",
+    "GRADO 2: poca espuma en boca o nariz. O2 5 l/min por cánula nasal y posición lateral de seguridad. Mortalidad 0,6%.",
+    "GRADO 3: mucha espuma, CON pulso radial. O2 15 l/min con máscara y PLS. Mortalidad 5,2%.",
+    "GRADO 4: mucha espuma, SIN pulso radial. O2 15 l/min con máscara y vigilancia estrecha: puede caer en paro. Mortalidad 19,4%.",
+    "GRADO 5: paro respiratorio. Vía aérea permeable, 5 ventilaciones de rescate y después ventilación artificial; controlar el pulso carotídeo seguido, porque puede pasar a grado 6. Mortalidad 44%.",
+    "GRADO 6: paro cardiorrespiratorio. 5 ventilaciones de rescate, controlar signos de circulación y si no hay, RCP 30:2 a 100-120 por minuto, con DEA si hay. Reevaluar pulso y respiración cada 2 minutos. Si recupera, se maneja como grado 4 o 5 y se vigila, porque puede volver a parar. Mortalidad 93%.",
+    "Ahogamiento primario (o 'puro'): no lo precipitó otra cosa. Secundario: lo precipitó alcohol, drogas, una convulsión, un traumatismo o un cuadro cardíaco."
+   ],
+   "clasificar": [
+    "Clasificá apenas el guardavidas terminó de evaluar en la orilla. Te lo puede reportar de dos maneras y tenés que reconocer las dos:",
+    "- Te da el grado directo ('grado 5', 'está en paro respiratorio'). Ya sabés qué implica: NO repreguntes tos, espuma y pulso uno por uno. Pasá directo a lo que ese grado necesita.",
+    "- Te describe signos sueltos, porque está ocupado con la maniobra. Armá vos el cuadro: si respira, ¿tose?, ¿hay espuma en boca o nariz?, ¿poca o mucha?; si hay mucha espuma, ¿tiene pulso radial?; si no respira, ¿ya dio las 5 ventilaciones de rescate?, ¿hay signos de circulación?",
+    "En los dos casos preguntá además el tiempo aproximado de sumersión. Lo de las maniobras en curso y el DEA ya lo preguntaste en la fase 2: no lo repitas si ya te contestaron."
+   ],
+   "saber": [
+    "El guardavidas NO administra oxígeno: en Argentina no está en su alcance. El oxígeno de la tabla de grados lo pone el SEM cuando llega, así que no se lo preguntes ni se lo indiques.",
+    "La relación de compresiones y ventilaciones es la de siempre: 30:2 en adultos, y 15:2 en chicos y lactantes cuando hay dos socorristas. 100 a 120 compresiones por minuto. Profundidad: 5 a 6 cm en adolescentes y adultos; un tercio del pecho en chicos (unos 5 cm) y en lactantes (unos 4 cm). En chicos, una o dos manos según el tamaño; en lactantes, dos pulgares abrazando el pecho o el talón de una mano. (OJO: el manual SVB de la escuela dice 15:2 para todas las edades con dos socorristas. El instructor corrigió que 15:2 se reserva a pediátricos. Manda el instructor.)",
+    "Se arranca siempre con 5 ventilaciones de rescate: el ahogamiento es un paro por asfixia, así que el oxígeno va primero, antes que las compresiones.",
+    "Después de los primeros 5 ciclos se evalúan ventilación y signos de circulación, y de ahí en más cada 2 minutos o 5 ciclos. El DEA pausa solo cada 2 minutos, así que los tiempos coinciden.",
+    "Vomitar durante la reanimación es lo habitual, no la excepción: pasa en la mitad de las víctimas conscientes y en el 86% de las que reciben RCP completa. Si vomita: lateralizar, limpiar la boca, volver a ponerlo boca arriba y seguir. NO es signo de mejora y no se frena la RCP por eso.",
+    "La espuma NO es vómito. No se lateraliza ni se detiene la reanimación por espuma: se limpia, o se ventila por encima y se limpia en la pausa de las compresiones. Si el alumno frena por la espuma, corregilo.",
+    "Ventilar de más infla el estómago, provoca vómito y broncoaspiración, y encima perjudica el retorno venoso al corazón. Insuflar suave, en un segundo, sólo hasta que el tórax se eleve.",
+    "Si el boca a boca no entra: revisar la hiperextensión del cuello y reintentar. Si sigue sin entrar, pensar en obstrucción de la vía aérea por cuerpo extraño.",
+    "Muchos ahogados se enfrían, incluso en verano: el agua recién es térmicamente neutra cerca de los 33 grados, así que hay que secarlos y abrigarlos. Pero la evaluación dura lo de siempre, hasta 10 segundos, y ante la duda se reanima. Sólo si estuvo en agua fría y está helado, el pulso y la respiración pueden ser tan lentos que cuesta detectarlos: ahí se mira hasta un minuto (ERC 2025).",
+    "A la víctima hipotérmica se la maneja con suavidad: una maniobra brusca puede desencadenar una fibrilación. Se la saca del agua en posición horizontal si se puede, se le quita la ropa mojada y se la abriga.",
+    "En hipotermia la desfibrilación puede no funcionar hasta que el cuerpo se recalienta. Por eso, en ahogamiento, no se da a nadie por muerto hasta que esté caliente.",
+    "Sólo NO se inicia RCP si la escena es insegura, si hubo más de una hora de sumersión, o si hay rigidez cadavérica, livideces o descomposición. Ante cualquier duda, se reanima.",
+    "Si recupera y vuelve a respirar solo, se maneja como grado 4 y se vigila de cerca: puede volver a caer en paro dentro de la media hora siguiente. Posición lateral de seguridad y, si hay DEA, los parches quedan puestos.",
+    "Agua dulce y agua salada se tratan igual. (En la revisión de Quan 2016 el agua salada tuvo un pronóstico apenas mejor, pero no cambia nada de lo que se hace ni del despacho.) Si el alumno hace esa distinción, no cambia nada de lo que le indicás.",
+    "Lo que más pesa en el pronóstico es el tiempo bajo el agua: con menos de 5 o 6 minutos el pronóstico es bueno, y pasados los 25 casi siempre es fatal. Por eso te importa el tiempo de sumersión, aunque sea aproximado.",
+    "La lesión de columna en un ahogado es rarísima si no hubo un golpe (0,5% en la serie de Watson 2001, siempre con zambullida, caída de altura o choque). Sin ese antecedente no se inmoviliza de rutina, y nunca se demora la ventilación por cuidar el cuello.",
+    "Hidrocución o síndrome de inmersión: entrada brusca a agua fría que dispara una arritmia y puede terminar en síncope o paro. Es un mecanismo distinto del ahogamiento por cansancio, y se pregunta cómo entró al agua.",
+    "En chicos, el ritmo desfibrilable es todavía más raro que en adultos, pero igual se usa el DEA apenas esté disponible, con parches pediátricos si los hay."
+   ],
+   "extras": [
+    {
+     "id": "dea_result",
+     "pide": "qué indicó el DEA, una vez que lo hayan colocado"
+    }
+   ],
+   "cambia": {
+    "identificacion": {
+     "label": "Se identificó como guardavidas y dijo su puesto",
+     "peso": 5,
+     "logrado": "Dijo su nombre, que es el guardavidas en servicio y desde qué puesto o sector llama.",
+     "parcial": "Se identificó por arriba, sin dejar claro que es el guardavidas del lugar ni desde dónde."
+    }
+   },
+   "checks": [
+    {
+     "id": "sumersion",
+     "label": "Tiempo de sumersión",
+     "peso": 8,
+     "critico": false,
+     "logrado": "Dio el tiempo aproximado que la víctima estuvo bajo el agua, aunque fuera estimado.",
+     "parcial": "Lo mencionó muy vago ('un rato', 'poco') sin un número aproximado."
+    },
+    {
+     "id": "clasificacion",
+     "label": "Clasificó la víctima o dio los signos para clasificarla",
+     "peso": 12,
+     "critico": false,
+     "logrado": "Dio el grado directamente, o describió tos, espuma (poca o mucha) y pulso radial de manera que el operador pudo clasificar.",
+     "parcial": "Dio algún signo suelto, insuficiente para ubicar el grado."
+    },
+    {
+     "id": "maniobras",
+     "label": "Informó qué maniobras estaba haciendo",
+     "peso": 10,
+     "critico": false,
+     "logrado": "Dijo qué venía haciendo y desde cuándo: ventilaciones de rescate, compresiones, cuántos ciclos o cuánto tiempo llevaba.",
+     "parcial": "Dijo que estaba atendiendo sin precisar qué maniobra ni desde cuándo."
+    }
+   ]
+  },
+  "paro/guardavidas": {
+   "escala": [],
+   "clasificar": [
+    "En un paro no hay grados. Lo que te importa, en este orden: si lo vio desplomarse y hace cuánto, si ya están comprimiendo, y si hay un DEA en camino o colocado.",
+    "Si te lo dio todo junto, que es lo que hace un entrenado, no lo repreguntes."
+   ],
+   "saber": [
+    "Colapso de golpe, no responde y no respira normalmente (o boquea) = paro. Unas sacudidas breves al principio pueden ser parte del paro, no una convulsión común.",
+    "Lo que decide la supervivencia es cuánto se tarda en empezar la RCP y en dar la primera descarga: sin nada, la probabilidad de sobrevivir cae unos 5 puntos por cada minuto. Por eso el DEA es lo que más te importa del material.",
+    "Un entrenado hace 30:2, a 100-120 compresiones por minuto y 5-6 cm de profundidad. Si no puede o no quiere ventilar, las compresiones solas son aceptables en el adulto.",
+    "El DEA se coloca apenas llega, sobre el pecho desnudo y seco. Mientras analiza y descarga nadie toca a la víctima; después se sigue comprimiendo enseguida.",
+    "Si recupera y respira normalmente: de costado, vigilar la respiración, y los parches quedan puestos porque puede volver a parar.",
+    "Un guardavidas fuera de servicio no tiene puesto ni equipo: se identifica, deja un teléfono y reparte tareas a los testigos (uno al DEA, otro a esperar a la ambulancia)."
+   ],
+   "extras": [
+    {
+     "id": "dea_result",
+     "pide": "qué indicó el DEA, una vez que lo hayan colocado"
+    }
+   ],
+   "checks": [
+    {
+     "id": "tiempo",
+     "label": "Si lo vio desplomarse y hace cuánto",
+     "peso": 8,
+     "critico": false,
+     "logrado": "Dijo que lo vio desplomarse (o que no lo vio) y hace cuánto pasó, aunque fuera aproximado.",
+     "parcial": "Dio una de las dos cosas, o muy vago ('hace un rato')."
+    },
+    {
+     "id": "maniobras",
+     "label": "Informó qué maniobras estaba haciendo",
+     "peso": 10,
+     "critico": false,
+     "logrado": "Dijo qué venía haciendo y desde cuándo: compresiones, ventilaciones, DEA colocado o en camino.",
+     "parcial": "Dijo que estaba atendiendo sin precisar qué hacía ni desde cuándo."
+    }
+   ]
+  },
+  "trauma/guardavidas": {
+   "escala": [],
+   "clasificar": [
+    "Primero lo que mata rápido: si responde y si respira bien. Si respira con dificultad o no respira, eso manda y la columna pasa a segundo plano.",
+    "Después, lo que te dice si es de columna: cómo se lastimó, si mueve brazos y piernas, si siente, si le duele el cuello.",
+    "Y qué están haciendo: si le sostienen la cabeza alineada, si lo movieron. Si te lo contó todo junto, no lo repreguntes."
+   ],
+   "saber": [
+    "Zambullirse de cabeza en agua baja es el mecanismo típico de lesión de la columna cervical en el agua. Sin un mecanismo así, la lesión es rarísima.",
+    "Si no mueve o no siente las piernas, o tiene los brazos débiles, sospechá lesión de médula: no se lo mueve más que lo indispensable y se le sostiene la cabeza alineada con el cuerpo hasta que llegue el SEM.",
+    "Si no respira, la ventilación va primero aunque haya sospecha de columna: se abre la vía aérea moviendo lo mínimo, pero no se deja de ventilar por cuidar el cuello.",
+    "Una lesión cervical alta puede comprometer la respiración: si empieza a respirar peor, es un cambio grave que te tienen que avisar enseguida.",
+    "No tener tabla ni collar no es un problema: la estabilización con las manos alcanza hasta que llegue el SEM. No se improvisan collares.",
+    "Hay que abrigarlo: el agua y la lesión medular favorecen la hipotermia."
+   ],
+   "extras": [],
+   "checks": [
+    {
+     "id": "mecanismo",
+     "label": "Cómo se lastimó",
+     "peso": 10,
+     "critico": false,
+     "logrado": "Dijo el mecanismo: se tiró de cabeza en poca profundidad, se golpeó contra el fondo o las piedras, cayó.",
+     "parcial": "Dijo que se golpeó sin decir cómo, o lo dijo recién cuando se lo preguntaron dos veces."
+    },
+    {
+     "id": "neurologico",
+     "label": "Si mueve y siente brazos y piernas",
+     "peso": 10,
+     "critico": false,
+     "logrado": "Dijo qué mueve y qué no, y si siente, en términos observables.",
+     "parcial": "Dijo 'no se puede mover' sin precisar qué ni si siente."
+    },
+    {
+     "id": "inmovilizacion",
+     "label": "Qué están haciendo con la columna",
+     "peso": 6,
+     "critico": false,
+     "logrado": "Dijo que le sostienen la cabeza alineada, que no lo mueven, y con qué cuentan (o que no tienen tabla ni collar).",
+     "parcial": "Lo mencionó a medias o sin aclarar si lo movieron."
+    }
+   ]
+  },
+  "paro/lego": {
+   "saber": [
+    "En el adulto que se desploma, la RCP guiada por teléfono es sólo con compresiones: es más fácil de indicar y de hacer, y es lo que recomiendan las guías.",
+    "Lo que más cambia el resultado es que empiece a comprimir rápido y que llegue un DEA. Cada minuto cuenta.",
+    "La respiración agónica aparece en muchos paros, sobre todo al principio, y es la razón más común por la que un testigo cree que la persona respira."
+   ]
+  },
+  "ahogamiento/lego": {
+   "saber": [
+    "En un ahogado, y en cualquier chico, el paro viene por falta de aire: por eso la RCP guiada empieza con 5 ventilaciones y sigue con 30 compresiones y 2 ventilaciones.",
+    "Si quien llama no puede o no quiere ventilar, se le indica que haga sólo compresiones, sin parar: es mucho mejor que nada.",
+    "Es habitual que el ahogado vomite: de costado, limpiar la boca, y seguir.",
+    "Se lo seca y se lo abriga en cuanto se pueda: casi todo ahogado está frío."
+   ]
+  }
+ }
+}

@@ -8,7 +8,16 @@
 //   - Alumno (código de alumnos, de sala, o CODIGO_ACCESO): avisar en qué estado está su
 //     grupo dentro de una clase abierta.
 //   - Instructor (código de instructor de su cuenta): el panel de SU cuenta.
-//   - Administrador (CODIGO_ADMIN): todo, incluidas las cuentas de los clientes.
+//   - Administrador (CODIGO_ADMIN): todo, incluidas las cuentas de los clientes. La
+//     puerta de Administración de la entrada pide `panel` con `requiere: "admin"`: con un
+//     código de instructor contesta 403 solo_admin.
+//
+// Desde noviembre de 2026 no hay escenarios: el operador se adapta al caso que cuenta el
+// alumno. Las prácticas nuevas guardan `caso` (lo clasifica la app) y `clase` (consigna,
+// lugar y localidad de la clase, lo que sabía el alumno); las viejas, `escenario`. Los
+// lectores de acá (resumen, tablero) contemplan las dos formas. Las acciones de
+// escenarios quedan como talones para un panel viejo abierto (ver más abajo), y las claves
+// `esc:` de la base no se borran.
 //
 // Variables de entorno que lee además de la base: CODIGO_ADMIN, CODIGO_ACCESO,
 // NOMBRE_PRINCIPAL, MOSTRAR_PRECIOS, TITULAR_NOMBRE, TITULAR_CUIT, TITULAR_DOMICILIO,
@@ -80,8 +89,11 @@ export default async function handler(req, res) {
           return res.status(200).json({ ok: true });
         }
       }
+      // `caso`: el nombre del tipo de caso que clasificó la app (vacío mientras no se sabe).
+      // Una pestaña vieja todavía manda `escenario` (el título): se guarda en el mismo campo.
+      const caso = corto(b.caso != null ? b.caso : b.escenario, 140);
       await kvPipe([
-        ["HSET", k, grupo.toLowerCase(), JSON.stringify({ grupo, estado, escenario: corto(b.escenario, 140), perfil: b.perfil === "lego" ? "lego" : "guardavidas", t: Date.now() })],
+        ["HSET", k, grupo.toLowerCase(), JSON.stringify({ grupo, estado, caso, perfil: b.perfil === "lego" ? "lego" : "guardavidas", t: Date.now() })],
         ["EXPIRE", k, 3 * 86400]
       ]);
       return res.status(200).json({ ok: true });
@@ -98,6 +110,13 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "codigo_invalido", detalle: "Ese no es un código de instructor." });
     }
     const esAdmin = acc.rol === "admin";
+    // La puerta de Administración de la entrada: un código de instructor no pasa por ahí
+    // (por la de Instructores, sí). Cuenta como intento fallido del freno del panel, igual
+    // que un código equivocado.
+    if (accion === "panel" && b.requiere === "admin" && !esAdmin) {
+      await anotarIntento(ip, codigoPanel, "panel");
+      return res.status(403).json({ error: "solo_admin", detalle: "Ese código no es el de administración." });
+    }
     // El administrador puede mirar cualquier cuenta; el instructor, sólo la suya.
     const cuentaId = esAdmin && b.cuentaId ? corto(b.cuentaId, 40) : acc.cuentaId;
     if (!esAdmin && acc.bloqueo) return res.status(403).json({ error: acc.bloqueo });
@@ -113,9 +132,10 @@ export default async function handler(req, res) {
       "practica": () => leerPractica(cuentaId, b.id),
       "revisar": () => revisarPractica(cuentaId, b),
       "practica-borrar": () => borrarPractica(cuentaId, b.id),
-      "escenarios": () => listarEscenarios(cuentaId),
-      "escenario-guardar": () => guardarEscenario(cuentaId, b.escenario),
-      "escenario-borrar": () => borrarEscenario(cuentaId, b.id),
+      // Talones: los escenarios ya no existen (ver "escenarios retirados" más abajo).
+      "escenarios": async () => ({ escenarios: [] }),
+      "escenario-guardar": async () => { throw escenariosRetirados(); },
+      "escenario-borrar": async () => { throw escenariosRetirados(); },
       "codigo-regenerar": () => regenerarCodigo(cuentaId, b.tipo)
     };
     const soloAdmin = {
@@ -216,7 +236,7 @@ const MESES_DETALLE = 6;
 
 // Lo que muestran la pestaña Instructores y «Mi cuenta»: prácticas y promedios de los
 // últimos seis meses, días con prácticas, la última práctica, y cuántas prácticas y clases
-// en vivo hubo en 90 días. Sale de contadores (uso:, dias:, idx:, salas:), sin leer ninguna
+// en vivo hubo en 90 días, y cuántas prácticas de cada tipo de caso. Sale de contadores (uso:, dias:, idx:, salas:), sin leer ninguna
 // práctica. Devuelve los pedidos a la base y la función que lee sus respuestas.
 function pedidosDetalle(id) {
   const meses = ultimosMeses(MESES_DETALLE);
@@ -231,7 +251,17 @@ function pedidosDetalle(id) {
   const leer = r => {
     const k = meses.length;
     const ultima = Array.isArray(r[k + 1]) && r[k + 1].length >= 2 ? Number(r[k + 1][1]) : 0;
+    // Prácticas por tipo de caso en los seis meses, de los contadores caso:<id> de uso:.
+    // Sólo los de la lista cerrada; las prácticas viejas (con escenario) no suman.
+    const casos = {};
+    for (let j = 0; j < k; j++) {
+      for (const [campo, v] of Object.entries(hashAObjeto(r[j]))) {
+        const id = campo.startsWith("caso:") ? campo.slice(5) : "";
+        if (CASOS_VALIDOS.includes(id) && Number(v) > 0) casos[id] = (casos[id] || 0) + Number(v);
+      }
+    }
     return {
+      casos,
       meses: meses.map((mes, j) => {
         const u = hashAObjeto(r[j]);
         return {
@@ -272,7 +302,8 @@ function publicaCuenta(c) {
     id: c.id, nombre: c.nombre, tipo: c.tipo || "instructor", plan: c.plan || "prueba",
     cupoMensual: Number(c.cupoMensual) || 0, vence: c.vence || null, activa: c.activa !== false,
     codigoAlumnos: c.codigoAlumnos || null, codigoInstructor: c.codigoInstructor || null,
-    contacto: c.contacto || "", notas: c.notas || "", creada: c.creada || null
+    contacto: c.contacto || "", notas: c.notas || "", creada: c.creada || null,
+    zona: c.zona || ""
   };
 }
 
@@ -285,7 +316,12 @@ async function crearSala(cuentaId, b) {
     codigo: null, cuentaId, nombre: corto(b.nombre, 80).trim() || ("Clase del " + hoyAR()),
     creada: ahora, vence: ahora + horas * 3600000, cerrada: false,
     perfil: b.perfil === "lego" || b.perfil === "guardavidas" ? b.perfil : null,
-    escenarios: Array.isArray(b.escenarios) ? b.escenarios.slice(0, 30).map(x => corto(x, 60)) : null
+    // Consigna y lugar: los ven los alumnos y el evaluador, nunca el operador (es ciego a la
+    // escena). La localidad sí le llega al operador, como al 107 real. Todo opcional; un
+    // `escenarios` de un panel viejo se ignora.
+    consigna: corto(b.consigna, 400).trim(),
+    lugar: corto(b.lugar, 120).trim(),
+    zona: corto(b.zona, 60).trim()
   };
   for (let i = 0; i < 6 && !sala.codigo; i++) {
     const cod = generarCodigo(6);
@@ -376,9 +412,13 @@ function resumen(p) {
     const mios = p.transcripcion.filter(l => l.w === "yo");
     if (mios[tu - 1]) tUbic = mios[tu - 1].t;
   }
+  // Prácticas nuevas: `caso` del registro. Viejas (con escenario): el título del escenario
+  // como nombre y casoId vacío, así el panel las junta en «Escenarios anteriores».
+  const caso = p.caso ? (p.caso.nombre || "") : ((p.escenario && p.escenario.titulo) || "");
+  const casoId = p.caso ? (p.caso.id || "") : "";
   return {
     id: p.id, fecha: p.fecha, grupo: p.grupo, alias: p.alias, sala: p.sala, perfil: p.perfil,
-    dificultad: p.dificultad, escenario: p.escenario, duracionMs: p.duracionMs, cortoPor: p.cortoPor,
+    dificultad: p.dificultad, caso, casoId, paro: Boolean(p.caso && p.caso.paro), escenario: p.escenario || null, duracionMs: p.duracionMs, cortoPor: p.cortoPor,
     puntaje: p.puntaje, topeado: p.topeado, titular: ev.titular || "", error: p.error || null,
     items, revision: rev, puntajeInstructor: p.revision ? p.revision.puntaje : null, revisionCiega: p.revision && p.revision.itemsCiegos ? p.revision.itemsCiegos : null,
     tUbicacionMs: tUbic, tRcpMs: p.tRcpMs == null ? null : p.tRcpMs, modeloEvaluador: p.modeloEvaluador || null,
@@ -432,44 +472,14 @@ async function borrarPractica(cuentaId, id) {
   return { ok: true };
 }
 
-// ---------------- escenarios compartidos ----------------
+// ---------------- escenarios retirados ----------------
 
-async function listarEscenarios(cuentaId) {
-  const h = await kv("HGETALL", P + "esc:" + cuentaId);
-  const lista = [];
-  if (Array.isArray(h)) for (let i = 1; i < h.length; i += 2) { const e = json(h[i]); if (e) lista.push(e); }
-  lista.sort((a, b) => (a.creado || 0) - (b.creado || 0));
-  return { escenarios: lista };
-}
-
-const GUIAS_VALIDAS = ["", "ahogamiento", "pcr", "trauma", "lego-rcp", "lego-ahogamiento"];
-
-async function guardarEscenario(cuentaId, e) {
-  if (!e || typeof e !== "object") throw problema("faltan_datos", "Falta el escenario.");
-  const esc = {
-    id: e.id && /^inst-[a-z0-9]+$/.test(String(e.id)) ? String(e.id) : "inst-" + nuevoId(),
-    title: corto(e.title, 120).trim(), fam: corto(e.fam, 40).trim() || "Propio",
-    card: corto(e.card, 200).trim(), scene: corto(e.scene, 2500).trim(),
-    addr: corto(e.addr, 400).trim(), zona: corto(e.zona, 80).trim() || "Santa Fe capital",
-    perfil: e.perfil === "lego" ? "lego" : "guardavidas",
-    guia: GUIAS_VALIDAS.includes(e.guia) ? e.guia : "",
-    victima: ["adulto", "nino", "lactante"].includes(e.victima) ? e.victima : "adulto",
-    notasInstructor: (Array.isArray(e.notasInstructor) ? e.notasInstructor : String(e.notasInstructor || "").split("\n"))
-      .map(x => corto(x, 400).trim()).filter(Boolean).slice(0, 12),
-    institucion: true, creado: Number(e.creado) || Date.now(), editado: Date.now()
-  };
-  if (!esc.title || !esc.scene || !esc.addr) throw problema("faltan_datos", "Faltan el nombre, la situación o la ubicación.");
-  if (!esc.card) esc.card = esc.scene.slice(0, 110);
-  // El tope es para los nuevos: editar uno que ya existe siempre se puede.
-  const [n, existe] = await kvPipe([["HLEN", P + "esc:" + cuentaId], ["HEXISTS", P + "esc:" + cuentaId, esc.id]]);
-  if ((Number(n) || 0) >= 60 && !Number(existe)) throw problema("demasiados", "Ya hay 60 escenarios propios en esta cuenta. Borrá alguno antes de cargar otro.");
-  await kv("HSET", P + "esc:" + cuentaId, esc.id, JSON.stringify(esc));
-  return { escenario: esc };
-}
-
-async function borrarEscenario(cuentaId, id) {
-  await kv("HDEL", P + "esc:" + cuentaId, corto(id, 60));
-  return { ok: true };
+// Los escenarios prediseñados y los compartidos por cuenta se sacaron en noviembre de 2026:
+// el operador se adapta al caso que cuenta el alumno. Un panel viejo abierto durante el
+// despliegue todavía pide estas acciones: la lista vuelve vacía (no se rompe la pestaña) y
+// guardar o borrar le dicen que recargue. Las claves `esc:` quedan en la base sin tocar.
+function escenariosRetirados() {
+  return problema("funcion_retirada", "Recargá la página: los escenarios ya no existen.", 410);
 }
 
 // ---------------- códigos ----------------
@@ -547,6 +557,9 @@ async function guardarCuenta(datos) {
     cupoMensual: Math.max(0, Math.min(100000, Number(datos.cupoMensual) || 0)),
     vence, activa: datos.activa !== false,
     contacto: corto(datos.contacto, 200), notas: corto(datos.notas, 1500),
+    // La localidad de la cuenta: la del operador ("107 en …") cuando la clase no dice otra.
+    // Si no viene (un panel viejo), se conserva la que tenía.
+    zona: "zona" in datos ? corto(datos.zona, 60).trim() : ((previa && previa.zona) || ""),
     creada: previa && previa.creada ? previa.creada : Date.now()
   };
   if (!cuenta.codigoAlumnos) cuenta.codigoAlumnos = await reservarCodigo("cod:", id, prefijoDe(nombre), 5);
@@ -603,6 +616,12 @@ async function usoGlobal(dias) {
 
 const P = "s107:";
 const RETENCION_DIAS = 400;
+// Los tipos de caso de protocolos.js (CASOS / ORDEN_CASOS), en el mismo orden. Es una lista
+// cerrada para los contadores `caso:<id>` de uso: un id inventado por un cliente no abre un
+// campo nuevo en la base. Si se agrega un tipo en protocolos.js, se agrega acá y en
+// api/chat.js.
+const CASOS_VALIDOS = ["ahogamiento", "atragantamiento", "paro", "hemorragia", "alergia", "parto", "acv", "pecho",
+  "respiratorio", "convulsion", "glucemia", "intoxicacion", "temperatura", "trauma", "quemadura", "inconsciente", "desmayo", "otro"];
 const ALFABETO = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";   // sin 0/O ni 1/I, que se confunden al dictarlos
 
 function kvConfig() {

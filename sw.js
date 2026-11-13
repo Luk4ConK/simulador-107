@@ -1,7 +1,7 @@
 // Service worker mínimo: hace que la app sea instalable y abra rápido.
 // La conversación con el operador SIEMPRE necesita internet: nunca se cachea /api/.
-const CACHE = "sim107-v1";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
+const CACHE = "sim107-v2";
+const SHELL = ["./", "./index.html", "./protocolos.js", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

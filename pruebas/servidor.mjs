@@ -4,7 +4,8 @@
 //   node pruebas/servidor.mjs            → http://localhost:8107
 //   RAPIDO=1 node pruebas/servidor.mjs   → los tiempos de la llamada en segundos (arribo,
 //                                          cadencia de controles) para ver una llamada
-//                                          entera en medio minuto
+//                                          entera en medio minuto; se cambian al servir
+//                                          protocolos.js, que es donde viven ARRIBOS y CADENCIA
 //   CON_BASE=1                           → con base de datos en memoria
 //   CODIGO_ACCESO=... CODIGO_ADMIN=...   → como en Vercel
 import http from "node:http";
@@ -33,11 +34,16 @@ const rutasApi = { "/api/chat": chat, "/api/datos": datos };
 const bonitas = { "/panel": "/panel.html", "/instructores": "/instructores.html", "/fundamentos": "/fundamentos.html", "/terminos": "/terminos.html", "/privacidad": "/privacidad.html", "/activar": "/activar.html" };
 const tipos = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".svg": "image/svg+xml", ".css": "text/css" };
 
-function acelerar(html) {
-  if (process.env.RAPIDO !== "1") return html;
-  return html
+// ARRIBOS y CADENCIA viven en protocolos.js desde que no hay escenarios (antes, en index.html).
+function acelerar(fuente) {
+  if (process.env.RAPIDO !== "1") return fuente;
+  const rapido = fuente
     .replace(/const ARRIBOS = \{[^}]*\};/, "const ARRIBOS = { corto:[0.1,0.1], normal:[0.15,0.15], largo:[0.25,0.25] };")
     .replace(/const CADENCIA = \{[^}]*\};/, "const CADENCIA = { critico:5000, estable:6000, rcp:4000 };");
+  // Si protocolos.js cambia de forma y los reemplazos dejan de calzar, que se note acá y
+  // no como una prueba que espera ocho minutos a la ambulancia.
+  if (!rapido.includes("corto:[0.1,0.1]") || !rapido.includes("rcp:4000")) throw new Error("RAPIDO=1: no encontré ARRIBOS o CADENCIA en protocolos.js");
+  return rapido;
 }
 
 const servidor = http.createServer(async (req, res) => {
@@ -61,7 +67,7 @@ const servidor = http.createServer(async (req, res) => {
   const archivo = path.join(raiz, path.normalize(ruta));
   if (!archivo.startsWith(raiz) || !fs.existsSync(archivo) || fs.statSync(archivo).isDirectory()) { res.writeHead(404); res.end("no existe"); return; }
   let contenido = fs.readFileSync(archivo);
-  if (ruta === "/index.html") contenido = acelerar(contenido.toString("utf8"));
+  if (ruta === "/protocolos.js") contenido = acelerar(contenido.toString("utf8"));
   res.writeHead(200, { "content-type": tipos[path.extname(archivo)] || "application/octet-stream" });
   res.end(contenido);
 });

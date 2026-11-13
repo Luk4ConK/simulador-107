@@ -10,8 +10,9 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 
 **https://simulador.kalulab.store** — es la web del simulador y todo empieza ahí (la dirección de Vercel, https://simulador-107.vercel.app, sigue andando). **www.kalulab.store** es la página de Kalu Lab, con el botón para entrar al simulador: ver «La página de Kalu Lab» más abajo. Abre en una entrada con dos puertas:
 
-- **Soy alumno:** el alumno pone el código de la clase que le diste y entra a practicar.
-- **Soy instructor:** ponés tu código y entrás al panel, donde abrís las clases y ves las prácticas.
+- **Alumnos:** el alumno pone el código de la clase que le diste y entra a practicar.
+- **Instructores:** ponés tu código y entrás al panel, donde abrís las clases y ves las prácticas.
+- **Administración:** la puerta discreta del dueño, con el código de administrador (`CODIGO_ADMIN`): abre el panel completo, con las cuentas de todos los instructores.
 
 Para activar el panel y las clases hay que hacer tres cosas en Vercel, una sola vez. La página **/activar** (por ejemplo, https://simulador-107.vercel.app/activar) revisa sola cuáles faltan, prueba que la base y la IA respondan, y tiene los pasos con los enlaces directos.
 
@@ -57,7 +58,7 @@ Descomprimí la carpeta `simulador-107` y subila como proyecto nuevo. Dos camino
 
 **Camino corto (sin instalar nada):** entrá a vercel.com → *Add New* → *Project* → *Deploy* y arrastrá la carpeta.
 
-**Camino con GitHub (recomendado si después querés ir cambiando escenarios):** subí la carpeta a un repositorio nuevo y en Vercel elegí *Import Git Repository*. Cada cambio que subas se publica solo.
+**Camino con GitHub (recomendado si después querés ir cambiando los protocolos de los casos):** subí la carpeta a un repositorio nuevo y en Vercel elegí *Import Git Repository*. Cada cambio que subas se publica solo.
 
 No hay que elegir framework ni comando de build: es HTML suelto más una función. Si Vercel pregunta, dejá *Other* y todo en blanco.
 
@@ -121,13 +122,12 @@ Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pan
 
 ## El panel del instructor
 
-Se entra desde la página principal, en *Soy instructor*, o directo en **https://simulador.kalulab.store/panel**. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
+Se entra desde la página principal, en *Instructores* (o en *Administración*, si sos el dueño), o directo en **https://simulador.kalulab.store/panel**. Se entra con `CODIGO_ADMIN` (vos) o con el código de instructor de cada cuenta. Desde ahí, sin tocar código ni Vercel:
 
-- **Clase en vivo.** Abrís una clase y te da un código de seis caracteres para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Ves a todos en un tablero (quién está llamando, quién terminó y con cuánto), el guion para cantar la evolución de la víctima en cada escenario que se está llamando y, al final, qué criterio costó más en toda la clase. Al cerrar la clase, los grupos que estaban en una llamada la terminan y reciben su devolución, y el resumen queda a la vista para el cierre; el de una clase anterior se vuelve a ver con «ver resumen».
-- **Prácticas.** Cada llamada queda con su transcripción. Podés revisarla criterio por criterio (a ciegas: lo que dijo la IA se ve recién después de marcar lo tuyo), borrarla o descargar todo en una planilla.
+- **Clase en vivo.** Abrís una clase y te da un código de seis caracteres para proyectar. Cada grupo entra con ese código desde su celular y escribe el nombre del grupo. Al abrirla podés escribir una **consigna** (el caso que les toca) y el **lugar** donde están (una pileta, un club, una escuela): la ven los alumnos y el evaluador, nunca el operador. Ves a todos en un tablero (quién está llamando, qué tipo de caso detectó el operador, quién terminó y con cuánto) y, al final, qué criterio costó más en toda la clase. Al cerrar la clase, los grupos que estaban en una llamada la terminan y reciben su devolución, y el resumen queda a la vista para el cierre; el de una clase anterior se vuelve a ver con «ver resumen».
+- **Prácticas.** Cada llamada queda con su transcripción y el tipo de caso (se puede filtrar por caso). Podés revisarla criterio por criterio (a ciegas: lo que dijo la IA se ve recién después de marcar lo tuyo), borrarla o descargar todo en una planilla.
 - **Alumnos.** La evolución del puntaje de cada grupo o alumno.
 - **Calidad.** Cuánto coincide la IA con los instructores (kappa de Cohen), con las revisiones a ciegas.
-- **Escenarios.** Escenarios propios de la cuenta, que ven todos sus alumnos en cualquier celular.
 - **Mi cuenta.** Cómo se usa la cuenta (prácticas del mes contra el cupo, días de clase, puntaje promedio y tiempo hasta la ubicación, mes por mes) y los códigos de alumnos y de instructor, con cómo cambiarlos.
 - **Instructores** (sólo el administrador). Todas las cuentas, una por instructor o institución: las prácticas del mes contra su cupo, las de los últimos 90 días, los días de clase (días con 3 prácticas o más), la última práctica, el vencimiento y si está activa. Arriba, la meta del piloto (5 instructores o instituciones con 2 días de clase o más) y las pruebas que vencen esa semana. Tocando una fila se abre su ficha: el puntaje promedio y el tiempo hasta la ubicación de sus alumnos, sus prácticas mes por mes, sus códigos, el mensaje de bienvenida y sus datos. También se descarga todo en una planilla.
 - **Contactos y Uso y costos** (sólo el administrador): lo que llega del formulario de la página para instructores (con un botón para borrar a alguien que pide que se borren sus datos), y el uso diario con los pedidos que se quedaron sin respuesta (si aparecen más de dos días por mes, es la señal para pasar al plan pago de Gemini).
@@ -143,7 +143,7 @@ Si pierde su código, o lo tiene alguien que no debería, abrí su ficha y tocá
 
 ## Qué le pasás a los alumnos
 
-Para una clase: la dirección de la web y el código de la clase en vivo, que ponen en *Soy alumno*; o directamente el link que copia el panel, que ya trae el código. Para practicar por su cuenta: el código de alumnos de tu cuenta, en la misma puerta. Nada más. No necesitan cuenta ni instalar nada.
+Para una clase: la dirección de la web y el código de la clase en vivo, que ponen en *Alumnos*; o directamente el link que copia el panel, que ya trae el código. Para practicar por su cuenta: el código de alumnos de tu cuenta, en la misma puerta. Nada más. No necesitan cuenta ni instalar nada.
 
 Antes de practicar conviene leerles el aviso: es una simulación, usen el nombre del grupo y datos inventados, y la conversación queda guardada para que la revises (se borra sola a los 13 meses).
 
@@ -151,11 +151,18 @@ Antes de practicar conviene leerles el aviso: es una simulación, usen el nombre
 
 En la pantalla de inicio cada alumno elige si practica como guardavidas o como persona sin formación; en una clase en vivo lo fija el instructor. Como persona sin formación, el operador ayuda a reconocer el paro, pide el altavoz y guía la RCP hasta que llega la ambulancia (sólo compresiones en adultos, con ventilaciones en chicos y ahogados). La devolución mide cuánto tardó en empezar a comprimir.
 
-## Cargar escenarios sin tocar código
+## Cómo se da una clase: no hay escenarios armados
 
-Desde el panel, en *Escenarios*: quedan guardados en la base y los ven todos los alumnos de la cuenta.
+El operador se adapta al caso que le cuenta el alumno: un ahogamiento, un paro, una hemorragia, un atragantamiento, una convulsión, una reacción alérgica, un parto, un desmayo y otros (son 18 tipos). Hay dos maneras de dar el caso, y se pueden combinar:
 
-En la pantalla de inicio del simulador sigue la tarjeta **"+ Cargar un escenario propio"**, que guarda el escenario sólo en ese navegador: sirve para probar un guion al momento. Cuando uno ya esté aceitado para todos los que usen el simulador, tocá *Exportar mis escenarios* y pegá lo que sale dentro de la lista `SCENARIOS` en `index.html`.
+- **Lo cantás vos.** Es lo que se hacía antes del simulador: el instructor, presente, canta en voz alta qué ve el que llama («un nene sacado del agua, no respira») y cómo evoluciona la víctima. Los alumnos llaman y lo transmiten; el operador no lo sabe, lo averigua preguntando.
+- **Lo escribís como consigna.** Al abrir la clase en el panel, en *Consigna*, poné el caso en un párrafo. Lo ven los alumnos en su pantalla; el operador no.
+
+En los dos casos, poné en *Lugar* la dirección donde están o un lugar público conocido, y pedí a los alumnos que usen **nombres y teléfonos inventados y no den su domicilio** (es un pedido de la ley de datos personales: la transcripción queda guardada). Si un alumno practica por su cuenta, el caso se lo inventa él. La app muestra un recordatorio antes de llamar.
+
+Cada práctica queda con el tipo de caso que el operador detectó (y, si la víctima se agravó, de cuál venía), la consigna y el lugar de la clase. Esos tipos de caso y la rúbrica de cada uno están a la vista en **/fundamentos**.
+
+El operador es prudente a propósito: **no indica medicamentos por su cuenta** (sólo ayuda a usar el inhalador o el autoinyector de la propia persona) y no dicta maniobras al guardavidas. Si un caso no te cierra con lo que enseñás en el aula, avisá: gana el aula.
 
 ## Cuánto cuesta
 
@@ -169,20 +176,21 @@ El detalle, el plan de negocio, el paso a planes pagos y la operativa están en 
 
 ## Qué toca si querés cambiar algo
 
-Todo el contenido vive en `index.html`, arriba del todo del `<script>`:
+Todo el contenido vive en **`protocolos.js`**, que leen la app, el panel y la página de fundamentos (por eso no hay que tocar tres lugares):
 
-- **`SCENARIOS`**: los escenarios fijos, con su `perfil` (guardavidas o lego), la `guia` que usa el operador y `notasInstructor`, el guion que muestra el panel.
-- **`CHECKS`** y **`CHECKS_LEGO`**: los criterios de la rúbrica para cada perfil. Cada guía suma los suyos en `GUIAS`.
-- **`GUIAS`**: lo que cambia de un tipo de escenario a otro (ahogamiento, paro, trauma, y las dos de RCP guiada).
-- **`instrucciones()`**: cómo se comporta el operador. Es el lugar donde afinar el realismo.
-- **`APERTURA`**: la frase con la que atiende.
+- **`CASOS`**: los tipos de caso. Cada uno trae cómo se reconoce, qué le pregunta el operador a un guardavidas, qué le indica a una persona sin formación mientras llega la ambulancia, qué errores corrige, cuándo se vuelve a llamar y qué criterios propios suma a la rúbrica. `ORDEN_CASOS` es la prioridad: ante dos señales gana la de arriba, y el paro gana siempre.
+- **`CHECKS`** y **`CHECKS_LEGO`**: los criterios de la rúbrica para cada perfil. Cada caso suma los suyos.
+- **`CONTEXTO`**, **`GLOSARIO`** y **`APERTURA`**: quién es el operador, qué vocabulario entiende y la frase con la que atiende.
 
-Si cambiás escenarios o rúbrica, conviene reflejarlo también en la copia del simulador publicada como artifact de Claude, la que se usa para escribir guiones.
+Y en `index.html`, **`instrucciones()`**: cómo se comporta el operador en la llamada. Es el lugar donde afinar el realismo.
+
+Si cambiás los casos o la rúbrica, conviene reflejarlo también en la copia del simulador publicada como artifact de Claude, la que se usa para escribir guiones.
 
 ## Archivos
 
 ```
-index.html               la app de los alumnos (pantallas, voz, rúbrica)
+index.html               la app de los alumnos (pantallas y voz)
+protocolos.js            todo el contenido: tipos de caso, rúbrica, glosario y contexto del operador
 panel.html               el panel del instructor y del administrador
 instructores.html        la presentación para instructores, con formulario de contacto
 fundamentos.html         por qué el simulador hace lo que hace, con las fuentes
@@ -203,7 +211,7 @@ pruebas/                 pruebas automáticas (no se publican)
 No hace falta instalar nada del proyecto; sólo Node 20 o más:
 
 ```
-node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs      # necesita Playwright
 CON_BASE=1 node pruebas/servidor.mjs                    # la app entera en http://localhost:8107, con IA y base de mentira
 ```

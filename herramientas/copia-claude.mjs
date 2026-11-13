@@ -32,6 +32,16 @@ function cambiar(viejo, nuevo) {
   h = h.replace(viejo, () => nuevo);
 }
 
+/* ---------------- protocolos.js adentro ----------------
+   El artifact es un solo documento: la página publicada carga /protocolos.js, acá se
+   incrusta su contenido en un <script>. */
+{
+  const prot = fs.readFileSync(path.join(raiz, "protocolos.js"), "utf8");
+  if (prot.includes("@@CASOS@@")) throw new Error("protocolos.js todavía no tiene los casos ensamblados (/* @@CASOS@@ */)");
+  // Un "</script>" dentro del texto (hoy sólo en un comentario) cerraría la etiqueta: se escapa.
+  cambiar(`<script src="/protocolos.js"></script>`, "<script>\n" + prot.replace(/<\/script/gi, "<\\/script") + "\n</scr" + "ipt>");
+}
+
 /* ---------------- pantallas ---------------- */
 
 // La entrada (alumnos e instructores) no se muestra nunca en la copia: se sacan sus enlaces
@@ -178,7 +188,8 @@ cambiar(
 `  function avisarSala(estado){
     if(!S.acceso || !S.acceso.sala) return;
     fetch("/api/datos", { method:"POST", headers:{"content-type":"application/json", "x-codigo":S.codigo},
-      body: JSON.stringify({ accion:"sala-estado", grupo: S.alias || "Sin nombre", estado, escenario: S.scn ? S.scn.title : "", perfil: S.perfil })
+      // Sin escenarios, al tablero del instructor va el tipo de caso que la app reconoció ("" si todavía no hay).
+      body: JSON.stringify({ accion:"sala-estado", grupo: S.alias || "Sin nombre", estado, caso: S.caso ? casoDe(S.caso).nombre : "", perfil: S.perfil })
     }).catch(()=>{});
   }`,
 `  function avisarSala(estado){ /* en la copia de Claude no hay clases en vivo */ }`
@@ -205,7 +216,8 @@ cambiar(
     pintarCuenta();
     show("setup");
     // Con un código guardado se vuelve a verificar en segundo plano: trae el nombre de la
-    // institución y sus escenarios, y si la clase ya cerró, vuelve a pedir un código.
+    // institución, la localidad y la consigna de la clase, y si la clase ya cerró, vuelve a
+    // pedir un código.
     if(S.codigo){
       try{ await verificar(S.codigo); }
       catch(e){ if(BLOQUEOS.includes(e.code)) pedirCodigo(textoError(e)); }
@@ -220,27 +232,6 @@ cambiar(
     claudeUse("downloads").then(dl=>{ if(!dl) $("#save").hidden = true; });
     if(!(await claudeUse("sample"))) $("#setup-note").textContent = ERR_CLAUDE.sin_claude;
   })();`
-);
-
-cambiar(
-`  $("#btn-export").addEventListener("click", ()=>{
-    const txt = JSON.stringify(MIOS.map(({mio, ...r})=>r), null, 2);
-    const blob = new Blob([txt], {type:"application/json;charset=utf-8"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "escenarios-107.json";
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  });`,
-`  $("#btn-export").addEventListener("click", async ()=>{
-    const txt = JSON.stringify(MIOS.map(({mio, ...r})=>r), null, 2);
-    const dl = await claudeUse("downloads");
-    if(dl){
-      try{ await dl.save({ filename:"escenarios-107.json", data:txt }); return; }
-      catch(e){ if(e && e.code === "declined") return; }
-    }
-    try{ await navigator.clipboard.writeText(txt); $("#setup-note").textContent = "Copié tus escenarios al portapapeles."; }
-    catch(e){ $("#setup-note").textContent = "No se pudieron exportar desde esta vista."; }
-  });`
 );
 
 /* ---------------- llamada escrita ---------------- */
@@ -290,10 +281,10 @@ cambiar(
 `    const blob = new Blob([txt], {type:"text/plain;charset=utf-8"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "107-"+S.scn.id+"-"+new Date().toISOString().slice(0,10)+".txt";
+    a.download = nombreDelInforme();
     document.body.appendChild(a); a.click();
     setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);`,
-`    const nombre = "107-"+S.scn.id+"-"+new Date().toISOString().slice(0,10)+".txt";
+`    const nombre = nombreDelInforme();
     claudeUse("downloads").then(dl=>{ if(dl) return dl.save({ filename:nombre, data:txt }); }).catch(()=>{});`
 );
 cambiar(

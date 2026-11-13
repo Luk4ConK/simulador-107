@@ -27,6 +27,15 @@
 //
 // Las llamadas a Gemini y a Claude van por fetch, sin SDK, por la misma razón: el
 // proyecto no tiene dependencias y se quiere mantener así.
+//
+// Desde noviembre de 2026 no hay escenarios prediseñados: el operador se adapta al caso que
+// cuenta el alumno, y el tipo de caso lo clasifica la app (protocolos.js). Este archivo no
+// sabe nada de eso salvo en el registro: guarda el `caso` que manda la app, lo cuenta en
+// `uso:` por tipo (con la lista cerrada CASOS_VALIDOS) y copia de la clase lo que sabía el
+// alumno (consigna, lugar, localidad). El prompt del operador sigue llegando armado desde
+// el navegador, y la consigna y el lugar de la clase NUNCA entran en él: el operador es
+// ciego a la escena. Una pestaña abierta durante el despliegue todavía puede mandar el
+// `escenario` de antes: se guarda como antes (ver guardarPractica).
 
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
@@ -195,7 +204,7 @@ export default async function handler(req, res) {
         const g = grupoDe(cuerpo.registro), k = P + "salaest:" + acceso.sala.codigo;
         try {
           await kvPipe([
-            ["HSET", k, g.toLowerCase(), JSON.stringify({ grupo: g, estado: "evaluando", escenario: corto(cuerpo.registro.escenario && cuerpo.registro.escenario.titulo, 140), perfil: cuerpo.registro.perfil === "lego" ? "lego" : "guardavidas", t: Date.now() })],
+            ["HSET", k, g.toLowerCase(), JSON.stringify({ grupo: g, estado: "evaluando", caso: nombreDeCaso(cuerpo.registro), perfil: cuerpo.registro.perfil === "lego" ? "lego" : "guardavidas", t: Date.now() })],
             ["EXPIRE", k, 3 * 86400]
           ]);
         } catch (e) {}
@@ -570,6 +579,12 @@ function puntuar(datos, rubrica, tope) {
 
 const P = "s107:";
 const RETENCION_DIAS = 400;   // ~13 meses; lo dice la política de privacidad
+// Los tipos de caso de protocolos.js (CASOS / ORDEN_CASOS), en el mismo orden. Es una lista
+// cerrada para los contadores `caso:<id>` de uso: un id inventado por un cliente no abre un
+// campo nuevo en la base. Si se agrega un tipo en protocolos.js, se agrega acá y en
+// api/datos.js.
+const CASOS_VALIDOS = ["ahogamiento", "atragantamiento", "paro", "hemorragia", "alergia", "parto", "acv", "pecho",
+  "respiratorio", "convulsion", "glucemia", "intoxicacion", "temperatura", "trauma", "quemadura", "inconsciente", "desmayo", "otro"];
 
 function kvConfig() {
   const url = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || "").trim().replace(/\/+$/, "");
@@ -672,18 +687,20 @@ async function datosPublicos(acceso) {
   if (!cuenta && kvConfig()) { try { cuenta = await leerCuenta(acceso.cuentaId); } catch (e) {} }
   if (!cuenta && acceso.cuentaId === "principal") cuenta = cuentaPrincipal();
   if (cuenta) salida.cuenta = { nombre: cuenta.nombre, tipo: cuenta.tipo };
-  if (acceso.sala) salida.sala = { codigo: acceso.sala.codigo, nombre: acceso.sala.nombre, perfil: acceso.sala.perfil || null, escenarios: acceso.sala.escenarios || null };
-  // Escenarios que la institución cargó desde el panel: los ven todos sus alumnos.
-  if (kvConfig() && acceso.cuentaId) {
-    try {
-      const h = await kv("HGETALL", P + "esc:" + acceso.cuentaId);
-      const lista = [];
-      if (Array.isArray(h)) for (let i = 1; i < h.length; i += 2) { const e = json(h[i]); if (e) lista.push(e); }
-      salida.escenarios = lista;
-    } catch (e) { salida.escenarios = []; }
+  // La localidad es lo único de la clase que llega al operador ("Sos operador/a del 107 en
+  // …"): un 107 real sabe dónde atiende. La consigna y el lugar los ven sólo el alumno y el
+  // evaluador; la app no los pone nunca en el prompt del operador.
+  salida.zona = zonaDe(acceso.sala, cuenta);
+  if (acceso.sala) {
+    salida.sala = {
+      codigo: acceso.sala.codigo, nombre: acceso.sala.nombre, perfil: acceso.sala.perfil || null,
+      consigna: acceso.sala.consigna || "", lugar: acceso.sala.lugar || ""
+    };
   }
   return salida;
 }
+
+function zonaDe(sala, cuenta) { return corto((sala && sala.zona) || (cuenta && cuenta.zona) || "", 60); }
 
 async function cupoDisponible(acceso) {
   if (!kvConfig() || !acceso.cuentaId) return { ok: true };
@@ -776,6 +793,28 @@ function tiempoUbicacion(ev, transcripcion) {
 }
 const FORMA_ID_PRACTICA = /^[a-z0-9]{8,40}$/;   // la de nuevoId() y la que arma la app
 
+// El caso que clasificó la app, limpio. Los ids salen de la lista cerrada: uno desconocido
+// queda vacío ("sin clasificar"), igual que una llamada que nunca llegó a clasificarse.
+function idDeCaso(v) { const s = String(v == null ? "" : v); return CASOS_VALIDOS.includes(s) ? s : ""; }
+function casoDeRegistro(c) {
+  c = c && typeof c === "object" ? c : {};
+  return {
+    id: idDeCaso(c.id), nombre: corto(c.nombre, 60), fam: corto(c.fam, 40), origen: idDeCaso(c.origen),
+    paro: Boolean(c.paro),
+    victima: ["adulto", "nino", "lactante"].includes(c.victima) ? c.victima : "",
+    historia: (Array.isArray(c.historia) ? c.historia : []).filter(h => h && idDeCaso(h.id)).slice(0, 8)
+      .map(h => ({ id: idDeCaso(h.id), t: Math.max(0, Number(h.t) || 0) }))
+  };
+}
+// Un cliente viejo (pestaña abierta durante el despliegue) manda `escenario` y no `caso`.
+function esRegistroViejo(r) { return !(r.caso && typeof r.caso === "object") && Boolean(r.escenario && typeof r.escenario === "object"); }
+// Lo que se muestra en el tablero de la clase: el nombre del caso, o el título del escenario
+// si viene de un cliente viejo. Vacío mientras no se clasificó.
+function nombreDeCaso(r) {
+  if (esRegistroViejo(r)) return corto(r.escenario.titulo, 140);
+  return corto(r.caso && r.caso.nombre, 60);
+}
+
 async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
   const r = cuerpo.registro;
   const ahora = Date.now();
@@ -797,6 +836,17 @@ async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
   const transcripcion = (Array.isArray(r.transcripcion) ? r.transcripcion : []).slice(0, 80)
     .map(l => ({ w: l && l.w === "op" ? "op" : "yo", t: Math.max(0, Number(l && l.t) || 0), x: corto(l && l.x, 900) }));
 
+  // Lo que sabía el alumno de la clase, copiado del lado del servidor (de la sala, nunca de
+  // lo que manda el navegador): la práctica dura 400 días y salainfo: sólo 90, así que la
+  // revisión de dentro de seis meses tiene que encontrar la consigna acá. Sin clase, sólo
+  // la localidad de la cuenta.
+  let cuenta = acceso.cuenta || null;
+  if (!cuenta) { try { cuenta = await leerCuenta(acceso.cuentaId); } catch (e) {} }
+  const clase = acceso.sala
+    ? { consigna: corto(acceso.sala.consigna, 400), lugar: corto(acceso.sala.lugar, 120), zona: zonaDe(acceso.sala, cuenta) }
+    : { zona: zonaDe(null, cuenta) };
+  const viejo = esRegistroViejo(r);
+
   const reg = {
     id, cuentaId: acceso.cuentaId, sala, grupo,
     alias: corto(r.alias || grupo, 40),
@@ -804,10 +854,14 @@ async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
     fecha: previa ? previa.fecha : ahora,
     perfil: r.perfil === "lego" ? "lego" : "guardavidas",
     dificultad: corto(r.dificultad, 12),
-    escenario: {
-      id: corto(r.escenario && r.escenario.id, 60), titulo: corto(r.escenario && r.escenario.titulo, 140),
-      fam: corto(r.escenario && r.escenario.fam, 40), guia: corto(r.escenario && r.escenario.guia, 30)
-    },
+    // Las prácticas nuevas llevan `caso`; las de un cliente viejo, `escenario` como antes.
+    // Los lectores (api/datos.js, panel.html) contemplan los dos.
+    ...(viejo
+      ? { escenario: {
+          id: corto(r.escenario.id, 60), titulo: corto(r.escenario.titulo, 140),
+          fam: corto(r.escenario.fam, 40), guia: corto(r.escenario.guia, 30) } }
+      : { caso: casoDeRegistro(r.caso) }),
+    clase,
     duracionMs: Math.max(0, Number(r.duracionMs) || 0),
     // "tiempo": la terminó la app (lego sin ubicación, con el operador todavía en línea).
     cortoPor: r.cortoPor === "operador" || r.cortoPor === "tiempo" ? r.cortoPor : "alumno",
@@ -816,7 +870,8 @@ async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
     esenciales: corto(r.esenciales, 12),
     // Modo lego: a qué altura de la llamada dijo que empezó a comprimir.
     tRcpMs: r.tRcpMs == null ? null : Math.max(0, Number(r.tRcpMs) || 0),
-    rubrica: (Array.isArray(cuerpo.rubrica) ? cuerpo.rubrica : []).slice(0, 30)
+    // Hasta 40: la rúbrica de un caso suma criterios propios a los diez de base.
+    rubrica: (Array.isArray(cuerpo.rubrica) ? cuerpo.rubrica : []).slice(0, 40)
       .map(c => ({ id: corto(c.id, 30), label: corto(c.label, 90), peso: Number(c.peso) || 0, critico: Boolean(c.critico) })),
     topeCritico: Number(cuerpo.topeCritico) || 40,
     transcripcion,
@@ -840,6 +895,9 @@ async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
     // de clase y la última práctica de la pestaña Instructores. Sin datos personales.
     const d = P + "dias:" + acceso.cuentaId;
     cmds.push(["HINCRBY", d, hoyAR(), 1], ["EXPIRE", d, 800 * 86400]);
+    // Cuántas prácticas de cada tipo de caso (para «Casos practicados» del panel). Sólo
+    // las nuevas y clasificadas: un cliente viejo o un caso sin clasificar no suman.
+    if (reg.caso && reg.caso.id) cmds.push(["HINCRBY", u, "caso:" + reg.caso.id, 1]);
   }
   // El puntaje y el tiempo hasta la ubicación, sumados por mes, para los promedios del
   // panel. Una sola vez por práctica, cuando recibe su primer puntaje: el reintento de una
@@ -853,7 +911,7 @@ async function guardarPractica(acceso, cuerpo, { datos, modelo, calc, error }) {
   if (sala) {
     if (!previa) cmds.push(["RPUSH", P + "salaprac:" + sala, id], ["EXPIRE", P + "salaprac:" + sala, 90 * 86400]);
     cmds.push(["HSET", P + "salaest:" + sala, grupo.toLowerCase(), JSON.stringify({
-      grupo, estado: datos ? "terminada" : "sin devolución", escenario: reg.escenario.titulo,
+      grupo, estado: datos ? "terminada" : "sin devolución", caso: reg.caso ? reg.caso.nombre : reg.escenario.titulo,
       perfil: reg.perfil, puntaje: reg.puntaje, practicaId: id, t: ahora
     })]);
     cmds.push(["EXPIRE", P + "salaest:" + sala, 3 * 86400]);

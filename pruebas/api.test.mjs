@@ -162,7 +162,7 @@ test("circuito completo con base: cuenta, sala, práctica, revisión, cupo y ven
     assert.equal(v.cuerpo.registro, true);
 
     // El grupo avisa que está en llamada, y el tablero lo ve.
-    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 3", estado: "en llamada", escenario: "Gimnasio" }, alumno);
+    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 3", estado: "en llamada", caso: "" }, alumno);
     let vivo = await llamar(datos, { accion: "sala-vivo", codigo: sala.codigo }, inst);
     assert.equal(vivo.cuerpo.grupos[0].estado, "en llamada");
 
@@ -172,7 +172,7 @@ test("circuito completo con base: cuenta, sala, práctica, revisión, cupo y ven
     const rub = [{ id: "ubicacion", label: "U", peso: 20, critico: true }, { id: "respiracion", label: "R", peso: 15, critico: true }, { id: "rcp", label: "RCP", peso: 20 }];
     const ev = await llamar(chat, {
       modo: "evaluar", prompt: "- ubicacion (U)\n- respiracion (R)\n- rcp (RCP)", rubrica: rub, topeCritico: 40,
-      registro: { alias: "Grupo 3", grupo: "Grupo 3", perfil: "lego", escenario: { id: "lego-gimnasio", titulo: "Gimnasio" }, duracionMs: 300000, tRcpMs: 95000,
+      registro: { alias: "Grupo 3", grupo: "Grupo 3", perfil: "lego", caso: { id: "paro", nombre: "Paro cardíaco", fam: "Paro", paro: true, victima: "adulto" }, duracionMs: 300000, tRcpMs: 95000,
         transcripcion: [{ w: "op", t: 0, x: "107" }, { w: "yo", t: 4000, x: "Estoy en San Martín 2850" }, { w: "yo", t: 20000, x: "no respira, ronca" }] }
     }, alumno);
     assert.equal(ev.statusCode, 200, JSON.stringify(ev.cuerpo));
@@ -182,7 +182,9 @@ test("circuito completo con base: cuenta, sala, práctica, revisión, cupo y ven
 
     vivo = await llamar(datos, { accion: "sala-vivo", codigo: sala.codigo }, inst);
     assert.equal(vivo.cuerpo.grupos[0].estado, "terminada");
+    assert.equal(vivo.cuerpo.grupos[0].caso, "Paro cardíaco");
     assert.equal(vivo.cuerpo.practicas.length, 1);
+    assert.equal(vivo.cuerpo.practicas[0].casoId, "paro");
     assert.equal(vivo.cuerpo.practicas[0].tUbicacionMs, 4000);
     assert.equal(vivo.cuerpo.practicas[0].tRcpMs, 95000);
 
@@ -255,23 +257,221 @@ test("regenerar el código de alumnos invalida el anterior", async () => {
   } finally { quitar(); }
 });
 
-test("escenarios de la institución: se guardan y los reciben sus alumnos", async () => {
+test("escenarios retirados: un panel viejo recibe la lista vacía y, al guardar o borrar, que recargue", async () => {
   entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-SECRETO-1234" });
-  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  const redis = crearRedis();
+  const quitar = instalarFetch({ redis, gemini: crearGemini() });
   try {
     const { chat, datos } = await cargar();
     const c = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Club Río" } }, { "x-panel": "ADMIN-SECRETO-1234" })).cuerpo.cuenta;
+    // Un escenario que la cuenta había cargado antes: queda en la base, pero nadie lo lee.
+    redis.ejecutar(["HSET", "s107:esc:" + c.id, "inst-viejo", JSON.stringify({ id: "inst-viejo", title: "Río · calambre" })]);
     const inst = { "x-panel": c.codigoInstructor };
-    const falta = await llamar(datos, { accion: "escenario-guardar", escenario: { title: "Sin ubicación" } }, inst);
-    assert.equal(falta.statusCode, 400);
-    const g = await llamar(datos, { accion: "escenario-guardar", escenario: { title: "Río · calambre", scene: "Un bañista...", addr: "Playa X", perfil: "lego", guia: "inventada" } }, inst);
-    assert.equal(g.statusCode, 200, JSON.stringify(g.cuerpo));
-    assert.equal(g.cuerpo.escenario.guia, "", "una guía que no existe no se guarda");
+    const lista = await llamar(datos, { accion: "escenarios" }, inst);
+    assert.equal(lista.statusCode, 200);
+    assert.deepEqual(lista.cuerpo, { escenarios: [] });
+    for (const accion of ["escenario-guardar", "escenario-borrar"]) {
+      const r = await llamar(datos, { accion, escenario: { title: "x", scene: "y", addr: "z" }, id: "inst-viejo" }, inst);
+      assert.equal(r.statusCode, 410, accion);
+      assert.equal(r.cuerpo.error, "funcion_retirada");
+      assert.match(r.cuerpo.detalle, /Recargá la página/);
+    }
+    assert.ok(redis.datos.has("s107:esc:" + c.id), "las claves esc: no se borran");
+    // Los alumnos ya no reciben escenarios al entrar.
     const v = await llamar(chat, { modo: "verificar" }, { "x-codigo": c.codigoAlumnos });
-    assert.equal(v.cuerpo.escenarios.length, 1);
-    assert.equal(v.cuerpo.escenarios[0].institucion, true);
-    await llamar(datos, { accion: "escenario-borrar", id: g.cuerpo.escenario.id }, inst);
-    assert.equal((await llamar(datos, { accion: "escenarios" }, inst)).cuerpo.escenarios.length, 0);
+    assert.equal(v.statusCode, 200);
+    assert.equal(v.cuerpo.escenarios, undefined);
+  } finally { quitar(); }
+});
+
+test("caso: se guarda en la práctica, sale en el resumen y suma a los contadores por tipo", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { chat, datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const cuenta = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Escuela Sur", zona: "Rosario" } }, admin)).cuerpo.cuenta;
+    assert.equal(cuenta.zona, "Rosario");
+    const alumno = { "x-codigo": cuenta.codigoAlumnos };
+    // Una rúbrica larga (diez de base más los del caso): se guarda hasta 40 filas.
+    const rub = Array.from({ length: 45 }, (_, i) => ({ id: "c" + i, label: "C" + i, peso: 1 }));
+    const evaluar = (id, caso) => ({ modo: "evaluar", practicaId: id, prompt: rub.map(c => "- " + c.id + " (x)").join("\n"), rubrica: rub,
+      registro: { grupo: "Grupo A", perfil: "lego", caso, esenciales: "4/4", transcripcion: [],
+        // Lo que manda el navegador sobre la clase no se cree: sale de la sala o de la cuenta.
+        clase: { consigna: "inventada por el cliente" } } });
+    const caso = { id: "ahogamiento", nombre: "Ahogamiento", fam: "Agua", origen: "desmayo", paro: true, victima: "nino",
+      historia: [{ id: "desmayo", t: 1000 }, { id: "inventado", t: 2000 }, { id: "ahogamiento", t: 30000 }], extra: "no se guarda" };
+    const ev = await llamar(chat, evaluar("casoguardado01", caso), alumno);
+    assert.equal(ev.statusCode, 200, JSON.stringify(ev.cuerpo));
+    await llamar(chat, evaluar("casoguardado01", caso), alumno);   // reintento: no vuelve a contar
+    await llamar(chat, evaluar("casoguardado02", { id: "quemadura", nombre: "Quemadura", fam: "Trauma" }), alumno);
+    // Un id que no está en la lista cerrada se guarda vacío y no abre un contador.
+    await llamar(chat, evaluar("casoguardado03", { id: "marciano", nombre: "Algo raro" }), alumno);
+    // Una llamada que nunca llegó a clasificarse.
+    await llamar(chat, evaluar("casoguardado04", { id: null, nombre: "" }), alumno);
+
+    const inst = { "x-panel": cuenta.codigoInstructor };
+    const p = (await llamar(datos, { accion: "practica", id: "casoguardado01" }, inst)).cuerpo.practica;
+    assert.deepEqual(p.caso, { id: "ahogamiento", nombre: "Ahogamiento", fam: "Agua", origen: "desmayo", paro: true, victima: "nino",
+      historia: [{ id: "desmayo", t: 1000 }, { id: "ahogamiento", t: 30000 }] });
+    assert.equal(p.escenario, undefined, "las prácticas nuevas ya no llevan escenario");
+    assert.deepEqual(p.clase, { zona: "Rosario" }, "sin clase, sólo la localidad de la cuenta");
+    assert.equal(p.rubrica.length, 40);
+    assert.equal(p.esenciales, "4/4");
+    const raro = (await llamar(datos, { accion: "practica", id: "casoguardado03" }, inst)).cuerpo.practica;
+    assert.equal(raro.caso.id, "");
+    assert.equal(raro.caso.nombre, "Algo raro");
+
+    const lista = (await llamar(datos, { accion: "practicas" }, inst)).cuerpo.practicas;
+    assert.equal(lista.length, 4);
+    const r1 = lista.find(x => x.id === "casoguardado01");
+    assert.equal(r1.caso, "Ahogamiento");
+    assert.equal(r1.casoId, "ahogamiento");
+    assert.equal(r1.paro, true);
+    assert.equal(r1.escenario, null);
+    assert.equal(lista.find(x => x.id === "casoguardado04").casoId, "");
+
+    // Los contadores por tipo, en la pestaña Instructores y en «Mi cuenta».
+    const c = (await llamar(datos, { accion: "cuentas", detalle: true }, admin)).cuerpo.cuentas.find(x => x.id === cuenta.id);
+    assert.deepEqual(c.casos, { ahogamiento: 1, quemadura: 1 });
+    assert.equal(c.zona, "Rosario");
+    const panel = (await llamar(datos, { accion: "panel" }, inst)).cuerpo;
+    assert.deepEqual(panel.estadisticas.casos, { ahogamiento: 1, quemadura: 1 });
+    assert.equal(panel.cuenta.zona, "Rosario");
+    // Un panel viejo que guarda la cuenta sin el campo no le borra la localidad.
+    const { zona, ...sinZona } = cuenta;
+    await llamar(datos, { accion: "cuenta-guardar", cuenta: { ...sinZona, notas: "editada" } }, admin);
+    assert.equal((await llamar(datos, { accion: "panel" }, inst)).cuerpo.cuenta.zona, "Rosario");
+  } finally { quitar(); }
+});
+
+test("clase con consigna, lugar y localidad: llegan a verificar y se copian a la práctica", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { chat, datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const cuenta = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Club Náutico", zona: "Santa Fe" } }, admin)).cuerpo.cuenta;
+    const inst = { "x-panel": cuenta.codigoInstructor };
+    const consigna = "Un nene se cayó a la pileta y lo sacaron. " + "x".repeat(500);
+    const sala = (await llamar(datos, { accion: "sala-crear", nombre: "Sábado", perfil: "lego", consigna, lugar: "Club Náutico, Av. Almirante Brown 5200", zona: "Santo Tomé",
+      escenarios: ["ahogamiento-puro"] }, inst)).cuerpo.sala;
+    assert.equal(sala.consigna.length, 400);
+    assert.equal(sala.lugar, "Club Náutico, Av. Almirante Brown 5200");
+    assert.equal(sala.zona, "Santo Tomé");
+    assert.equal(sala.escenarios, undefined, "un panel viejo que manda escenarios: se ignora");
+    const alumno = { "x-codigo": sala.codigo };
+    const v = (await llamar(chat, { modo: "verificar" }, alumno)).cuerpo;
+    assert.equal(v.zona, "Santo Tomé");
+    assert.deepEqual(v.sala, { codigo: sala.codigo, nombre: "Sábado", perfil: "lego", consigna: sala.consigna, lugar: "Club Náutico, Av. Almirante Brown 5200" });
+    assert.equal(v.escenarios, undefined);
+
+    const ev = await llamar(chat, { modo: "evaluar", practicaId: "conconsigna01", prompt: "- ubicacion (U)", rubrica: [{ id: "ubicacion", peso: 1 }],
+      registro: { grupo: "Grupo 1", caso: { id: "ahogamiento", nombre: "Ahogamiento" }, transcripcion: [], clase: { consigna: "trucha", lugar: "trucho" } } }, alumno);
+    assert.equal(ev.statusCode, 200, JSON.stringify(ev.cuerpo));
+    const p = (await llamar(datos, { accion: "practica", id: "conconsigna01" }, inst)).cuerpo.practica;
+    assert.deepEqual(p.clase, { consigna: sala.consigna, lugar: "Club Náutico, Av. Almirante Brown 5200", zona: "Santo Tomé" });
+
+    // Sin localidad propia, la clase usa la de la cuenta; sin ninguna de las dos, vacía.
+    const sala2 = (await llamar(datos, { accion: "sala-crear", nombre: "Domingo" }, inst)).cuerpo.sala;
+    const v2 = (await llamar(chat, { modo: "verificar" }, { "x-codigo": sala2.codigo })).cuerpo;
+    assert.equal(v2.zona, "Santa Fe");
+    assert.deepEqual([v2.sala.consigna, v2.sala.lugar], ["", ""]);
+    const sinZona = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Sin localidad" } }, admin)).cuerpo.cuenta;
+    assert.equal((await llamar(chat, { modo: "verificar" }, { "x-codigo": sinZona.codigoAlumnos })).cuerpo.zona, "");
+  } finally { quitar(); }
+});
+
+test("panel con requiere admin: el administrador pasa, el instructor recibe solo_admin", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const redis = crearRedis();
+  const quitar = instalarFetch({ redis, gemini: crearGemini() });
+  try {
+    const { datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const ok = await llamar(datos, { accion: "panel", requiere: "admin" }, admin);
+    assert.equal(ok.statusCode, 200, JSON.stringify(ok.cuerpo));
+    assert.equal(ok.cuerpo.esAdmin, true);
+    const cuenta = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Instructor Ruiz" } }, admin)).cuerpo.cuenta;
+    const inst = { "x-panel": cuenta.codigoInstructor };
+    const no = await llamar(datos, { accion: "panel", requiere: "admin" }, inst);
+    assert.equal(no.statusCode, 403);
+    assert.equal(no.cuerpo.error, "solo_admin");
+    // Cuenta en el freno del panel, como un código equivocado.
+    const freno = [...redis.datos.keys()].find(k => k.startsWith("s107:rl:panel:"));
+    assert.ok(freno, "anotó el intento");
+    assert.equal(redis.ejecutar(["SCARD", freno]).result, 1);
+    // Por la puerta de Instructores (sin requiere), el mismo código entra.
+    assert.equal((await llamar(datos, { accion: "panel" }, inst)).statusCode, 200);
+    // Un código de alumnos sigue siendo 401, pida lo que pida.
+    assert.equal((await llamar(datos, { accion: "panel", requiere: "admin" }, { "x-panel": cuenta.codigoAlumnos })).statusCode, 401);
+  } finally { quitar(); }
+});
+
+test("sala-estado con caso, y una pestaña vieja que todavía manda escenario", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const quitar = instalarFetch({ redis: crearRedis(), gemini: crearGemini() });
+  try {
+    const { datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const sala = (await llamar(datos, { accion: "sala-crear", nombre: "Clase" }, admin)).cuerpo.sala;
+    const alumno = { "x-codigo": sala.codigo };
+    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 1", estado: "en llamada", caso: "Hemorragia grave", perfil: "lego" }, alumno);
+    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 2", estado: "en llamada", escenario: "Gimnasio" }, alumno);
+    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 3", estado: "conectado" }, alumno);
+    const grupos = (await llamar(datos, { accion: "sala-vivo", codigo: sala.codigo }, admin)).cuerpo.grupos;
+    const g = n => grupos.find(x => x.grupo === n);
+    assert.equal(g("Grupo 1").caso, "Hemorragia grave");
+    assert.equal(g("Grupo 1").perfil, "lego");
+    assert.equal(g("Grupo 2").caso, "Gimnasio");
+    assert.equal(g("Grupo 3").caso, "");
+    assert.ok(grupos.every(x => !("escenario" in x)));
+  } finally { quitar(); }
+});
+
+test("práctica de un cliente viejo (con escenario, sin caso): se guarda como antes y se resume bien", async () => {
+  entorno({ ...conBase, CODIGO_ADMIN: "ADMIN-99" });
+  const redis = crearRedis();
+  const quitar = instalarFetch({ redis, gemini: crearGemini() });
+  try {
+    const { chat, datos } = await cargar();
+    const admin = { "x-panel": "ADMIN-99" };
+    const cuenta = (await llamar(datos, { accion: "cuenta-guardar", cuenta: { nombre: "Escuela Vieja" } }, admin)).cuerpo.cuenta;
+    const inst = { "x-panel": cuenta.codigoInstructor };
+    const sala = (await llamar(datos, { accion: "sala-crear", nombre: "Clase vieja" }, inst)).cuerpo.sala;
+    const ev = await llamar(chat, { modo: "evaluar", practicaId: "clienteviejo01", prompt: "- ubicacion (U)", rubrica: [{ id: "ubicacion", peso: 1 }],
+      registro: { grupo: "Grupo V", perfil: "guardavidas", escenario: { id: "ahogamiento-puro", titulo: "Balneario · ahogado", fam: "Agua", guia: "ahogamiento" }, transcripcion: [] } },
+      { "x-codigo": sala.codigo });
+    assert.equal(ev.statusCode, 200, JSON.stringify(ev.cuerpo));
+    const p = (await llamar(datos, { accion: "practica", id: "clienteviejo01" }, inst)).cuerpo.practica;
+    assert.deepEqual(p.escenario, { id: "ahogamiento-puro", titulo: "Balneario · ahogado", fam: "Agua", guia: "ahogamiento" });
+    assert.equal(p.caso, undefined);
+    assert.deepEqual(p.clase, { consigna: "", lugar: "", zona: "" });
+    const r = (await llamar(datos, { accion: "practicas" }, inst)).cuerpo.practicas[0];
+    assert.equal(r.caso, "Balneario · ahogado");
+    assert.equal(r.casoId, "");
+    assert.equal(r.paro, false);
+    assert.equal(r.escenario.titulo, "Balneario · ahogado");
+    // En el tablero de la clase, el título va en el campo caso.
+    const vivo = (await llamar(datos, { accion: "sala-vivo", codigo: sala.codigo }, inst)).cuerpo;
+    assert.equal(vivo.grupos[0].caso, "Balneario · ahogado");
+    assert.equal(vivo.practicas[0].caso, "Balneario · ahogado");
+    // No suma a los contadores por tipo de caso.
+    const c = (await llamar(datos, { accion: "cuentas", detalle: true }, admin)).cuerpo.cuentas.find(x => x.id === cuenta.id);
+    assert.deepEqual(c.casos, {});
+    assert.equal(c.usoMes.practicas, 1);
+
+    // Una práctica guardada antes del cambio, escrita tal cual en la base (sin caso ni clase).
+    const vieja = { id: "antesdelcambio1", cuentaId: cuenta.id, sala: null, fecha: Date.now() - 86400000, grupo: "G", alias: "G", perfil: "lego",
+      escenario: { id: "lego-gimnasio", titulo: "Gimnasio", fam: "Paro", guia: "lego-rcp" }, rubrica: [{ id: "rcp", label: "RCP", peso: 20, critico: false }],
+      transcripcion: [], evaluacion: { items: [{ id: "rcp", estado: "logrado" }] }, puntaje: 100 };
+    redis.ejecutar(["SET", "s107:p:" + vieja.id, JSON.stringify(vieja)]);
+    redis.ejecutar(["ZADD", "s107:idx:" + cuenta.id, String(vieja.fecha), vieja.id]);
+    const r2 = (await llamar(datos, { accion: "practicas" }, inst)).cuerpo.practicas.find(x => x.id === vieja.id);
+    assert.deepEqual([r2.caso, r2.casoId, r2.paro, r2.puntaje], ["Gimnasio", "", false, 100]);
+    // Y la revisión sigue funcionando con su rúbrica guardada.
+    const rev = await llamar(datos, { accion: "revisar", id: vieja.id, items: { rcp: "parcial" } }, inst);
+    assert.equal(rev.cuerpo.revision.puntaje, 50);
   } finally { quitar(); }
 });
 
@@ -349,12 +549,12 @@ test("clase cerrada: las llamadas en curso terminan y se guardan; nadie más ent
     const sala = (await llamar(datos, { accion: "sala-crear", nombre: "Pre-curso", horas: 3 }, admin)).cuerpo.sala;
     const alumno = { "x-codigo": sala.codigo };
     const evaluar = grupo => ({ modo: "evaluar", prompt: "- ubicacion (U)", rubrica: [{ id: "ubicacion", peso: 1, critico: true }],
-      registro: { grupo, escenario: { titulo: "Balneario" }, transcripcion: [] } });
+      registro: { grupo, caso: { id: "ahogamiento", nombre: "Ahogamiento" }, transcripcion: [] } });
 
     // Un grupo termina antes del cierre. El aviso "evaluando" que manda la app puede llegar
     // después de que se guardó: no tiene que pisar el "terminada" con su puntaje.
     assert.equal((await llamar(chat, evaluar("Grupo 1"), alumno)).statusCode, 200);
-    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 1", estado: "evaluando", escenario: "Balneario" }, alumno);
+    await llamar(datos, { accion: "sala-estado", grupo: "Grupo 1", estado: "evaluando", caso: "Ahogamiento" }, alumno);
     let vivo = (await llamar(datos, { accion: "sala-vivo", codigo: sala.codigo }, admin)).cuerpo;
     assert.equal(vivo.grupos.find(g => g.grupo === "Grupo 1").estado, "terminada");
 
