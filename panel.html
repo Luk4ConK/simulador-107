@@ -810,7 +810,7 @@
   function pintarConsigna(sala){
     const filas = [["Consigna", sala.consigna], ["Lugar", sala.lugar], ["Localidad", sala.zona]].filter(f => f[1]);
     $("#cv-consigna-wrap").hidden = !(sala.consigna || sala.lugar);
-    vaciar($("#cv-consigna")).append(h("dl", { class:"datos" }, filas.map(([k, v]) => [h("dt", { text:k }), h("dd", { text:v })])));
+    vaciar($("#cv-consigna")).append(h("dl", { class:"datos" }, filas.flatMap(([k, v]) => [h("dt", { text:k }), h("dd", { text:v })])));
   }
 
   function tile(etiqueta, valor, detalle, medidor){
@@ -908,7 +908,7 @@
     const tipos = ORDEN.filter(id => hay.has(id)).concat([...hay].filter(id => id !== VIEJOS && id !== SIN_CASO && !ORDEN.includes(id)));
     if(hay.has(SIN_CASO)) tipos.push(SIN_CASO);
     if(hay.has(VIEJOS)) tipos.push(VIEJOS);
-    vaciar(sel).append(h("option", { value:"", text:"Todos los casos" }), tipos.map(id => h("option", { value:id, text:etiquetaTipo(id) })));
+    vaciar(sel).append(h("option", { value:"", text:"Todos los casos" }), ...tipos.map(id => h("option", { value:id, text:etiquetaTipo(id) })));
     sel.value = tipos.includes(antes) ? antes : "";
   }
 
@@ -1050,7 +1050,7 @@
     if(clase.consigna) filas.push(["Consigna", clase.consigna]);
     if(clase.lugar) filas.push(["Lugar de la consigna", clase.lugar]);
     if(clase.zona) filas.push(["Localidad", clase.zona]);
-    vaciar($("#d-caso")).append(h("dl", { class:"datos" }, filas.map(([k, v]) => [h("dt", { text:k }), h("dd", { text:v })])),
+    vaciar($("#d-caso")).append(h("dl", { class:"datos" }, filas.flatMap(([k, v]) => [h("dt", { text:k }), h("dd", { text:v })])),
       !clase.lugar && c ? h("p", { class:"small muted", style:"margin-top:8px", text:"Sin lugar en la consigna: la dirección se juzga por si una ambulancia la encontraría (calle y altura o esquina, o una referencia inequívoca, y la localidad)." }) : "");
   }
   function mostrarIA(){ ciega = false; $("#dlg").classList.remove("ciega"); $("#d-ciega").hidden = true; }

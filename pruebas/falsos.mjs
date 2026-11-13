@@ -235,8 +235,11 @@ export function operadorPorDefecto(sistema, contenidos) {
   let caso = (CLAVES_CASO.find(([, re]) => re.test(dichos)) || ["0"])[0];
   if (caso === "0" && paro) caso = "paro";
   let marcas = "\n[[DATOS:" + tengo.join(",") + "]]\n[[CASO:" + caso + (paro && caso !== "0" ? ",paro" : "") + "]]";
-  // El grado sólo se manda cuando la app pasó la escala (hoy, en un ahogamiento).
-  if (/\[\[GRADO:n\]\]/.test(estado)) marcas += "\n[[GRADO:" + (paro ? 6 : /respira/i.test(dichos) ? 1 : 0) + "]]";
+  // El grado sólo se manda cuando la app pasó la escala (hoy, en un ahogamiento). La escala
+  // viaja en el bloque del caso ("SOBRE ESTA LLAMADA"), que va antes del título del estado;
+  // la parte fija también nombra la marca, así que se mira sólo la parte variable.
+  const variable = sistema.slice(sistema.lastIndexOf("SOBRE ESTA LLAMADA"));
+  if (/ESCALA QUE MANEJÁS/.test(variable) && /\[\[GRADO:n\]\]/.test(variable)) marcas += "\n[[GRADO:" + (paro ? 6 : /respira/i.test(dichos) ? 1 : 0) + "]]";
 
   if (/SE TERMINÓ/.test(estado)) return "Sin la dirección no puedo mandarte la ambulancia. Averiguala y volvé a llamar al 107." + marcas + "\n[[CERRAR]]";
   if (/LA AMBULANCIA ESTÁ LLEGANDO/.test(estado)) {
