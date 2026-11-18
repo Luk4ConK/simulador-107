@@ -17,7 +17,7 @@
      (claro #FFFFFF, oscuro #0F1E21) con el validador de la guía de visualización. */
   :root{
     --ground:#E7EDEC; --surface:#FFFFFF; --surface-2:#F1F6F5;
-    --ink:#0C1B1E; --ink-2:#4C5E60; --ink-3:#75898A;
+    --ink:#0C1B1E; --ink-2:#4C5E60; --ink-3:#566A6B;
     --line:#CEDAD9; --line-soft:#E0E9E8;
     --accent:#C8451D; --accent-soft:#FBEAE4;
     --ok:#1E7A4E; --warn:#A96D0C; --bad:#B0382A;
@@ -48,10 +48,20 @@
     --serie:#3987e5; --serie-suave:#184f95;
     color-scheme: dark;
   }
+  /* En oscuro, el blanco sobre el naranja claro no llega al contraste mínimo (2,9:1): el
+     texto sobre el acento va casi negro (6,5:1). */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .btn.pri, :root:not([data-theme="light"]) .sigil{color:#1A0B05}
+  }
+  :root[data-theme="dark"] .btn.pri, :root[data-theme="dark"] .sigil{color:#1A0B05}
   *{box-sizing:border-box}
   html,body{margin:0}
   body{background:var(--ground); color:var(--ink); font-family:var(--body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
-  .wrap{max-width:1100px; margin:0 auto; padding:20px 16px 60px}
+  /* Áreas seguras, como en la app: desde la app instalada en un iPhone, el panel abre con
+     la barra de estado translúcida y la cabecera quedaba debajo de la muesca. */
+  .wrap{max-width:1100px; margin:0 auto;
+        padding-left:max(16px, env(safe-area-inset-left)); padding-right:max(16px, env(safe-area-inset-right));
+        padding-top:max(20px, env(safe-area-inset-top)); padding-bottom:calc(60px + env(safe-area-inset-bottom))}
   h1,h2,h3{font-family:var(--display); font-weight:700; letter-spacing:-.015em; margin:0}
   p{margin:0}
   a{color:var(--ink-2)}
@@ -85,14 +95,15 @@
   .sect > .lbl{display:block; margin-bottom:10px}
 
   .f{display:grid; gap:5px; font-size:13px; color:var(--ink-2)}
-  .f input,.f select,.f textarea,.inp{width:100%; padding:10px 11px; font-size:15px; color:var(--ink); background:var(--surface-2);
+  .f input,.f select,.f textarea,.inp{width:100%; padding:10px 11px; font-size:16px; color:var(--ink); background:var(--surface-2);
      border:1px solid var(--line); border-radius:10px}
   .f textarea{resize:vertical}
   .btn{border-radius:10px; padding:10px 14px; border:1px solid var(--line); background:var(--surface); font-weight:600; font-size:14px}
   .btn.pri{background:var(--accent); border-color:var(--accent); color:#fff}
   .btn.peligro{color:var(--bad); border-color:var(--bad); background:transparent}
   .btn[disabled]{opacity:.5; cursor:not-allowed}
-  .link{background:none; border:0; padding:0; color:var(--ink-2); text-decoration:underline; text-underline-offset:3px; font-size:13.5px}
+  /* El relleno con margen negativo agranda la zona de toque sin mover el diseño. */
+  .link{background:none; border:0; padding:12px 4px; margin:-12px -4px; display:inline-block; color:var(--ink-2); text-decoration:underline; text-underline-offset:3px; font-size:13.5px}
   .err{color:var(--bad); font-size:13.5px; min-height:20px}
   .ok{color:var(--ok)}
   .atencion{color:var(--warn)} .mal{color:var(--bad)}
@@ -145,13 +156,15 @@
   .pip.logrado{background:var(--ok)} .pip.parcial{background:var(--warn)} .pip.falto{background:var(--bad)}
 
   /* detalle */
-  dialog{border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--ink); padding:0; width:min(920px, 96vw); max-height:92vh}
+  dialog{border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--ink); padding:0; width:min(920px, 96vw); max-height:92vh; max-height:92dvh}
   dialog::backdrop{background:rgba(5,15,17,.55)}
   .dlg-cab{position:sticky; top:0; background:var(--surface); border-bottom:1px solid var(--line); padding:14px 16px; display:flex; gap:10px; align-items:flex-start; z-index:1}
   .dlg-cuerpo{padding:16px; display:grid; gap:16px}
   .tr{background:var(--surface-2); border:1px solid var(--line-soft); border-radius:12px; padding:12px; font-family:var(--mono); font-size:12.5px; line-height:1.6; max-height:320px; overflow:auto; white-space:pre-wrap}
   .crit{display:grid; grid-template-columns:1fr 150px; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid var(--line-soft)}
-  .crit select{padding:7px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2)}
+  .crit select{padding:7px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); font-size:16px; min-height:44px}
+  /* Safari en el iPhone agranda la página al tocar un campo de menos de 16 px. */
+  #p-cambiar, dialog select{font-size:16px}
   #dlg.ciega .ia{display:none}
 
   /* columnas de uso */
@@ -560,10 +573,18 @@
     catch(e){ prompt("Copiá este texto:", texto); }
   }
   const origen = location.origin;
+  const SIN_CONEXION = "No hay conexión a internet. Revisá el wifi o los datos y probá de nuevo (sin_conexion).";
 
   async function api(accion, body){
-    const r = await fetch("/api/datos", { method:"POST", headers:{ "content-type":"application/json", "x-panel":P.codigo },
-      body: JSON.stringify(Object.assign({ accion }, P.cuentaId ? { cuentaId:P.cuentaId } : {}, body||{})) });
+    let r;
+    try{
+      r = await fetch("/api/datos", { method:"POST", headers:{ "content-type":"application/json", "x-panel":P.codigo },
+        body: JSON.stringify(Object.assign({ accion }, P.cuentaId ? { cuentaId:P.cuentaId } : {}, body||{})) });
+    }catch(err){
+      // Sin wifi ni datos el fetch falla sin código, y se leía como "código equivocado (undefined)".
+      if(err && err.name === "TypeError"){ const e = new Error("sin_conexion"); e.code = "sin_conexion"; throw e; }
+      throw err;
+    }
     const d = await r.json().catch(()=>({ error:"respuesta_ilegible" }));
     if(!r.ok){ const e = new Error(d.detalle || d.error || ("error " + r.status)); e.code = d.error; e.status = r.status; throw e; }
     return d;
@@ -623,7 +644,8 @@
       err.textContent = e.code === "sin_base"
         ? "Todavía no está conectada la base de datos (sin_base). "
         : e.code === "demasiados_intentos" ? "Muchos intentos seguidos. Esperá diez minutos (demasiados_intentos)."
-        : "Ese código no abre el panel (" + (e.code || e.status) + ").";
+        : e.code === "sin_conexion" ? SIN_CONEXION
+        : "Ese código no abre el panel (" + (e.code || e.status || "error") + ").";
       if(e.code === "sin_base") err.append(h("a", { href:"activar", text:"Ver qué falta activar" }), ".");
     }
   });
@@ -1559,7 +1581,10 @@
   (async function(){
     let guardado = "";
     try{ guardado = sessionStorage.getItem("sim107_panel") || localStorage.getItem("sim107_panel") || ""; }catch(e){}
-    if(guardado){ try{ await entrar(guardado, false, true); return; }catch(e){} }
+    if(guardado){
+      try{ await entrar(guardado, false, true); return; }
+      catch(e){ if(e.code === "sin_conexion") $("#login-err").textContent = SIN_CONEXION; }
+    }
     $("#login-cod").focus();
   })();
 })();

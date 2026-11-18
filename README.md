@@ -8,7 +8,7 @@ Publicado en Vercel, el micrófono funciona sin peleas, se instala en el celular
 
 ## La dirección
 
-**https://simulador.kalulab.store** — es la web del simulador y todo empieza ahí (la dirección de Vercel, https://simulador-107.vercel.app, sigue andando). **www.kalulab.store** es la página de Kalu Lab, con el botón para entrar al simulador: ver «La página de Kalu Lab» más abajo. Abre en una entrada con dos puertas:
+**https://simulador.kalulab.store** — es la web del simulador y todo empieza ahí (la dirección de Vercel, https://simulador-107.vercel.app, sigue andando). **www.kalulab.store** es la página de Kalu Lab, con el botón para entrar al simulador: ver «La página de Kalu Lab» más abajo. Abre en una entrada con tres puertas:
 
 - **Alumnos:** el alumno pone el código de la clase que le diste y entra a practicar.
 - **Instructores:** ponés tu código y entrás al panel, donde abrís las clases y ves las prácticas.
@@ -160,7 +160,7 @@ El operador se adapta al caso que le cuenta el alumno: un ahogamiento, un paro, 
 
 En los dos casos, poné en *Lugar* la dirección donde están o un lugar público conocido, y pedí a los alumnos que usen **nombres y teléfonos inventados y no den su domicilio** (es un pedido de la ley de datos personales: la transcripción queda guardada). Si un alumno practica por su cuenta, el caso se lo inventa él. La app muestra un recordatorio antes de llamar.
 
-Cada práctica queda con el tipo de caso que el operador detectó (y, si la víctima se agravó, de cuál venía), la consigna y el lugar de la clase. Esos tipos de caso y la rúbrica de cada uno están a la vista en **/fundamentos**.
+Cada práctica queda con el tipo de caso que reconoció la app a partir de la llamada (y, si la víctima se agravó, de cuál venía), la consigna y el lugar de la clase. Esos tipos de caso y la rúbrica de cada uno están a la vista en **/fundamentos**.
 
 El operador es prudente a propósito: **no indica medicamentos por su cuenta** (sólo ayuda a usar el inhalador o el autoinyector de la propia persona) y no dicta maniobras al guardavidas. Si un caso no te cierra con lo que enseñás en el aula, avisá: gana el aula.
 
@@ -211,7 +211,7 @@ pruebas/                 pruebas automáticas (no se publican)
 No hace falta instalar nada del proyecto; sólo Node 20 o más:
 
 ```
-node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs      # necesita Playwright
 CON_BASE=1 node pruebas/servidor.mjs                    # la app entera en http://localhost:8107, con IA y base de mentira
 ```

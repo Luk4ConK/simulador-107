@@ -6,6 +6,13 @@ protocolo transmitió y cuáles faltaron. Tiene dos perfiles: **guardavidas** (e
 pregunta como a un profesional y no le dicta maniobras) y **lego** (persona sin formación,
 para los cursos de RCP: el operador reconoce el paro y guía la RCP por teléfono).
 
+**No hay escenarios prediseñados** (desde noviembre de 2026): el caso lo canta el
+instructor presente, lo trae la consigna de la clase o lo inventa el alumno, y el operador
+**se adapta** a cualquiera de 18 tipos de caso, de primeros auxilios a ahogamiento y paro.
+La app reconoce qué tipo de llamada es a partir de lo que dice el alumno y de la marca
+`[[CASO]]` del operador. A una persona sin formación el operador le da primeros auxilios
+por teléfono; a un guardavidas, como siempre, no le dicta nada.
+
 Es un producto de **Kalu Lab**, la empresa del titular (nombre comercial; desde octubre de
 2026, dominio **kalulab.store**, comprado en GoDaddy: el primer año salió casi nada, pero la
 renovación ronda los USD 84 por año; si sale bien se buscará el .com).
@@ -68,8 +75,9 @@ entren desde su propia web, está en el historial de git (commit anterior a "Kal
 por su cuenta").
 
 **La raíz es la entrada única** (pedido del instructor: todo empieza en la web principal,
-así los alumnos la conocen): `v-gate` de `index.html` tiene dos puertas, alumnos con el
-código de la clase y instructores con el suyo. La de instructores verifica el código con
+así los alumnos la conocen): `v-gate` de `index.html` tiene tres puertas: alumnos con el
+código de la clase, instructores con el suyo y, discreta al final, administración (ver
+"Operador adaptativo" para cómo la verifica). La de instructores verifica el código con
 `/api/datos` (`accion: "panel"`), lo deja en `sessionStorage.sim107_panel` y manda a
 `/panel`, que entra solo. Sin código guardado la web abre siempre en la entrada; la
 práctica libre ("Practicar sin código") sólo aparece si el servidor no pide códigos. El
@@ -81,9 +89,17 @@ panel (`/?sala=` o `/?c=`) toman `location.origin`, así que salen con la direcc
 la que se abre el panel. Un sitio que quiera meter el simulador en su web tiene que
 abrirlo en una pestaña nueva: dentro de un iframe el micrófono no anda.
 
+**Noviembre de 2026: operador adaptativo, sin escenarios** (pedido del titular; rama
+`claude/operador-adaptativo`, que llega a producción recién cuando se une a `main`). Se
+sacaron los escenarios y todo lo que colgaba de ellos (`S.scn`, `GUIAS`, `v-nuevo`,
+`v-brief`, las tarjetas, los escenarios compartidos y de la clase, `notasInstructor`).
+El contenido pasó a `protocolos.js`, la entrada tiene tres puertas y las clases en vivo
+tienen consigna, lugar y localidad. Antes de la primera clase con esta versión conviene
+que un instructor lea los casos (ver "Pendiente").
+
 **Septiembre de 2026: se armó el producto completo** (en la rama
 `claude/simulador-107-producto-rllxr2`; producción se actualiza recién cuando se une a la
-rama principal). Suma el modo lego, nueve escenarios, clases en vivo para 8 grupos, registro
+rama principal). Suma el modo lego, nueve escenarios (retirados en noviembre de 2026), clases en vivo para 8 grupos, registro
 de prácticas con base de datos (Upstash Redis), un panel de instructor y de administrador,
 páginas públicas (presentación para instructores, fundamentos con fuentes, términos y
 privacidad) y pruebas automáticas en `pruebas/`. El plan de negocio, los precios, la
@@ -104,22 +120,25 @@ ni código de acceso, ni clases en vivo, ni registro. **No se edita a mano**: se
 `NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs` y se publica en esa misma
 dirección con `capabilities: {sample: {}, downloads: true}`. Cada reemplazo del armador
 exige encontrar su texto exactamente una vez: si cambiás `index.html` y alguno deja de
-calzar, el armador se detiene y dice cuál; ajustalo ahí. Si cambiás escenarios, rúbrica o
-el prompt del operador, regenerá y republicá la copia.
+calzar, el armador se detiene y dice cuál; ajustalo ahí. El armador incrusta
+`protocolos.js` dentro del HTML (escapa los `</script>` de sus comentarios) y se niega a
+armar si todavía tiene la marca `@@CASOS@@`. Si cambiás `protocolos.js` (casos, rúbrica,
+contexto) o el prompt del operador, regenerá y republicá la copia.
 
 ## Archivos
 
 ```
-index.html            la app de los alumnos: pantallas, voz, rúbrica, estado. Sin frameworks.
-panel.html            panel del instructor y del administrador (lee SCENARIOS de index.html)
+index.html            la app de los alumnos: pantallas, voz, la llamada y su estado. Sin frameworks.
+protocolos.js         TODO el contenido: los 18 casos, rúbricas, grillas, contexto, glosario y el detector
+panel.html            panel del instructor y del administrador (carga protocolos.js)
 instructores.html     presentación para instructores, formulario de contacto, PLANES
-fundamentos.html      decisiones con su evidencia; arma la tabla de la rúbrica con rubrica()
+fundamentos.html      decisiones con su evidencia; carga protocolos.js para la tabla de la rúbrica y la de los casos
 activar.html          para el dueño: qué falta activar en Vercel (base, CODIGO_ADMIN, clave) y los pasos
 terminos.html         términos de uso (datos del titular desde /api/datos?info=1)
 privacidad.html       política de privacidad, Ley 25.326
 publico.css/.js       estilo y datos del titular de las páginas públicas
 api/chat.js           operador y evaluador: clave, rotación de modelos, cupo, registro
-api/datos.js          salas, prácticas, revisiones, escenarios, cuentas, contactos, uso
+api/datos.js          salas, prácticas, revisiones, cuentas, contactos, uso (y los talones de los escenarios)
 manifest.webmanifest  para que se instale como app
 sw.js                 service worker: abre rápido, nunca cachea /api/
 vercel.json           maxDuration de las funciones, direcciones cortas, cabeceras
@@ -134,80 +153,109 @@ README.md             guía de despliegue, escrita para el usuario
 es autónoma): los ayudantes de base de datos y códigos están repetidos en las dos, en un
 bloque marcado "repetido de api/chat.js (mantener iguales)". Si cambiás uno, cambiá el otro.
 
-`panel.html` y `fundamentos.html` leen `SCENARIOS`, `CHECKS`, `CHECKS_LEGO`, `GUIAS` y
-`function rubrica(scn){` de `index.html` con un recorte de llaves balanceadas (el mismo que
-usa `pruebas/rubrica.test.mjs`). **Mantené esas declaraciones con esa forma exacta** o esas
-páginas se quedan sin datos.
+`panel.html` y `fundamentos.html` ya no leen `index.html` con un recorte de llaves: cargan
+`protocolos.js` con `<script src>`. Ese archivo no puede usar `import`/`export`, el DOM,
+`S` ni `Date.now()` (lo cargan también las pruebas de Node). `CASOS_VALIDOS`, la lista de
+los 18 ids, está repetida en los dos archivos de `api/`: si agregás un caso, sumalo ahí.
 
-## Mapa de `index.html`
+## Mapa de `protocolos.js` (todo el contenido editable)
 
-Todo el contenido editable está arriba del `<script>`, con nombres en castellano:
+Desde noviembre de 2026 el contenido no vive en `index.html` sino en **`protocolos.js`**, un
+script clásico (sin `import`/`export`, sin DOM, sin `S`, sin `Date.now()`: sólo datos y
+funciones puras). Lo cargan con `<script src="/protocolos.js">`, ANTES del script propio,
+`index.html`, `panel.html` y `fundamentos.html`; las pruebas lo evalúan entero con
+`new Function(fuente + "\nreturn PROTOCOLOS;")()` o con `require`. Todo está declarado en el
+nivel superior (queda global en el navegador) y el final exporta `PROTOCOLOS`. Nombres en
+castellano:
 
-- `SCENARIOS` — los escenarios fijos. Campos: `id`, `fam`, `title`, `card` (bajada de la
-  tarjeta), `scene` (lo que ve el alumno), `addr` (la ubicación real donde está parado,
-  que es justamente lo que tiene que saber transmitir), `zona` (la localidad que conoce
-  el operador), `guia` (cuál de las `GUIAS` usa) y `notasInstructor` (el guion de cómo
-  evoluciona la víctima, **para que lo cante el instructor presente**: la app no lo usa
-  ni lo evalúa).
-- `perfil` en cada escenario: `guardavidas` o `lego`. Filtra qué escenarios ve cada perfil
-  y elige la rúbrica (`CHECKS` o `CHECKS_LEGO`), el contexto (`CONTEXTO` o `CONTEXTO_LEGO`),
-  el glosario y las grillas (`ESENCIALES`/`EXTRAS` o `ESENCIALES_LEGO`/`EXTRAS_LEGO`).
-- `GUIAS` — lo que cambia de un tipo de escenario a otro. Hoy existen `ahogamiento`, `pcr`,
-  `trauma` (guardavidas), `lego-rcp` (sólo compresiones) y `lego-ahogamiento` (con
-  ventilaciones: chicos y ahogados). La de ahogamiento tiene:
-  `escala` (los grados de Szpilman), `clasificar` (el Bloque 2 del interrogatorio),
-  `circunstancial` (el Bloque 3), `saber` (lo que el operador sabe del cuadro y le cambia
-  lo que indica), `cambia` (ajustes a criterios globales de la rúbrica) y `checks`
-  (criterios propios). Un escenario sin `guia` funciona igual, sólo con el Bloque 1.
-- `CADENCIA` y `ARRIBOS` — cada cuánto el operador vuelve a controlar a la víctima, y
-  los rangos de cuánto tarda el móvil en llegar.
-- `ESENCIALES` — lo que el operador tiene que saber ANTES de anunciar que el SEM sale.
-  Mientras falte algo, la app se lo dice en cada turno y no lo deja despachar. Incluye
-  `acceso` (dónde frena el móvil y quién lo espera), que el instructor puso al mismo nivel
-  que la ubicación: es lo que de verdad le sirve a la ambulancia, a diferencia del detalle
-  clínico fino.
-- `EXTRAS` — lo que pregunta después del anuncio. **Son muy pocos a propósito**: hoy
-  identificación, acceso y el resultado del DEA. La guía del escenario suma los suyos con
-  `extras`. Agotados, la llamada pasa a espera sola.
-- `TOPE_EXTRAS` — turnos que puede gastar después del aviso de despacho (2). Pasados
-  esos, entra en espera aunque queden extras sin preguntar.
-- `CHECKS` — los diez criterios de la rúbrica de guardavidas (`CHECKS_LEGO`, los diez del
-  perfil lego, que sí suman 100). Cada uno tiene `peso` (cuánto suma sobre
-  100), `critico` (si sin ese dato no sale el móvil) y la vara de corrección escrita:
-  qué cuenta como `logrado` y qué como `parcial`. Si agregás o sacás uno, la pantalla de
-  devolución y el informe descargable se actualizan solos. Los pesos se normalizan en
-  `puntuar()`, porque cada guía suma los suyos.
-- `TOPE_CRITICO` — el puntaje máximo cuando falta un criterio crítico (hoy 40).
-  Ojo con dos criterios que cambiaron de sentido: `material` (qué equipamiento hay en el
-  lugar, el DEA ante todo) es distinto de `maniobras` (qué están haciendo), y
-  `indicaciones` dejó de ser "siguió las indicaciones" —que se quedó sin objeto cuando el
-  operador dejó de indicar— y pasó a ser "contestó concreto lo que le preguntaron".
-- `DIFF_TXT` y el bloque `tone` dentro de `instrucciones()` — los tres niveles de
-  operador: Guía, Real, Exigente.
-- `instrucciones()` — el prompt de sistema del operador. Es el archivo donde se afina el
-  realismo: orden del interrogatorio, cuándo repregunta, cuándo da RCP guiada, cuándo
-  cierra. Devuelve `{ fijo, variable }`: lo fijo va primero (se puede cachear) y el estado
-  de la llamada al final, en cada turno. En lego lo arman `promptFijoLego()` y
-  `estadoLlamadaLego()`.
-- `APERTURA` — la frase con la que atiende.
-- `NUMEROS` — el teclado del teléfono. `107` arranca la llamada; el resto no, y cada uno
-  explica por qué. El mensaje del 911 dice cuál es el número que corresponde, no que esté
-  mal llamar: en muchas jurisdicciones el 911 atiende y deriva.
-- `GLOSARIO` — vocabulario del ámbito prehospitalario y de guardavidas, para que el
-  operador entienda al alumno cuando habla técnico en vez de hacerlo repetir. **No le
-  dice nada de la escena**: es comprensión, no información.
-- `CONTEXTO` — quién es el operador y cómo trabaja. Lo más importante que vive acá: si
-  el alumno se identifica como guardavidas, el operador cambia de registro y le pide lo
-  que sólo un entrenado puede dar (tiempo de sumersión, si ya está comprimiendo, si
-  colocó el DEA). Los recursos y nombres del sistema local están pendientes de confirmar
-  con el instructor.
+- `CASOS` y `ORDEN_CASOS` — los **18 tipos de caso**, en orden de prioridad (ante dos
+  señales gana el primero): `ahogamiento, atragantamiento, paro, hemorragia, alergia, parto,
+  acv, pecho, respiratorio, convulsion, glucemia, intoxicacion, temperatura, trauma,
+  quemadura, inconsciente, desmayo, otro`. `respiratorio` va después de `pecho` ("le falta
+  el aire" también es infarto) y los tres últimos son `provisorio`: cualquier otro los
+  reemplaza. Cada caso: `id`, `nombre` (lo que ven alumno e instructor), `fam`,
+  `provisorio`, `reconocer` (una línea para la tabla del prompt fijo), `rcp`
+  (`"ventilaciones"` sólo en ahogamiento), `fuentes`, y una guía por perfil:
+  - `guardavidas`: `pide` (reemplaza cómo se piden `acciones`/`material`/`estado`/`motivo`),
+    `esenciales` (0 o 1 dato propio antes del despacho), `extras` (0 o 1 después),
+    `clasificar` (cómo interroga ese cuadro un despachador), `saber` (hechos destilados),
+    `escala` (sólo ahogamiento: Szpilman), `cambia` (parches a `CHECKS`) y `checks` (0 a 3
+    criterios propios, peso 6 a 12, nunca críticos).
+  - `lego`: `enLinea` (true en paro, ahogamiento, atragantamiento, hemorragia, alergia,
+    parto, convulsión e inconsciente: el operador se queda hasta el arribo), `esenciales`,
+    `indicaciones` (frases listas para decir; un string vale siempre, un `{si, di}` es una
+    rama: `si` = `"adulto"`/`"nino"`/`"lactante"` la filtra la app con `S.victima`,
+    cualquier otro `si` viaja como "SÓLO SI …"), `noHacer`, `alarma` (completa "volvé a
+    llamar al 107 …"), `saber` y `checks` (sólo sin paro).
+  La herencia de antes es obligatoria y la cuidan las pruebas: `ahogamiento.guardavidas` es
+  la vieja `GUIAS.ahogamiento`, `paro.guardavidas` la `pcr`, `trauma.guardavidas` la
+  `trauma`, y `paro.lego.saber` / `ahogamiento.lego.saber` las de `lego-rcp` y
+  `lego-ahogamiento` (comparadas contra `pruebas/regresion-original.json`).
+- `CHECKS` (diez, guardavidas), `CHECKS_LEGO` (diez, suman 100), `CHECK_VENTILACIONES`,
+  `CHECK_INDICACIONES_LEGO` (peso 15, lego sin paro), `AYUDA_SIN_PARO`, `TOPE_CRITICO` (40).
+- `rubrica(perfil, casoId, {paro, victima, enLinea})` — la rúbrica efectiva:
+  guardavidas = `CHECKS` con el `cambia` del caso + sus `checks`; lego con paro =
+  `CHECKS_LEGO` (+ `ventilaciones` si es ahogamiento o la víctima es chico o bebé); lego sin
+  paro = `CHECKS_LEGO` sin `rcp`, `dea`, `altavoz` (ni `linea` si no es en línea), con
+  `ayuda` sin DEA, + `indicaciones_lego` + los `checks` del caso. `puntuar(datos, R, tope)`
+  suma y normaliza; `normEstado()` lee lo que devuelve el evaluador.
+- `ESENCIALES` (guardavidas, siete: `ubicacion, motivo, victimas, estado, acciones,
+  material, acceso`), `EXTRAS` (`identificacion`), `ESENCIALES_LEGO` (`ubicacion, motivo,
+  conciencia, respiracion`), `EXTRAS_LEGO` (`dea` sólo con paro, `acceso`, `telefono`).
+  Son la BASE: cada caso suma su dato propio (ver `esencialesDe()` en `index.html`).
+- `CONTEXTO`, `CONTEXTO_LEGO`, `GLOSARIO`, `GLOSARIO_LEGO`, `DIFF_TXT`, `APERTURA`,
+  `NUMEROS`, `PISTAS_UBICACION`, `NUMEROS_QUE_NO_UBICAN`, `RCP_COMPRESIONES`,
+  `RCP_VENTILACIONES`, `RCP_VENTILACIONES_ADULTO`, `RCP_VENTILACIONES_LACTANTE`,
+  `RCP_SITUACIONES`, `CADENCIA`, `ARRIBOS` y los topes (`TOPE_EXTRAS`, `TOPE_EXTRAS_LEGO`,
+  `AVISAR_SIN_AVANCE`, `TOPE_SIN_AVANCE`, `TOPE_SIN_AVANCE_LEGO`, `TOPE_MINUTOS`,
+  `TOPE_MINUTOS_LEGO`, `TOPE_INDICACIONES_LEGO`): lo mismo de siempre, mudado tal cual.
+  `CONTEXTO` y `GLOSARIO` se ampliaron para cualquier urgencia, conservando todas las
+  prohibiciones textuales.
+- **El detector** (`DETECTOR`, adentro: expresiones y ayudantes) y sus funciones públicas,
+  que leen SÓLO lo que dijo el alumno (un string por turno), sin tildes y por raíz, con
+  filtro de negación pegada ("no sangra") y de condición ("y si entra en paro"):
+  `normalizar()`, `detectarCaso()` (null si no hay señal clara: no adivina),
+  `detectarParo()` (sólo señal inequívoca), `indicioDeParo()` (lo mínimo para creerle al
+  modelo una marca de paro), `detectarInconsciente()`, `detectarVictima()`,
+  `resolverCaso(actual, deTexto, deMarca)` (el caso sólo escala), `casoDe(id)` (con id
+  desconocido, `otro`) y `tablaDeCasos()` (la tabla del prompt fijo). Las trampas de cada
+  expresión están comentadas al lado; los casos que las prueban, en
+  `pruebas/casos.test.mjs`.
 
-Fase de seguimiento: `estadoLlamada()` arma, en cada turno, el bloque que le dice al
-modelo en qué minuto va y si el móvil llegó. `sondear()` hace que el operador vuelva a
-preguntar solo cuando pasó la cadencia sin que nadie hable. El operador marca su
-clasificación con `[[GRADO:n]]` (sólo si la guía tiene `escala`). La evolución de la
-víctima ya no la muestra la app: la canta el instructor con `notasInstructor`, que el
-panel muestra en la clase en vivo.
+## Lo que queda en `index.html`
+
+- La entrada y la configuración, la voz, el teclado, la llamada, la devolución y el estado
+  `S`. Ya no hay `SCENARIOS`, `GUIAS`, tarjetas, escenario propio ni brief.
+- `clasificar(marca)` — qué tipo de llamada es, el paro, el inconsciente y la víctima (ver
+  "Operador adaptativo" abajo). `leerMarcaCaso()` lee `[[CASO:id,paro,victima]]`.
+- `guia()` (la del caso ya clasificado, o null: sólo para el bloque del caso en el prompt) y
+  `guiaEfectiva()` (con caso nulo da la de `otro`: para indicaciones, alarma y cierres).
+- `esencialesDe()` / `extrasDe()` — las ÚNICAS funciones de la llamada que nombran las
+  grillas. Base + dato propio del caso (antes del despacho; si aparece después, pasa a
+  extra; si se pidió `AVISAR_SIN_AVANCE` veces sin conseguirlo, `S.sinPropio` deja de
+  exigirlo).
+- `indicacionesDe()`, `textoIndicacion()`, `alarmaDe()`, `enLineaLego()` — los primeros
+  auxilios del lego sin paro.
+- `instrucciones()` — el prompt de sistema. Devuelve `{ fijo, variable }`. El **fijo** es
+  idéntico toda la llamada y no depende del caso, del paro ni de la víctima (contexto,
+  glosario, esenciales base, tono, `QUÉ TIPO DE LLAMADA ES` con `tablaDeCasos()`); la
+  primera línea es `"Sos operador/a del sistema de emergencias 107" + (S.zona ? " en " +
+  S.zona : "") + ", Argentina…"`. El **variable** lo arman `estadoLlamada()` /
+  `estadoLlamadaLego()`, que empiezan con `bloqueDelCaso()` (tipo, `clasificar`, `escala`,
+  `saber`, `noHacer`) y siguen con el estado de siempre; en lego viajan ahí también las
+  indicaciones del caso y la lista de RCP (`lineasDeRcp()`, que avisa si cambió la técnica
+  y pide preguntar la víctima si no se sabe).
+- `dijoUbicacion()`, `anuncioDeDespacho()`, `empezoRCP()`, `confirmaRcp()`, `enEspera()`,
+  `abandona()`, `tocaCerrarAhora()`, `textoDeCierre()`, `sondear()`, `cadencia()`: los
+  mecanismos de siempre, ahora sin `S.scn`.
+- Estado de la llamada en `S` (se reinicia en `iniciarLlamada()`): `caso`, `casoOrigen`,
+  `casos` (historia), `marcaCaso`, `paro`, `inconsciente`, `victima`, `victimaParo`,
+  `victimaMarca`, `indicadas`, `listaRcpId`, `ubicDeclarada`, `sinPropio`; y de la clase
+  (vienen de `verificar`): `zona`, `consigna`, `lugar`.
+
+Pantallas: `v-gate` (tres puertas) → `v-setup` (quién sos, ajustes, el aviso de la
+dirección y **Agarrar el teléfono**) → `v-dial` → `v-call` → `v-debrief` (botones **Llamar
+de nuevo**, al teclado, y **Cambiar ajustes**). Se muestran con `show(nombre)`.
 
 Terminar la llamada y pasar a la devolución son dos pasos distintos. `endCall()` deja la
 llamada terminada en `v-call`, con la conversación a la vista y el botón **Ver la
@@ -216,14 +264,11 @@ listo cuando el alumno toca el botón. Antes saltaba derecho al informe y quedab
 cortaba la voz del operador en la última frase. Por eso ahora `speechSynthesis.cancel()`
 sólo se llama si el que cortó fue el alumno.
 
-Pantallas: `v-gate` (la entrada: alumnos e instructores) → `v-setup` → `v-nuevo` (escenario propio) →
-`v-brief` → `v-dial` (el teclado del teléfono) → `v-call` → `v-debrief`. Se muestran con
-`show(nombre)`.
-
 El paso por el teclado es parte del ejercicio: el alumno tiene que saber a qué número
 llamar. Marcar cualquier otro no arranca la llamada, le explica cuál corresponde y lo
-deja volver a marcar. `iniciarLlamada()` dejó de estar pegada al botón del escenario
-justamente para que la dispare el teclado.
+deja volver a marcar. `iniciarLlamada()` la dispara el teclado. El `107` arranca la
+llamada; el mensaje del 911 dice cuál es el número que corresponde, no que esté mal
+llamar: en muchas jurisdicciones el 911 atiende y deriva.
 
 ## Decisiones de diseño que conviene no romper
 
@@ -245,8 +290,11 @@ justamente para que la dispare el teclado.
 - **La clave de API nunca toca el navegador.** Va en variables de entorno de Vercel y se
   usa sólo dentro de `api/chat.js`. No la escribas en ningún archivo del repo.
 - **El prompt del operador NO se puede truncar.** Hoy `TOPE_PROMPT` es 40.000 y, si el
-  prompt lo supera, el servidor contesta 413 `prompt_largo` en vez de recortarlo; el prompt
-  real mide unos 16.450 caracteres y `pruebas/ui.test.mjs` avisa si se acerca al tope.
+  prompt lo supera, el servidor contesta 413 `prompt_largo` en vez de recortarlo. El más
+  largo (noviembre de 2026, un ahogamiento de guardavidas) mide unos 24.900 caracteres:
+  16.300 de la parte fija y 8.500 de la variable, que es la que crece con el bloque del caso.
+  `pruebas/ui.test.mjs` falla por encima de 30.000. El objetivo era 24.000; para bajarlo
+  habría que achicar el `saber` heredado del ahogamiento, que la regresión protege.
   Historia: `api/chat.js` lo recortaba a 8.000
   caracteres cuando el prompt real mide ~15.100: se perdía el 47% final, o sea la base de
   conocimiento, el bloque de estado dinámico, los marcadores y el nivel de dificultad. La
@@ -269,7 +317,8 @@ justamente para que la dispare el teclado.
   el prompt ("cuando ya no te falte nada, callate") y no lo cumple: sigue abriendo
   preguntas nuevas en cada turno (espuma, temperatura, ritmo de compresiones) hasta que la
   práctica se vuelve un examen. Lo decide `enEspera()` a partir de dos grillas,
-  `ESENCIALES` y `EXTRAS`: mientras falte algo de la primera, el operador pregunta por eso
+  `esencialesDe()` y `extrasDe()` (la base de `protocolos.js` más el dato propio del
+  caso): mientras falte algo de la primera, el operador pregunta por eso
   y NO puede anunciar el despacho; completada la primera, anuncia y va por los extras de a
   uno; agotados los dos, entra en espera y tiene prohibido preguntar. El operador declara
   lo que ya averiguó con `[[DATOS:id,id]]` y la app **acumula**, así que si un turno se
@@ -285,7 +334,8 @@ justamente para que la dispare el teclado.
   `[[DATOS:...]]` una ubicación que nunca le dieron y despachó a ningún lado. Ahora
   `dijoUbicacion()` acepta `ubicacion` sólo si en lo que dijo el alumno hay algo que un
   móvil pueda buscar: un número que no sea edad ni tiempo, una palabra de
-  `PISTAS_UBICACION` o una palabra de la dirección del escenario (`addr`, `zona`). Si el
+  `PISTAS_UBICACION`, una palabra propia del lugar de la consigna (`S.lugar`) o una
+  intersección con dos señales (ver "Operador adaptativo"). Si el
   operador anuncia el móvil sin eso, el anuncio no cuenta (`S.anuncioSinUbicacion`) y el
   turno siguiente se le hace aclarar que sin dirección no sale nada. Si es exacta o no lo
   juzga la devolución; esto sólo mira que exista. Los demás datos se le siguen creyendo.
@@ -297,7 +347,8 @@ justamente para que la dispare el teclado.
   versión tenía ocho extras y el efecto fue el contrario al buscado: la app le pasaba al
   operador la lista de los que faltaban y él la iba cumpliendo con disciplina, así que
   seguía preguntando (rescatistas, testigos, temperatura del agua) cuando ya tendría que
-  estar callado. Quedaron tres, más `TOPE_EXTRAS`. Lo que el alumno cuente por su cuenta
+  estar callado. Quedaron muy pocos (hoy `identificacion` más, como mucho, uno del caso),
+  más `TOPE_EXTRAS`. Lo que el alumno cuente por su cuenta
   se le evalúa igual en la rúbrica: que el operador no lo pregunte es el punto, no un
   problema.
 - **La primera versión de esto cortaba por cantidad de turnos y estaba mal.** No miraba si
@@ -338,8 +389,9 @@ justamente para que la dispare el teclado.
   después de probarlo: despachada la ambulancia y llena la planilla, un operador real
   corta, porque tiene otras llamadas. Antes de cortar avisa que corta y dice en qué caso
   hay que volver a llamar al 107; eso depende del estado en que quedó la víctima, y la app
-  se lo indica según `S.grado`. **En grado 6 no se pide avisar si empeora**: ya está en
-  paro, no hay empeoramiento posible, y pedirlo delata que el operador no entendió.
+  se lo indica según `S.grado`. **En grado 6 (o con el paro) no se pide avisar si
+  empeora**: no hay empeoramiento posible, y pedirlo delata que el operador no entendió. Un
+  grado 5 (paro respiratorio, con pulso) sí puede empeorar.
   El cierre sigue bloqueado mientras no haya despachado: `[[CERRAR]]` antes de eso se
   ignora y la llamada sigue.
 - **Esto reemplazó a un diseño donde el operador se quedaba en línea hasta que llegaba el
@@ -349,24 +401,24 @@ justamente para que la dispare el teclado.
   cómo evolucionaba la víctima, cronometrado, para que él lo transmitiera. Se sacó: durante
   la llamada el guardavidas tiene las manos en la víctima y no está mirando el teléfono,
   así que era pedirle algo que no iba a hacer. Ahora eso lo canta en voz alta el instructor
-  presente, y el guion quedó en `notasInstructor` dentro del escenario, que la app no usa.
-  De paso se ahorran unos 11.000 tokens por práctica, porque cada cambio en pantalla
-  provocaba un turno más del operador.
+  presente (desde noviembre de 2026 tampoco hay escenarios ni guion en la app: el caso
+  entero lo da el instructor o la consigna). De paso se ahorran unos 11.000 tokens por
+  práctica, porque cada cambio en pantalla provocaba un turno más del operador.
 - **El tiempo de arribo se sortea** dentro del rango elegido y se le dice al alumno como
   estimación de llegada; lo que no se dice es que salió de un sorteo.
-- **La rúbrica efectiva se recalcula al terminar la llamada**, no al empezarla. El
-  criterio de reportar los cambios de escena sólo se puede exigir si la escena alcanzó a
-  cambiar, y eso recién se sabe al final. Calcularlo al arrancar lo excluía siempre.
+- **La rúbrica efectiva se recalcula al terminar la llamada**, no al empezarla:
+  `rubrica(S.perfil, S.caso, {paro, victima, enLinea})` depende del caso al que llegó la
+  llamada, de si hubo paro y de la víctima, y eso recién se sabe al final.
 - **El modelo no tiene noción del tiempo.** Hay que decírselo en cada turno; eso hace
   `estadoLlamada()`. No se puede confiar en que lo deduzca de la transcripción.
 - **Lo que cambia en la escena, el operador no lo sabe.** Hoy la evolución la canta el
-  instructor en voz alta (ver `notasInstructor`); si algún día la app la vuelve a mostrar,
+  instructor en voz alta; si algún día la app la vuelve a mostrar,
   tiene que ser SÓLO al alumno. Si el operador la supiera, se rompe lo de que es ciego y
   el alumno aprueba sin transmitir nada.
 - **La base de conocimiento está destilada, no copiada.** Los manuales no entran en un
   prompt que se manda en cada turno, y además son material publicado de terceros. Lo que
-  hay en `GUIAS.ahogamiento.saber` son los hechos reescritos que le cambian al operador
-  lo que dice. No pegues capítulos de los manuales acá.
+  hay en los `saber` de `CASOS` son los hechos reescritos que le cambian al operador lo
+  que dice. No pegues capítulos de los manuales acá.
 - **Sin frameworks, sin build, sin dependencias.** Se despliega tal cual. Mantenerlo así.
   Anthropic y Upstash se llaman con `fetch` directo por lo mismo.
 
@@ -422,11 +474,13 @@ Clínica (fuentes: AHA 2025 adulto y pediátrica, ERC 2025 adulto y pediátrica)
 - **La técnica de la RCP guiada cambia con la víctima: `listaRcp()`.** Adulto sin
   ahogamiento: `RCP_COMPRESIONES`. Adulto ahogado: `RCP_VENTILACIONES_ADULTO` (talón de
   la mano, unos 5 cm: un tercio del pecho de un adulto pasa los 6 cm). Chico:
-  `RCP_VENTILACIONES` (un tercio, unos 5 cm, una o dos manos). Lactante (`victima:
-  "lactante"`, el panel ya lo ofrece): `RCP_VENTILACIONES_LACTANTE`, boca a boca y nariz,
-  cabeza derecha sin hiperextender, dos pulgares, unos 4 cm. Un lactante lleva siempre
-  ventilaciones, aunque la guía sea `lego-rcp`.
-- En `GUIAS.ahogamiento.saber`: no existe la regla "una sola mano de 1 a 9 años"; la
+  `RCP_VENTILACIONES` (un tercio, unos 5 cm, una o dos manos). Lactante:
+  `RCP_VENTILACIONES_LACTANTE`, boca a boca y nariz, cabeza derecha sin hiperextender,
+  dos pulgares, unos 4 cm. Un lactante lleva siempre ventilaciones, aunque el caso sea
+  `paro`. La víctima ya no viene de un escenario: la deduce `detectarVictima()` o la
+  marca del operador (ver "Operador adaptativo"); sin víctima va la lista del chico, que
+  nunca le indica a un bebé el talón de la mano.
+- En `CASOS.ahogamiento.guardavidas.saber`: no existe la regla "una sola mano de 1 a 9 años"; la
   evaluación de pulso y respiración dura hasta 10 s y sólo se estira a un minuto con
   hipotermia marcada (agua fría, helado).
 - En los guiones, la recuperación se canta con "respira normalmente" o "tose", nunca con
@@ -487,8 +541,8 @@ Panel:
 - Una clase cerrada queda a la vista con su resumen (`P.salaVista`) hasta tocar "Volver";
   las clases anteriores tienen "ver resumen". El tablero sigue actualizándose mientras haya
   grupos terminando, hasta 45 minutos después del cierre.
-- El guion que se muestra es el de cada escenario que los grupos tienen ahora, no el más
-  usado en la clase.
+- El tablero muestra el tipo de caso de cada grupo (y la consigna y el lugar de la clase);
+  el guion de los escenarios se fue con ellos.
 - A ciegas también en la tabla de Prácticas y en el recuadro de la ubicación.
 - Prácticas paginadas de a 500 (hasta 5.000 por período) y el CSV respeta la búsqueda.
 - Plan Prueba: 30 prácticas por mes y vencimiento a 30 días.
@@ -515,10 +569,146 @@ un solo lugar. La pestaña «Clientes» pasó a llamarse **Instructores** (`data
   días de clase o más) no cuenta la cuenta principal ni la de la demo (`esDemo`, la cuenta
   cuyo código de alumnos es `CODIGO_DEMO`).
 - La ficha de cada cuenta deja al administrador cambiarle los códigos (`codigo-regenerar`
-  con `cuentaId`) y abrir su panel en Alumnos (`cambiarCuenta()`). `pintarUso()` dibuja lo
-  mismo en la ficha y en «Mi cuenta».
+  con `cuentaId`), la localidad (`zona`) y abrir su panel en Alumnos (`cambiarCuenta()`).
+  `pintarUso()` dibuja lo mismo en la ficha y en «Mi cuenta», incluido "Casos practicados"
+  (contadores `caso:<id>`, desde noviembre de 2026).
 - El tooltip de los gráficos se muda adentro del `dialog` abierto (`mostrarTip`): el
   diálogo está en la capa superior y lo tapaba.
+
+### Operador adaptativo (noviembre de 2026)
+
+Pedido del titular: sacar los escenarios prediseñados (los nueve, el escenario propio, el
+brief, los escenarios compartidos por cuenta y los de la clase en vivo, `notasInstructor`)
+y que el operador se adapte a cualquier caso que le cuente el alumno, de primeros auxilios
+a ahogamiento y paro. El contrato de diseño de ese trabajo no está en el repo; esto es lo que conviene no
+romper.
+
+Clasificación (`clasificar()` en `index.html`, detectores en `protocolos.js`):
+- **Un único caso por llamada, que sólo escala.** `resolverCaso()` nunca baja de prioridad
+  ni vuelve a "no sé"; los provisorios (`inconsciente`, `desmayo`, `otro`) los reemplaza
+  cualquiera, y entre ellos no hay ida y vuelta. Si se prende el paro, el caso pasa a
+  `paro`, salvo ahogamiento, atragantamiento y parto, que siguen siendo ese caso (cambia la
+  técnica o quién es la víctima). `S.casoOrigen` y `S.casos` guardan de dónde venía.
+- **Se llama dos veces por turno**: `clasificar(null)` al mandar el turno del alumno (antes
+  de armar el prompt y antes de `empezoRCP()`) y `clasificar(marca)` al recibir la
+  respuesta. Las dos ven lo mismo porque la marca se recuerda (`S.marcaCaso`).
+- **La app clasifica con lo que dijo el ALUMNO y con la marca `[[CASO:id,paro,victima]]`
+  del operador, nunca con lo que dijo el operador.** La marca se pide siempre, se saca del
+  texto y se lee sin tildes (`[[CASO:convulsión]]` vale). En `ask()` el orden es: 1) sacar
+  `[[CASO]]`; 2) `[[GRADO]]`, que vale sólo con caso ahogamiento (lo sea ya o lo diga esa
+  marca); 3) `[[DATOS]]`; 4) `clasificar(marca)`; 5) el despacho; 6) los contadores.
+- **Ninguna transición irreversible se prende sólo por una marca.** La marca de paro se cree
+  únicamente si el alumno dijo algo que la sostenga (`indicioDeParo()`). Y no hay indicio si
+  lo ÚLTIMO que dijo de la respiración es que respira bien ("no responde pero respira
+  bien"): ahí una marca equivocada prendía un paro que no se apaga. `[[GRADO:6]]` sí prende
+  el paro (lo pone el contrato; queda anotado como excepción). `S.paro` y `S.inconsciente`
+  no se apagan nunca.
+- **`detectarParo()` es estricto a propósito.** Sí: no responde + no respira (mismo turno o
+  turnos distintos, también "ni respira", "dejó de responder", "no me contesta"), boquea,
+  sin pulso, "un paro / en paro / paro cardíaco", RCP en curso AFIRMADA con palabra
+  inequívoca, **no responde + respiración anormal** (ronca, respira raro, de a ratos, no
+  sabe si respira: es la respiración agónica dicha por un lego, AHA y ERC 2025) y **el
+  atragantado que pierde el conocimiento** ("se desmayó", "dejó de responder", sin que
+  después vuelva). No: "paro" suelto ("ya paró de convulsionar", "se paró y se cayó"),
+  "apretando"/"empujando"/"compresiones" solas (son también una herida o las abdominales),
+  "no puede respirar", un **curso o una clase de RCP** ("hice un curso de RCP", "estamos en
+  una clase de RCP": el simulador se usa en cursos), "no contesta" a secas entre turnos (es
+  también un teléfono), "no respira por la nariz", y "paro respiratorio" cuando alguien
+  dijo que tiene pulso (es un grado 5).
+- **La víctima.** `detectarVictima()`: entre un chico y un bebé gana el más chico (nunca se le
+  indica a un bebé la técnica de uno más grande); **un adulto y un chico nombrados a la vez
+  dan null** ("mi marido no respira, estoy sola con los nenes"): antes ganaba el chico y un
+  adulto en paro recibía 5 soplidos y la técnica de chico. Con null, el estado le hace
+  preguntar al operador en la misma frase en que indica empezar, y decide su marca. En un
+  **parto en paro el texto no decide nunca** (nombra a la mamá y al bebé): vale sólo una
+  marca mandada durante el paro (`S.victimaParo`), y si no hay, null y se pregunta "quién no
+  respira, la mamá o el bebé".
+- **"Estoy apretando" no es RCP.** `empezoRCP()` y la marca `rcp` sólo se miran con el paro
+  ya reconocido. Y si el paro se reconoce en ESE mismo turno, hace falta además una palabra
+  inequívoca (`RCP_INEQUIVOCA`): "estoy apretando pero ahora no responde y no respira" es
+  alguien que apretaba una herida.
+
+Llamada:
+- **Lego, dos caminos.** Con paro, todo como antes (RCP guiada con `listaRcp()`, en línea
+  hasta el arribo, nunca abandona, `tRcpMs`). Sin paro: con lo esencial completo, en el
+  mismo mensaje anuncia la ambulancia y da la primera indicación del caso; después una por
+  turno (`S.indicadas`), con los extras pedidos en la misma frase que una indicación. Si el
+  caso es `enLinea` o la persona está inconsciente, se queda sosteniendo hasta el arribo; si
+  no, corta apenas terminó, diciendo cuándo volver a llamar (`alarmaDe()`). Si se prende el
+  paro, pasa al primer camino en ese turno. Ya despachado y sin paro, lo esencial que falte
+  (conciencia, respiración, motivo, que sólo se marcan con `[[DATOS]]`) ya no lo deja en
+  "TODAVÍA TE FALTA LO ESENCIAL": si el modelo despachaba sin la marca, las indicaciones no
+  le llegaban nunca.
+- **A un inconsciente no se le corta**, sea cual sea el caso: se le anteponen las
+  indicaciones de `CASOS.inconsciente` y su alarma.
+- **El cierre forzado sólo se suspende por un cambio real de situación** (paro nuevo,
+  despacho nuevo, un cuadro que ahora pide quedarse en línea: `reabre` en `ask()`). Que
+  `S.sinAvance` vuelva a 0 porque la respuesta trajo un dato nuevo NO alcanza: en el turno
+  del abandono el operador se despedía y la llamada seguía.
+- **Prudencia en lo que no validó el instructor.** El operador no indica medicación por su
+  cuenta (nada de aspirina): sólo ayuda a usar la propia y ya indicada (inhalador,
+  autoinyector, azúcar si es diabético y traga). Torniquete sólo si hay uno comercial y la
+  presión no alcanza. Parto: recibir sin tirar, secar, abrigar, no cortar el cordón; eso es
+  prudencia del proyecto, sin fuente obstétrica (lo dice `/fundamentos`).
+- **La ubicación (`dijoUbicacion()`), ni más blanda ni más dura que antes.** Vale con un
+  número que no sea edad ni tiempo, una palabra de `PISTAS_UBICACION`, una palabra propia de
+  `S.lugar` (largo ≥ 6, fuera de `GENERICAS_DIRECCION`), o una intersección con DOS señales:
+  la forma "en X y Y" dicha como respuesta a una pregunta de dónde es, y que el operador la
+  haya declarado. `S.ubicDeclarada` se anota DESPUÉS de evaluar la declaración. `S.zona` no
+  se usa: "estoy en Santa Fe" no ubica a nadie. `PISTAS_UBICACION` no tiene "casa",
+  "domicilio", "local", "salón" ni "sede".
+- **La consigna y el lugar nunca entran al prompt del operador** (es ciego); la localidad
+  (`S.zona`) sí, en la primera línea. La consigna y el lugar los ven el alumno (en
+  `v-setup` y debajo del teclado: arriba empujaban el botón Llamar fuera de la pantalla) y
+  el evaluador, que juzga la ubicación por si una ambulancia la encontraría y, con lugar,
+  por si coincide. "No penalices que la dirección, el nombre o el teléfono sean inventados".
+- **El prompt fijo no depende del caso.** El bloque del caso, la lista de RCP y las
+  indicaciones viajan en el variable. Con el caso sin clasificar y el motivo ya declarado,
+  el bloque no le manda "averiguá el motivo" (chocaba con "ya tenés: motivo").
+- **Marcas cortadas.** Una respuesta que se termina en medio de una marca (pasa con el
+  razonamiento de Gemini, que gasta el mismo tope de 800 tokens) no llega a la pantalla ni
+  a la voz (`MARCA_CORTADA`, `MARCAS_A_MEDIAS`).
+- **Un grado 5 (paro respiratorio, con pulso) sí puede empeorar**: `sinEmpeoramiento()` da
+  falso con `S.grado === 5`, aunque el paro esté prendido.
+
+Entrada, clase y servidor:
+- **Tres puertas** en `v-gate`: Alumnos, Instructores y Administración (discreta, al
+  final). La de administración llama a `/api/datos` con `{accion:"panel", requiere:"admin"}`;
+  un código de instructor contesta 403 `solo_admin` (y cuenta en el freno del panel). Si
+  entra, `sessionStorage.sim107_puerta = "admin"` y el panel abre en Instructores. La de
+  instructores sigue aceptando el código de administrador.
+- **Con un código guardado, "Agarrar el teléfono" espera a la verificación** ("Verificando
+  el código…"), y `aplicarAcceso()` no cambia el perfil ni la localidad con una llamada en
+  curso: con wifi flojo la llamada arrancaba sin grupo, localidad ni consigna, y la
+  verificación tardía le daba vuelta el perfil a mitad de la llamada.
+- **Sin conexión se dice "sin conexión"** (`sin_conexion`), no "código equivocado"; y sin
+  respuesta del servidor no se ofrece "Practicar sin código". El service worker (`sim107-v3`)
+  le da 3,5 s a la red en una navegación y después abre la copia guardada, guarda sólo
+  respuestas `ok`, y sirve la entrada de los alumnos sólo para la raíz.
+- **La clase en vivo**: `sala-crear` acepta `consigna` (≤400), `lugar` (≤120) y `zona`
+  (≤60). El tablero muestra por grupo el tipo de caso: la app avisa `"en llamada"` cada vez
+  que cambia `S.caso` (desde `ask()` y `sendTurn()`, no desde `clasificar()`, que las
+  pruebas recortan). Cortar sin haber dicho nada vuelve la tarjeta a `"conectado"`, no la
+  deja en `"evaluando"`.
+- **La práctica guarda `caso`** (`{id, nombre, fam, origen, paro, victima, historia}`) y
+  `clase` (`{consigna, lugar, zona}`, copiada del lado del SERVIDOR desde la sala, nunca del
+  cliente: `salainfo:` vence a los 90 días y la práctica dura 400). `resumen()` da `caso`,
+  `casoId` y `paro`; las prácticas viejas siguen con su `escenario` (el panel las agrupa en
+  "Escenarios anteriores" mirando `p.escenario`, no `casoId` vacío). Un cliente viejo en
+  caché que manda `escenario` se guarda como antes.
+- **`CASOS_VALIDOS`** (los 18) está repetido en `api/chat.js` y `api/datos.js`, en el bloque
+  "mantener iguales". El contador `caso:<id>` en `uso:<cuenta>:<mes>` suma una vez por
+  práctica nueva, con id validado; la ficha de cada cuenta y «Mi cuenta» muestran "Casos
+  practicados".
+- **Talones de los escenarios** en `api/datos.js`, para un panel viejo abierto: `escenarios`
+  contesta `{escenarios: []}`; `escenario-guardar` y `escenario-borrar`, 410
+  `funcion_retirada`. Las claves `esc:` de la base no se borraron. Se pueden sacar los
+  talones en la versión siguiente.
+- **Cuenta con localidad** (`zona`, ≤60): la edita el administrador en la ficha; la clase
+  la puede pisar. Se la dice al operador.
+- **`/fundamentos`** arma la tabla de la rúbrica con `rubrica(perfil, caso, {paro})` y tres
+  selectores (perfil, caso y, en lego, con o sin paro), y la tabla de los tipos de caso con
+  sus fuentes. Sección "El operador se adapta al caso".
 
 ## Variables de entorno (en Vercel, no en el repo)
 
@@ -547,7 +737,7 @@ Hay pruebas automáticas en `pruebas/`, sin dependencias del proyecto (Node 20+;
 navegador usa el Playwright global y el Chromium del entorno):
 
 ```
-node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs   # servidor, rúbrica y llamada, sin red
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs   # sin red
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs            # punta a punta en Chromium
 NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs  # la copia de Claude, con un Claude falso
 RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107
@@ -560,13 +750,34 @@ pide `/favicon.ico` por su cuenta, y `copia-claude.test.mjs` ya lo tiene en cuen
 clon de Windows hay que poner `git config core.autocrlf false`: con CRLF,
 `herramientas/copia-claude.mjs` no encuentra los textos que reemplaza.
 
-`pruebas/falsos.mjs`: `gemini.operador` reemplaza al operador falso en el medio de una
-prueba (volverlo a `null` al terminar); así se prueba un operador que se porta mal.
+Qué prueba cada una (noviembre de 2026; en la computadora del titular se corren con
+`NODE_PATH="C:/Users/pluka/AppData/Roaming/npm/node_modules"`, `CHROMIUM=…` y, si el 8107
+está ocupado, `PUERTO=8151`, todo en la MISMA línea del comando):
+- `rubrica.test.mjs` carga `protocolos.js` entero con `new Function`: la forma del archivo,
+  los 18 casos, la regresión contra `pruebas/regresion-original.json` (las rúbricas y guías
+  de antes de sacar los escenarios: no se pierde una línea) y un barrido de 320 rúbricas.
+- `casos.test.mjs`: tablas de frases por caso (positivas y trampas), `detectarParo`,
+  `indicioDeParo`, `detectarInconsciente`, `detectarVictima` y `resolverCaso`. Si tocás
+  una expresión del detector, sumá ahí la frase que la motivó.
+- `llamada.test.mjs` recorta de `index.html` las funciones de la llamada (`sendTurn` y
+  `ask` incluidas), con la red, la voz, la pantalla y `avisarSala` falsos, y juega
+  llamadas enteras turno a turno. Si agregás una función o una constante que usan esas
+  funciones, sumala a la lista de recortes del principio del archivo.
+- `ui.test.mjs` con el operador falso, en un celular de 375x812 en dos recorridos.
+  `pruebas/servidor.mjs` con `RAPIDO=1` acelera `ARRIBOS` y `CADENCIA` al servir
+  `/protocolos.js`.
 
-El recorte de llaves balanceadas de `rubrica.test.mjs` y `llamada.test.mjs` no entiende
+`pruebas/falsos.mjs`: `gemini.operador` reemplaza al operador falso en el medio de una
+prueba (volverlo a `null` al terminar); así se prueba un operador que se porta mal. El
+operador falso manda siempre `[[CASO:…]]` deducido de lo que dijo el alumno y lee frases
+literales del estado ("Identificadores válidos: …", "ESCALA QUE MANEJÁS"): si cambiás esos
+textos en `index.html`, ajustalo.
+
+El recorte de llaves balanceadas de `llamada.test.mjs` (sobre `index.html`) no entiende
 expresiones regulares: en las funciones que se recortan, una regex con un `[` o una `{`
 sin cerrar (por ejemplo `/^\[silencio/`) hace que el recorte se pase de largo. Ahí usá
-`startsWith` o `includes`.
+`startsWith` o `includes`, o armá la expresión con `new RegExp("…")` fuera de la función
+(así están las de las marcas).
 
 `pruebas/falsos.mjs` tiene un Redis en memoria (sólo los comandos que se usan: si agregás
 uno en `api/`, agregalo ahí) y un Gemini falso con cuotas, 404 y un operador que sigue el
@@ -579,11 +790,11 @@ fórmulas de las planillas del Drive se verificaron con la librería `formulas` 
 Lo que funcionó antes de tener la suite, y sigue sirviendo para explorar:
 
 - **Sintaxis**: extraer el `<script>` de `index.html` a un archivo y `node --check`.
-- **Rúbrica**: extraer `CHECKS`, `rubrica()` y `puntuar()` con un `new Function` y correr
+- **Rúbrica**: cargar `protocolos.js` (`require("./protocolos.js")` alcanza) y correr
   los casos borde sin navegador: todo faltó → 0; todo logrado → 100; sin ubicación y el
   resto perfecto → topeado en 40. Los pesos ya NO tienen que sumar 100: `puntuar()`
-  normaliza, porque cada guía agrega los suyos.
-- **Fase de seguimiento**: generar una copia de `index.html` con `CADENCIA` y `ARRIBOS` en
+  normaliza, porque cada caso agrega los suyos.
+- **Fase de seguimiento**: generar una copia de `protocolos.js` con `CADENCIA` y `ARRIBOS` en
   segundos en vez de minutos y un operador falso que devuelve `[[GRADO:6]]` y `[[CERRAR]]`
   en todos los turnos. Servirla y manejarla desde el navegador. Así se ve la llamada
   entera en 30 segundos y se comprueba lo que importa: que los cierres previos al arribo
@@ -613,7 +824,7 @@ se "corrija" de vuelta desde el manual:
 - **Relación de compresiones y ventilaciones.** El manual SVB Guardavidas dice, en dos
   lugares, "15x2 en todas las edades para situaciones de ahogamiento donde intervienen dos
   socorristas y 30x2 en solitario". El instructor corrigió que **15:2 se reserva a chicos
-  y lactantes, y en adultos es 30:2**. Está aplicado así en `GUIAS.ahogamiento.saber`, con
+  y lactantes, y en adultos es 30:2**. Está aplicado así en `CASOS.ahogamiento.guardavidas.saber`, con
   la discrepancia anotada en la misma línea.
 
 ## Pendiente
@@ -624,9 +835,17 @@ se "corrija" de vuelta desde el manual:
    falta ver si el evaluador **aplica bien la vara** en llamadas reales, que es harina de
    otro costal. Prueba clave: una llamada deliberadamente mala tiene que dar bajo, y una
    buena de verdad tiene que llegar a 85+. Si una buena queda en 60, la vara está dura.
-2. Hecho en septiembre de 2026: nueve escenarios (seis de guardavidas y tres lego), guías
-   `pcr` y `trauma`, modo lego con su rúbrica, panel con escenarios compartidos por
-   cuenta y registro de prácticas por alumno o grupo.
+2. **Que un instructor valide los casos nuevos** (noviembre de 2026) antes de usarlos en
+   clase: lo heredado de las guías de antes ya estaba validado; lo nuevo, no. La lista de
+   afirmaciones a confirmar está en el informe de cierre de ese trabajo; las más delicadas:
+   atragantamiento del lactante (talón de una mano o dos pulgares, ya no dos dedos), pecho
+   sin aspirina (ERC 2025 la sugiere; acá se omitió por prudencia), anafilaxia (segunda
+   dosis a los 5 minutos, cómo se aplica), azúcar en la hipoglucemia, torniquete, golpe de
+   calor (inmersión en agua fría) y todo el parto, que no tiene fuente obstétrica. Si el
+   aula dice otra cosa, se corrige en `protocolos.js` y se anota en "Correcciones del
+   instructor".
+   (Hecho en septiembre de 2026, y retirado en noviembre: nueve escenarios, guías `pcr` y
+   `trauma`, escenarios compartidos por cuenta.)
 3. Interrumpir al operador **hablando** (hoy sólo tocando la franja de estado). Necesita
    cancelación de eco o una API de voz en tiempo real.
 4. Conseguir el manual de operadores del SIES 107 de Santa Fe para afinar el

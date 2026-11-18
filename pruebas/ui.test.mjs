@@ -102,6 +102,13 @@ async function verDevolucion(page) {
   await page.waitForSelector("#deb-body:not([hidden])", { timeout: 15000 });
 }
 
+// En un celular, lo que hay que tocar queda a la vista (sin desplazar la página a mano).
+async function aLaVista(page, selector, donde) {
+  const caja = await page.locator(selector).boundingBox();
+  const alto = await page.evaluate(() => window.innerHeight);
+  assert.ok(caja && caja.y >= 0 && caja.y + caja.height <= alto, donde + ": " + selector + " a la vista (" + JSON.stringify(caja) + ", alto " + alto + ")");
+}
+
 // En un celular nada se sale del ancho de la pantalla: ni la página ni lo que tiene adentro.
 async function sinScrollHorizontal(page, donde) {
   const ancho = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, cuerpo: document.body.scrollWidth, vista: window.innerWidth }));
@@ -178,6 +185,9 @@ try {
     await decir(page, "Soy Luka, guardavidas del puesto 2");
     for (let i = 0; i < 4; i++) if ((await decir(page, "Seguimos con la RCP")) === false) break;
     await page.waitForSelector("#ver-informe:not([hidden])", { timeout: 15000 });
+    // La tarjeta de la llamada no crece con la conversación: se desplaza el feed, y el
+    // botón para ver la devolución queda en la pantalla.
+    await aLaVista(page, "#ver-informe", "llamada terminada");
     const feed = await page.locator("#feed").innerText();
     assert.ok(!feed.includes("[["), "ninguna marca [[...]] se filtra a la pantalla");
     assert.match(feed, /El operador cortó la llamada/);
@@ -358,6 +368,10 @@ try {
     assert.match(await page.locator("#consigna-dial").innerText(), /En la cocina del club/);
     assert.match(await page.locator("#consigna-dial").innerText(), /Avenida Alem 3288/);
     await sinScrollHorizontal(page, "teclado de la clase");
+    // La consigna va debajo del teclado: no empuja el botón Llamar fuera de la pantalla.
+    const dial = await page.evaluate(() => ({ llamar: document.querySelector("#llamar").getBoundingClientRect().top,
+      consigna: document.querySelector("#consigna-dial").getBoundingClientRect().top }));
+    assert.ok(dial.consigna > dial.llamar, "la consigna, debajo del botón Llamar");
 
     // El tablero ve al grupo desde que agarra el teléfono, y después en llamada.
     let vivo = await api("/api/datos", { accion: "sala-vivo", codigo: salaNorte.codigo }, instNorte);
@@ -368,6 +382,11 @@ try {
 
     await decir(page, "Estoy en el Club Regatas, Avenida Alem 3288, en la cocina");
     await decir(page, "Mi compañera se quemó la mano con agua hirviendo");
+    // El tablero muestra el caso mientras el grupo todavía está en la llamada.
+    vivo = await api("/api/datos", { accion: "sala-vivo", codigo: salaNorte.codigo }, instNorte);
+    const g3 = vivo.grupos.find(g => g.grupo === "Grupo 3");
+    assert.equal(g3.estado, "en llamada");
+    assert.equal(g3.caso, "Quemadura", "el caso llega al tablero en cuanto se clasifica");
     await decir(page, "Sí, me responde, está despierta y respira bien");
     await sinScrollHorizontal(page, "llamada de la clase");
     // No es en línea: el operador da las indicaciones de a una y corta él.

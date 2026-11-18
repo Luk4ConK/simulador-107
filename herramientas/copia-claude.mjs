@@ -107,7 +107,7 @@ cambiar(
       data = await r.json().catch(()=>({error:"respuesta_ilegible"}));
     }catch(err){
       if(err && err.name === "AbortError"){ const e = new Error("sin_respuesta"); e.code = "sin_respuesta"; throw e; }
-      throw err;
+      throw sinConexion(err);
     }finally{ if(reloj) clearTimeout(reloj); }
     if(!r.ok){ const e = new Error(data.detalle||data.error||"error"); e.code = data.error; e.status = r.status; e.data = data; throw e; }
     return data;
@@ -176,8 +176,11 @@ cambiar(
 );
 cambiar(
 `  async function pedirDatos(cuerpo, encabezados){
-    const r = await fetch("/api/datos", { method:"POST",
-      headers: Object.assign({"content-type":"application/json"}, encabezados || {}), body: JSON.stringify(cuerpo) });
+    let r;
+    try{
+      r = await fetch("/api/datos", { method:"POST",
+        headers: Object.assign({"content-type":"application/json"}, encabezados || {}), body: JSON.stringify(cuerpo) });
+    }catch(err){ throw sinConexion(err); }
     const d = await r.json().catch(()=>({error:"respuesta_ilegible"}));
     if(!r.ok){ const e = new Error(d.detalle||d.error||"error"); e.code = d.error; e.status = r.status; throw e; }
     return d;
@@ -218,9 +221,15 @@ cambiar(
     // Con un código guardado se vuelve a verificar en segundo plano: trae el nombre de la
     // institución, la localidad y la consigna de la clase, y si la clase ya cerró, vuelve a
     // pedir un código.
+    // Mientras tanto no se puede agarrar el teléfono: con wifi flojo, la llamada arrancaba
+    // sin el nombre del grupo, sin la localidad ni la consigna, y la verificación llegaba
+    // a mitad de la llamada y le cambiaba el perfil y la primera línea del prompt.
     if(S.codigo){
+      const boton = $("#btn-call"), texto = boton.textContent;
+      boton.disabled = true; boton.textContent = "Verificando el código…";
       try{ await verificar(S.codigo); }
       catch(e){ if(BLOQUEOS.includes(e.code)) pedirCodigo(textoError(e)); }
+      finally{ boton.disabled = false; boton.textContent = texto; }
     }
   })();`,
 `  (async function init(){

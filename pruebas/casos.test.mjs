@@ -299,6 +299,43 @@ test("detectarParo: sólo con una señal inequívoca", () => {
     ["no tiene pulso radial", false],
     ["y si entra en paro", false],
     ["no, respira bien", false],
+    // Un curso o una clase de RCP no es RCP en curso (revisión de noviembre de 2026).
+    [["sangra mucho de la pierna", "yo hice un curso de rcp"], false],
+    ["hice el curso de rcp el año pasado", false],
+    ["estamos en un curso de rcp", false],
+    ["estoy dando una clase de rcp y a un alumno le duele el pecho", false],
+    ["hice rcp hace dos años en el club", false],
+    ["llevamos dos minutos de rcp", true],
+    // Otras formas de decir que no respira o no responde.
+    ["no respira ni responde", true],
+    ["ni responde ni respira", true],
+    ["dejó de reaccionar y no respira", true],
+    ["no respira y no se mueve, no me contesta", true],
+    [["dejó de responder", "no respira"], true],
+    // "No contesta" a secas es también un teléfono; "no respira por la nariz", respira.
+    [["llamé a la madre y no contesta", "no respira por la nariz, respira por la boca"], false],
+    ["está tirado, no contesta, no respira", true],
+    // No responde y respira de forma anormal: es paro (AHA 2025, ERC 2025).
+    ["no reacciona, respira raro, como que ronca", true],
+    [["no responde", "hace ruidos como ronquidos"], true],
+    [["no responde", "no sé si respira"], true],
+    ["respira de a ratos y no responde", true],
+    ["no respira bien y no responde", true],
+    ["respira pero no normal y no responde", true],
+    ["está como dormido, ronca fuerte, no lo puedo despertar", true],
+    ["ronca mucho de noche pero está bien", false],
+    ["le cuesta respirar, respira mal", false],
+    ["no responde pero no respira mal, respira tranquilo", false],
+    // El atragantado que pierde el conocimiento es un paro.
+    [["se atragantó con carne", "se desmayó, se cayó al piso"], true],
+    [["se atragantó con carne", "se desvaneció"], true],
+    [["se atragantó con carne", "dejó de responder"], true],
+    [["se atragantó con carne", "se desmayó", "ya volvió, está tosiendo"], false],
+    ["se atragantó y tose fuerte", false],
+    // "Paro respiratorio" con pulso es un grado 5, no un paro cardiorrespiratorio.
+    ["grado 5, paro respiratorio, tiene pulso carotídeo", false],
+    ["está en paro respiratorio, tiene pulso", false],
+    ["está en paro respiratorio", true],
   ], "detectarParo");
 });
 
@@ -313,6 +350,18 @@ test("indicioDeParo: alguna señal suelta alcanza", () => {
     ["está boqueando", true],
     ["no tiene pulso", true],
     ["le dio un paro", true],
+    ["no respira ni responde", true],
+    ["el bebé no llora ni respira", true],
+    [["se atragantó con carne", "dejó de responder"], true],
+    ["no lo puedo despertar", true],
+    ["no me contesta", true],
+    // Si lo último que dijo de la respiración es que respira bien, no es indicio.
+    ["mi abuelo se desmayó, no responde pero respira bien", false],
+    ["no responde, respira normal", false],
+    ["está inconsciente pero respira", false],
+    [["no respiraba", "ahora sí, respira bien", "pero no responde"], false],
+    [["respira bien", "ahora no respira"], true],
+    [["no responde", "no sé si respira"], true],
     ["le duele el pecho", false],
     ["sangra mucho", false],
     ["responde bien y respira", false],
@@ -335,11 +384,16 @@ test("detectarInconsciente: el estado de ahora, no el episodio", () => {
     ["responde bien", false],
     ["no está inconsciente", false],
     [["ya se despertó", "ahora no responde de nuevo"], true],
+    ["no lo puedo despertar", true],
+    ["dejó de responder", true],
+    ["estaba inconsciente pero ahora responde", false],
+    ["estaba inconsciente pero ahora sí responde", false],
+    ["estaba desmayado, abrió los ojos y me habla", false],
   ], "detectarInconsciente");
 });
 
 /* ---------------- detectarVictima ---------------- */
-test("detectarVictima: la más chica gana; señor, señora, hombre, mujer sueltos no cuentan", () => {
+test("detectarVictima: entre chicos gana el más chico; adulto y chico juntos no deciden; señor, señora, hombre, mujer sueltos no cuentan", () => {
   tabla(P.detectarVictima, [
     // Los del contrato (§6).
     ["soy la abuela, mi nieto de 3 años", "nino"],
@@ -356,7 +410,15 @@ test("detectarVictima: la más chica gana; señor, señora, hombre, mujer suelto
     ["tiene 10 años", "nino"],
     ["tiene un año", "nino"],
     ["no es un bebé, tiene 10 años", "nino"],
-    ["un hombre y un nene", "nino"],
+    // Un adulto y un chico nombrados a la vez no dicen quién es la víctima: decide la
+    // marca del operador (antes ganaba el chico, y un adulto en paro recibía la técnica
+    // de un chico o de un bebé).
+    ["un hombre y un nene", null],
+    [["mi marido se desplomó, estoy sola con los nenes", "no responde y no respira"], null],
+    ["mi papá de 70 años no responde y no respira, mi hijita está llorando", null],
+    ["un señor de 60 años se cayó, estaba con su nieta chiquita", null],
+    ["estoy cuidando a un bebé y su abuelo se desmayó, no respira", null],
+    ["un nene de 4 años y su hermanito bebé", "lactante"],
     // Adulto.
     ["un señor de 60 años", "adulto"],
     ["tiene 45 años", "adulto"],

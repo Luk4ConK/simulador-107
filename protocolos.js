@@ -705,7 +705,7 @@ CASOS.atragantamiento = {
       { si: "no puede toser ni hablar, y no es un bebé", di: "Inclinalo para adelante y dale 5 golpes fuertes en la espalda, entre los omóplatos, con el talón de la mano." },
       { si: "no puede toser ni hablar, y no es un bebé", di: "Si no salió, abrazalo desde atrás, poné el puño arriba del ombligo y tirá fuerte hacia adentro y arriba, 5 veces. Después alterná 5 golpes y 5 apretones hasta que salga." },
       { si: "lactante", di: "Si no llora ni tose: ponelo boca abajo sobre tu antebrazo, con la cabeza más baja, sosteniéndole la cara, y dale 5 golpes en la espalda con el talón de la mano." },
-      { si: "lactante", di: "Dalo vuelta boca arriba y empujá 5 veces en el medio del pecho, justo debajo de la línea de las tetillas, con dos dedos. Nunca en la panza. Alterná 5 y 5 hasta que salga." },
+      { si: "lactante", di: "Dalo vuelta boca arriba y empujá 5 veces en el medio del pecho, justo debajo de la línea de las tetillas, con el talón de una mano o con los dos pulgares. Nunca en la panza. Alterná 5 y 5 hasta que salga." },
       "Si deja de responder, acostalo boca arriba en el piso y avisame enseguida."
     ],
     noHacer: [
@@ -976,7 +976,10 @@ CASOS.parto = {
   provisorio: false,
   reconocer: "parto inminente: rompió bolsa con pujos, contracciones muy seguidas, se ve la cabeza, o el bebé ya nació",
   rcp: null,
-  fuentes: ["ERC 2025 First Aid", "ERC 2025 Paediatric Life Support", "AHA/AAP 2025 Pediatric BLS"],
+  // Las guías citadas respaldan sólo lo del recién nacido que no respira (paro de
+  // lactante). Lo obstétrico (recibir sin tirar, secar, abrigar, no cortar el cordón) es
+  // prudencia del proyecto, pendiente de validar con un instructor: por eso la última clave.
+  fuentes: ["ERC 2025 Paediatric Life Support (si el bebé no respira)", "AHA/AAP 2025 Pediatric BLS (si el bebé no respira)", "Prudencia del proyecto (sin fuente obstétrica)"],
   guardavidas: {
     pide: { acciones: "qué están haciendo: si la tienen acostada y preparada, o si el bebé ya nació y lo secaron y abrigaron",
             material: "si tienen toallas o mantas limpias, guantes y botiquín" },
@@ -2046,8 +2049,21 @@ const DETECTOR = (function(){
   /* ---------- paro ---------- */
   // "no respira bien" no es "no respira". "No respira normal" sí cuenta: es la respuesta
   // literal a "¿respira normalmente?".
-  const NO_RESPIRA = / (?:no respira|no esta respirando|no estaria respirando|dejo de respirar|sin respirar|no le siento la respiracion)(?! (?:muy |tan |del todo |nada )?bien )(?= )/g;
-  const NO_RESPONDE = / (?:no responde|no reacciona|no contesta|no se despierta|no despierta|no vuelve en si)(?= )/g;
+  // "Ni respira" ("no responde ni respira") también: por voz es como más se dice. "No
+  // respira por la nariz" es alguien que respira por la boca.
+  const NO_RESPIRA = / (?:no respira|ni respira|no esta respirando|ni esta respirando|no estaria respirando|dejo de respirar|sin respirar|no le siento la respiracion)(?! (?:muy |tan |del todo |nada )?bien | mal | por la nariz )(?= )/g;
+  /* "No contesta" a secas NO va acá: también es un teléfono ("llamé a la madre y no
+     contesta"), y juntado con un "no respira" de otro turno armaba un paro. Vale sólo en
+     el mismo turno que el "no respira" (NO_CONTESTA, en paro()), o diciendo a quién no le
+     contesta ("no me contesta"). */
+  const NO_RESPONDE = / (?:no responde|ni responde|no reacciona|ni reacciona|dejo de responder|dejo de reaccionar|no (?:me|nos|le|te) contesta|no se despierta|no despierta|no (?:lo|la) (?:puedo|podemos|pudimos|pude) despertar|no hay forma de despertarl[oa]|no vuelve en si)(?= )/g;
+  const NO_CONTESTA = / (?:no contesta|ni contesta)(?= )/g;
+  /* Respiración anormal: ronca, respira raro, de a ratos, o no se sabe si respira. Con
+     alguien que NO responde es la definición de paro de las guías (AHA 2025, ERC 2025): la
+     respiración agónica dicha con palabras de un lego es la causa número uno de RCP
+     guiada que no arranca. Con alguien consciente no dice nada, por eso va siempre junto
+     con noResponde(). Pasa por el filtro de negación: "no respira mal" es que respira. */
+  const RESPIRA_ANORMAL = / (?:ronca|roncando|ronquidos?|respira raro|respira feo|respira mal|respira (?:muy )?poquito|respira de a ratos|respira a ratos|hace ruidos|gorgote[a-z]*|suspira|no se si respira|no sabe si respira|no sabemos si respira|respira pero no normal|no respira (?:muy |tan |del todo )?bien|no respira normal)(?= )/g;
   const INCONSCIENTE = / (?:inconsciente|desmayad[oa]|desvanecid[oa]|sin conocimiento|perdio el conocimiento|sin conciencia)(?= )/g;
   const BOQUEA = / (?:boque[a-z]*|gasping|respiracion agonica)(?= )/g;
   // "Sin pulso radial" es un grado 4 de ahogamiento, no un paro.
@@ -2055,7 +2071,13 @@ const DETECTOR = (function(){
   /* "paro" suelto NUNCA: sin tildes, "ya paró de convulsionar", "paró de sangrar" y "se
      paró y se cayó" quedan escritos igual. Sólo con algo que lo vuelva sustantivo. "El
      paro" tampoco: sin tildes, "él paró de temblar" queda "el paro de temblar". */
-  const DICE_PARO = / (?:(?:un|en) paro|paro cardi[a-z]*|paro respiratorio|parada cardiaca|pcr)(?= )/g;
+  const DICE_PARO = / (?:(?:un|en) paro(?! respiratorio)|paro cardi[a-z]*|parada cardiaca|pcr)(?= )/g;
+  /* "Paro respiratorio" es el grado 5 de Szpilman: no respira pero TIENE pulso, y puede
+     pasar a grado 6. La guía del ahogamiento le enseña al guardavidas a reportarlo así.
+     Vale como paro sólo si en la llamada nadie dijo que tiene pulso (un lego que dice
+     "paro respiratorio" no le tomó el pulso, y para él no respirar ya es paro). */
+  const PARO_RESPIRATORIO = / paro respiratorio(?= )/g;
+  const CON_PULSO = / (?:tiene pulso|con pulso|hay pulso|le (?:siento|encuentro|encontramos|sentimos) (?:el )?pulso|pulso carotideo|grado (?:5|cinco))(?= )/g;
   /* RCP en curso, con palabra inequívoca y AFIRMADA, como empezoRCP(): un verbo que la
      afirma, hasta cuatro palabras, y la palabra. "Apretando", "empujando" y "compresiones"
      solas NO: son también la presión sobre una herida y las compresiones abdominales del
@@ -2068,10 +2090,18 @@ const DETECTOR = (function(){
   // dispara ("haciendo"), así que acá la negación se busca un poco más atrás.
   const NIEGA_LA_RCP = / (?:no|nunca|nadie|ni|tampoco|sin)(?: [a-z]+){0,3} $/;
 
+  /* "Hice un curso de RCP", "estamos en una clase de RCP", "estoy dando una clase de RCP
+     y a un alumno le duele el pecho": el simulador se usa justamente en cursos de RCP, y
+     esto se leía como RCP en curso, con un paro que después no se apaga. Lo que hay entre
+     el verbo y la palabra (m[1]) no puede ser un curso, y lo que sigue no puede ponerla
+     en el pasado ("RCP el año pasado", "hace dos años"). */
+  const CURSO_RCP = / (?:curso|cursos|clase|clases|capacitacion|capacitaciones|taller|talleres|entrenamiento|practica|practicas|examen|instructor|instructora|certificado|carnet)(?= |$)/;
+  const RCP_EN_PASADO = /^ (?:el ano pasado|hace (?:un|una|unos|unas|dos|tres|cuatro|cinco|varios|varias|mucho|poco|[0-9]+)|en (?:el|la) (?:club|escuela|colegio|trabajo|facultad|cruz roja))(?= )/;
   function rcpEnCurso(t){
-    if(afirma(t, REANIMANDO, false, (m, antes) => !CESO.test(antes))) return true;
-    return afirma(t, RCP_AFIRMADA, false, (m, antes) =>
-      !DUDA_RCP.test(antes) && !CESO.test(antes) && !NIEGA_LA_RCP.test(antes) && !NIEGA_EN_EL_MEDIO.test(m[1] || ""));
+    if(afirma(t, REANIMANDO, false, (m, antes) => !CESO.test(antes) && !CURSO_RCP.test(antes.slice(-40)))) return true;
+    return afirma(t, RCP_AFIRMADA, false, (m, antes, todo) =>
+      !DUDA_RCP.test(antes) && !CESO.test(antes) && !NIEGA_LA_RCP.test(antes) && !NIEGA_EN_EL_MEDIO.test(m[1] || "")
+      && !CURSO_RCP.test(m[1] || "") && !RCP_EN_PASADO.test(todo.slice(m.index + m[0].length)));
   }
   function noResponde(T){
     return T.some(t => afirma(t, NO_RESPONDE, true) || afirma(t, INCONSCIENTE));
@@ -2083,27 +2113,52 @@ const DETECTOR = (function(){
   function paro(textos){
     const T = turnos(textos);
     if(T.some(t => afirma(t, BOQUEA) || afirma(t, SIN_PULSO, true) || afirma(t, DICE_PARO) || rcpEnCurso(t))) return true;
-    if(T.some(t => afirma(t, NO_RESPIRA, true) && afirma(t, SE_DESPLOMO))) return true;
+    if(T.some(t => afirma(t, PARO_RESPIRATORIO)) && !T.some(t => afirma(t, CON_PULSO))) return true;
+    if(T.some(t => afirma(t, NO_RESPIRA, true) && (afirma(t, SE_DESPLOMO) || afirma(t, NO_CONTESTA, true)))) return true;
+    // No responde y respira de forma anormal (ronca, de a ratos, no sabe si respira).
+    if(T.some(t => afirma(t, RESPIRA_ANORMAL)) && noResponde(T)) return true;
+    // El atragantado que pierde el conocimiento es un paro: al piso y RCP, sin evaluar la
+    // respiración (ERC 2025 BLS, AHA 2025). Lo dice el propio caso: "si deja de
+    // responder, es un paro".
+    if(atragantadoQuePerdioElConocimiento(T)) return true;
     // Las dos mitades pueden venir en turnos distintos: "no responde" y, tres turnos
     // después, "no, no respira".
     return T.some(t => afirma(t, NO_RESPIRA, true)) && noResponde(T);
   }
 
-  // Lo mínimo para creerle al modelo una marca de paro: alguna señal suelta.
+  /* Lo mínimo para creerle al modelo una marca de paro: alguna señal suelta. Salvo que lo
+     ÚLTIMO que el alumno dijo sobre la respiración sea que respira bien: "se desmayó, no
+     responde pero respira bien" no es indicio, y con indicio una marca equivocada del
+     modelo prendía el paro (que no se apaga) en alguien que respira. */
   const COLOR = / (?:morad[oa]s?|azul(?:es|ad[oa]s?)?|cianosis|cianotic[oa]|violeta|muert[oa]|se murio|fallecio)(?= )/g;
+  const RESPIRA_BIEN = / (?:respira|esta respirando|sigue respirando)(?= (?:bien |normal |normalmente |tranquil[oa] |sin problemas? )?(?:\| |$))/g;
+  // El turno donde dijo por última vez algo de la respiración, si ahí dijo que respira
+  // bien; si no, -1.
+  function turnoRespiraBien(T){
+    let i = T.length - 1;
+    while(i >= 0 && !T[i].includes(" respir")) i--;
+    if(i < 0) return -1;
+    const t = T[i];
+    return (afirma(t, RESPIRA_BIEN) && !afirma(t, NO_RESPIRA, true) && !afirma(t, RESPIRA_ANORMAL)) ? i : -1;
+  }
   function indicio(textos){
     const T = turnos(textos);
-    if(T.some(t => afirma(t, NO_RESPIRA, true) || afirma(t, NO_RESPONDE, true) || afirma(t, INCONSCIENTE)
-                || afirma(t, SIN_PULSO, true) || afirma(t, BOQUEA) || afirma(t, COLOR))) return true;
-    return paro(textos);
+    if(paro(textos)) return true;
+    const bien = turnoRespiraBien(T);
+    // Que respira bien anula el "no responde" (es un inconsciente que respira), pero no
+    // un "está morado" o "no tiene pulso" que el alumno dijo DESPUÉS.
+    if(bien >= 0) return T.some((t, i) => i > bien && (afirma(t, SIN_PULSO, true) || afirma(t, BOQUEA) || afirma(t, COLOR)));
+    return T.some(t => afirma(t, NO_RESPIRA, true) || afirma(t, NO_RESPONDE, true) || afirma(t, NO_CONTESTA, true) || afirma(t, INCONSCIENTE)
+                || afirma(t, SIN_PULSO, true) || afirma(t, BOQUEA) || afirma(t, COLOR));
   }
 
   /* ---------- inconsciente ---------- */
   // El ESTADO, no el episodio: "se desmayó" puede ser alguien que ya está hablando, y la
   // app no apaga S.inconsciente. Por eso acá va "desmayado" y no "se desmayó".
-  const NO_DESPIERTA = / (?:no responde|no reacciona|no se despierta|no despierta)(?= )/g;
+  const NO_DESPIERTA = / (?:no responde|ni responde|no reacciona|ni reacciona|dejo de responder|dejo de reaccionar|no (?:me|nos|le|te) contesta|no se despierta|no despierta|no (?:lo|la) (?:puedo|podemos|pudimos|pude) despertar|no hay forma de despertarl[oa])(?= )/g;
   const ESTA_INCONSCIENTE = / (?:inconsciente|desmayad[oa])(?= )/g;
-  const VOLVIO = / (?:ya volvio|volvio en si|ya habla|ya esta hablando|ya se desperto|se desperto|ya desperto|ya reacciono|ya reacciona|ya responde|ya contesta|ya esta consciente|ya abrio los ojos|recupero (?:el conocimiento|la conciencia)|ya se recupero)(?= )/g;
+  // "Ahora sí responde" llega como "ahora | responde": el "sí" con tilde corta (limpiar).
+  const VOLVIO = / (?:ya volvio|volvio en si|ya habla|ya esta hablando|ya se desperto|se desperto|ya desperto|ya reacciono|ya reacciona|ya responde|ya contesta|ya esta consciente|ya abrio los ojos|abrio los ojos|ahora (?:\| )?(?:responde|contesta|habla|reacciona)|(?:ya )?me (?:habla|contesta|responde)|esta despiert[oa]|recupero (?:el conocimiento|la conciencia)|ya se recupero)(?= )/g;
   function ultima(t, re, sinFiltro){
     let pos = -1, m;
     re.lastIndex = 0;
@@ -2151,7 +2206,7 @@ const DETECTOR = (function(){
   const NENE = / (?:nen[ea]s?|nenit[oa]s?|chiquit[oa]s?|chiquitin|hijit[oa]s?|criaturas?|(?:un|una|el|la|mi|al|del|este|esta|ese|esa) nin[oa]|(?:un|una|el|la|mi|al|del|este|esta|ese|esa) chic[oa])(?= )/g;
   // "Señor", "señora", "hombre" o "mujer" SUELTOS no cuentan: son el vocativo al operador
   // ("sí, señora") o quien llama. Hace falta el artículo o el "mi".
-  const ADULTO = / (?:(?:un|una) (?:senor|senora|hombre|mujer|ancian[oa]|adult[oa]|abuel[oa]|persona mayor|persona adulta|adolescente|jubilad[oa])|mi (?:marido|esposo|esposa|mujer|papa|mama|padre|madre|abuelo|abuela|viej[oa]|suegr[oa]|pareja|novi[oa]))(?= )/g;
+  const ADULTO = / (?:(?:un|una) (?:senor|senora|hombre|mujer|ancian[oa]|adult[oa]|abuel[oa]|persona mayor|persona adulta|adolescente|jubilad[oa])|mi (?:marido|esposo|esposa|mujer|papa|mama|padre|madre|abuelo|abuela|viej[oa]|suegr[oa]|pareja|novi[oa])|su (?:marido|esposo|esposa|papa|mama|padre|madre|abuelo|abuela))(?= )/g;
 
   function victima(textos){
     const lista = Array.isArray(textos) ? textos : (textos == null ? [] : [textos]);
@@ -2187,7 +2242,13 @@ const DETECTOR = (function(){
         else adulto = true;
       }
     });
-    // Ante varias señales gana la más chica, que es la que decide la técnica.
+    /* Un adulto y un chico (o un bebé) nombrados a la vez no dicen quién es la víctima:
+       "mi papá de 70 años no responde, mi hijita está llorando". Tomar al más chico le
+       daba la técnica de un chico o de un bebé a un adulto en paro. Queda en null: el
+       estado le hace preguntar al operador en la misma frase en que indica empezar, y su
+       marca decide. Entre un chico y un bebé gana el más chico, que es el que decide la
+       técnica: nunca se le indica a un bebé la de uno más grande. */
+    if(adulto && (nino || lactante)) return null;
     return lactante ? "lactante" : nino ? "nino" : adulto ? "adulto" : null;
   }
 
@@ -2272,16 +2333,11 @@ const DETECTOR = (function(){
   const COMO_DORMIDO = / (?:como dormid[oa]|no vuelve en si|sin conocimiento)(?= )/g;
   const DESMAYO = / (?:se desmayo|desmay[a-z]*|se desvanecio|desvanec[a-z]*|se desplomo|desplom[a-z]*|cayo redond[oa]|se cayo redond[oa]|(?:le |se le )?bajo la presion|baja de presion|se mareo y se cayo|perdio el conocimiento|lipotimia|sincope)(?= )/g;
 
-  function caso(textos){
-    const T = turnos(textos);
-    if(!T.length) return null;
-    const hay = (re, sinFiltro, acepta) => T.some(t => afirma(t, re, sinFiltro, acepta));
-    const hayAgua = hay(AGUA, true);
-    const s = {};
-
-    // "Se ahoga con la comida" es atragantamiento; "se ahoga" con agua cerca, ahogamiento;
-    // "se ahoga" a secas no dice cuál de los tres es y no clasifica.
-    let ahogaConAgua = false, ahogaConAlgo = false;
+  /* "Se ahoga con la comida" es atragantamiento; "se ahoga" con agua cerca, ahogamiento;
+     "se ahoga" a secas no dice cuál de los tres es y no clasifica. Devuelve, por turno,
+     si ese "se ahoga" fue con agua o con algo. Lo usan caso() y paro(). */
+  function ahogos(T){
+    const conAgua = T.map(() => false), conAlgo = T.map(() => false);
     T.forEach((t, i) => {
       AHOGA.lastIndex = 0;
       let m;
@@ -2290,20 +2346,48 @@ const DETECTOR = (function(){
         if(anulada(t.slice(0, m.index + 1))) continue;
         const sigue = t.slice(m.index + m[0].length);
         if(/^ (?:con|comiendo|tomando|por comer)(?= )/.test(sigue)){
-          if(!/^ con (?:el |la |un |una |tanta |mucha )?(?:agua|ola|olas|correntada)(?= )/.test(sigue)) ahogaConAlgo = true;
+          if(!/^ con (?:el |la |un |una |tanta |mucha )?(?:agua|ola|olas|correntada)(?= )/.test(sigue)) conAlgo[i] = true;
           continue;
         }
-        if(afirma(t, COMIENDO)){ ahogaConAlgo = true; continue; }
-        if(afirma(t, AGUA, true) || (i > 0 && afirma(T[i-1], AGUA, true)) || afirma(t, GRADO, true)) ahogaConAgua = true;
+        if(afirma(t, COMIENDO)){ conAlgo[i] = true; continue; }
+        if(afirma(t, AGUA, true) || (i > 0 && afirma(T[i-1], AGUA, true)) || afirma(t, GRADO, true)) conAgua[i] = true;
       }
     });
-    s.ahogamiento = ahogaConAgua || hay(AGUA_SEGURO)
+    return { conAgua, conAlgo };
+  }
+  // Las señales de atragantamiento de un turno (sin contar el "se ahoga con…", que va
+  // por ahogos()). Tragarse pastillas o lavandina es una intoxicación, no esto.
+  function atragantaEn(t){
+    return afirma(t, ATRAGANTA)
+      || afirma(t, TRAGO, false, (m) => !/(?:pastilla|remedio|medicament|comprimido|veneno|lavandina|blister)/.test(m[0]))
+      || (afirma(t, COMIENDO) && afirma(t, FALTA_AIRE));
+  }
+  /* El atragantado que, en ese turno o después, se desmaya, se desploma o deja de
+     responder, sin que después se diga que volvió en sí. */
+  function atragantadoQuePerdioElConocimiento(T){
+    const conAlgo = ahogos(T).conAlgo;
+    const desde = T.findIndex((t, i) => conAlgo[i] || atragantaEn(t));
+    if(desde < 0) return false;
+    for(let i = desde; i < T.length; i++){
+      if(!(afirma(T[i], SE_DESPLOMO) || afirma(T[i], INCONSCIENTE) || afirma(T[i], NO_RESPONDE, true))) continue;
+      if(!T.slice(i).some(t => afirma(t, VOLVIO))) return true;
+    }
+    return false;
+  }
+
+  function caso(textos){
+    const T = turnos(textos);
+    if(!T.length) return null;
+    const hay = (re, sinFiltro, acepta) => T.some(t => afirma(t, re, sinFiltro, acepta));
+    const hayAgua = hay(AGUA, true);
+    const s = {};
+
+    const ah = ahogos(T);
+    s.ahogamiento = ah.conAgua.some(Boolean) || hay(AGUA_SEGURO)
       || T.some(t => afirma(t, RESCATE) && afirma(t, AGUA, true))
       || (hayAgua && hay(ESPUMA));
 
-    s.atragantamiento = ahogaConAlgo || hay(ATRAGANTA)
-      || hay(TRAGO, false, (m) => !/(?:pastilla|remedio|medicament|comprimido|veneno|lavandina|blister)/.test(m[0]))
-      || T.some(t => afirma(t, COMIENDO) && afirma(t, FALTA_AIRE));
+    s.atragantamiento = ah.conAlgo.some(Boolean) || T.some(atragantaEn);
 
     s.paro = paro(textos);
 
@@ -2347,13 +2431,17 @@ function detectarCaso(textos){ return DETECTOR.caso(textos); }
 
 /* Verdadero sólo con una señal inequívoca de paro o de RCP en curso: "no respira" junto
    con "no responde" (en el mismo turno o en turnos distintos), "boquea", "no tiene pulso",
-   "un paro / en paro / paro cardíaco / paro respiratorio", o una RCP afirmada con palabra
-   inequívoca. NUNCA con "paro" suelto, "apretando", "empujando" o "compresiones" solas,
-   "no puede respirar", "no respira bien" o "respira" + "no responde". */
+   "un paro / en paro / paro cardíaco", "paro respiratorio" si nadie dijo que tiene pulso
+   (con pulso es un grado 5), una RCP afirmada con palabra inequívoca (no un curso de
+   RCP), no responde y respira de forma anormal (ronca, de a ratos, no sabe), o un
+   atragantado que pierde el conocimiento. NUNCA con "paro" suelto, "apretando",
+   "empujando" o "compresiones" solas, "no puede respirar", o "respira bien" + "no
+   responde". */
 function detectarParo(textos){ return DETECTOR.paro(textos); }
 
 /* Verdadero con ALGUNA señal suelta (no respira, no responde, inconsciente, sin pulso,
-   boquea, morado o azul). Es lo mínimo para creerle al modelo una marca de paro. */
+   boquea, morado o azul), salvo que lo último que dijo de la respiración sea que respira
+   bien. Es lo mínimo para creerle al modelo una marca de paro. */
 function indicioDeParo(textos){ return DETECTOR.indicio(textos); }
 
 /* Verdadero si dijo que no responde, no reacciona, no se despierta, que está inconsciente

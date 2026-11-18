@@ -42,7 +42,7 @@ const INICIAL = {
   grado: null, grados: [], sondeos: 0, ultimaOp: 0, fase: "interrogatorio", turnosOp: 0, turnosPost: 0,
   datos: {}, despachado: false, sinAvance: 0, anuncioSinUbicacion: false, reintento: 0,
   caso: null, casoOrigen: null, casos: [], marcaCaso: null, paro: false, inconsciente: false,
-  victima: null, turnoParo: 0, indicadas: 0, listaRcpId: "", ubicDeclarada: false, sinPropio: 0,
+  victima: null, victimaParo: null, victimaMarca: null, turnoParo: 0, indicadas: 0, listaRcpId: "", ubicDeclarada: false, sinPropio: 0,
   zona: "", consigna: "", lugar: "", perfil: "guardavidas", arribo: 10 * 60000, tDespacho: 0,
   tRcp: null, primerTurno: true, avisoArribo: false,
 };
@@ -51,7 +51,8 @@ const fuente = [
   protocolos,
   "const S = {};",
   // Falsos de la red, la voz y la pantalla.
-  "const RESPUESTAS = [], CORTES = [];",
+  "const RESPUESTAS = [], CORTES = [], AVISOS = [];",
+  "function avisarSala(estado){ AVISOS.push(estado + ':' + (S.caso || '')); }",
   "let ultimo = Promise.resolve();",
   "const EL = { textContent:'', classList:{ add(){}, remove(){} }, querySelector(){ return EL; }, remove(){} };",
   "function $(){ return EL; }",
@@ -68,6 +69,7 @@ const fuente = [
   linea("const MARCA_CASO ="), linea("const MARCAS_CASO ="), linea("const MARCA_GRADO ="), linea("const MARCAS_GRADO ="),
   linea("const MARCA_DATOS ="), linea("const MARCAS_DATOS ="), linea("const MARCA_ESPERA ="), linea("const MARCAS_ESPERA ="),
   linea("const MARCA_CERRAR ="), linea("const MARCAS_CERRAR ="), linea("const MARCAS_SUELTAS ="),
+  linea("const MARCA_CORTADA ="), linea("const MARCAS_A_MEDIAS ="),
   bloque("function leerMarcaCaso(txt){"), bloque("function clasificar(marca){"),
   bloque("function enLineaLego(){"), bloque("function esRamaDeVictima(x){"), bloque("function indicacionesDe(){"),
   bloque("function textoIndicacion(x){"), bloque("function alarmaDe(){"),
@@ -76,19 +78,23 @@ const fuente = [
   bloque("function rcpConVentilaciones(){"), bloque("function idListaRcp(){"), bloque("function listaRcp(){"),
   bloque("function mandaListaRcp(){"), bloque("function yaIndicoRcp(){"), bloque("function sinEmpeoramiento(){"),
   bloque("function llegoMovil(){"), bloque("function anuncioDeDespacho(txt){"),
-  linea("const AFIRMA_RCP ="), linea("const ACUSE_RCP ="), bloque("function empezoRCP(txt){"),
-  linea("const GENERICAS_DIRECCION ="), linea("function palabras(txt)"), linea("const INTERSECCION ="),
+  linea("const RCP_INEQUIVOCA ="), linea("const AFIRMA_RCP ="), linea("const ACUSE_RCP ="), bloque("function empezoRCP(txt){"),
+  linea("const GENERICAS_DIRECCION ="), linea("function palabras(txt)"), linea("const INTERSECCION ="), linea("const PREGUNTA_UBICACION ="),
   bloque("function dijoUbicacion(){"),
   bloque("function abandona(){"), bloque("function terminoDeIndicar(){"), bloque("function enEspera(){"),
   bloque("function tocaCerrarAhora(){"), bloque("function confirmaRcp(){"),
   bloque("async function ask(sondeo){"), bloque("function textoDeCierre(){"), bloque("function cadencia(){"),
+  bloque("function minutosParaArribo(){"), bloque("function bloqueDelCaso(){"), bloque("function encabezadoDelEstado(){"),
+  bloque("function lineaDeDatos(){"), bloque("function lineasDeRcp(){"), bloque("function lineasDeIndicaciones(){"),
+  bloque("function estadoLlamadaLego(sondeo){"),
   bloque("function sendTurn(text){"),
   // sendTurn() no espera a ask(): se guarda la promesa para que la prueba sí la espere.
   "ask = (function(real){ return function(s){ ultimo = real(s); return ultimo; }; })(ask);",
-  "return { S, RESPUESTAS, CORTES, P: PROTOCOLOS, esperar: () => ultimo, sendTurn, ask, clasificar, leerMarcaCaso,",
+  "return { S, RESPUESTAS, CORTES, AVISOS, P: PROTOCOLOS, esperar: () => ultimo, sendTurn, ask, clasificar, leerMarcaCaso,",
   "  guia, guiaEfectiva, enLineaLego, indicacionesDe, textoIndicacion, alarmaDe, esencialesDe, extrasDe, faltan, grillaDeDatos,",
   "  rcpConVentilaciones, listaRcp, mandaListaRcp, sinEmpeoramiento, llegoMovil, anuncioDeDespacho, empezoRCP,",
-  "  dijoUbicacion, abandona, enEspera, tocaCerrarAhora, confirmaRcp, textoDeCierre, cadencia };",
+  "  dijoUbicacion, abandona, enEspera, tocaCerrarAhora, confirmaRcp, textoDeCierre, cadencia,",
+  "  bloqueDelCaso, lineasDeRcp, estadoLlamadaLego };",
 ].join("\n");
 const M = new Function(fuente)();
 const { S, P } = M;
@@ -97,7 +103,7 @@ const { S, P } = M;
 function nueva(cambios) {
   for (const k of Object.keys(S)) delete S[k];
   Object.assign(S, structuredClone(INICIAL), { t0: Date.now() }, cambios || {});
-  M.RESPUESTAS.length = 0; M.CORTES.length = 0;
+  M.RESPUESTAS.length = 0; M.CORTES.length = 0; M.AVISOS.length = 0;
 }
 const op = content => ({ role: "assistant", content });
 const yo = content => ({ role: "user", content });
@@ -185,9 +191,15 @@ test("dijoUbicacion: una dirección o una referencia sí; la localidad, la casa,
   assert.equal(ubica("estoy en Santa Fe"), false, "la localidad sola no ubica: S.zona no se usa");
   assert.equal(ubica("estoy en mi casa"), false);
   assert.equal(ubica("en mi casa", { ubicDeclarada: true }), false);
-  assert.equal(ubica("en San Martín y Belgrano", { ubicDeclarada: true }), true, "intersección con las dos señales");
-  assert.equal(ubica("en San Martín y Belgrano"), false, "sin que el operador la declare, una sola señal no alcanza");
-  assert.equal(ubica("está en el agua y no respira", { ubicDeclarada: true }), false, "no es una esquina");
+  // La intersección: la forma del texto, como respuesta a "¿dónde es?", y la declaración del operador.
+  const esquina = (t, cambios) => { nueva(Object.assign({ zona: "Santa Fe capital" }, cambios)); conTurnos(op("¿Dónde estás exactamente?"), yo(t)); return M.dijoUbicacion(); };
+  assert.equal(esquina("en San Martín y Belgrano", { ubicDeclarada: true }), true, "intersección con las dos señales");
+  assert.equal(esquina("en San Martín y Belgrano"), false, "sin que el operador la declare, una sola señal no alcanza");
+  assert.equal(ubica("en San Martín y Belgrano", { ubicDeclarada: true }), false, "si no contesta a una pregunta de dónde es, no es una esquina");
+  assert.equal(esquina("está en el agua y no respira", { ubicDeclarada: true }), false, "no es una esquina");
+  nueva({ ubicDeclarada: true }); conTurnos(op("¿Qué le pasa?"), yo("es mi papá y tiene mucho dolor"));
+  assert.equal(M.dijoUbicacion(), false, "'es mi papá y tiene…' no es una dirección");
+  assert.equal(esquina("es mi papá y tiene mucho dolor", { ubicDeclarada: true }), false, "'es' ya no abre una intersección");
   // Una palabra propia del lugar de la consigna (de 6 letras o más, no genérica).
   assert.equal(ubica("estamos en el Náutico", { lugar: "Club Náutico Sauce Viejo" }), true);
   assert.equal(ubica("estamos en el Náutico"), false, "sin consigna, esa palabra no dice nada");
@@ -610,4 +622,107 @@ test("anuncioDeDespacho: lo que dice, no lo que niega", () => {
   for (const t of ["Sin la dirección no puedo mandarte la ambulancia", "No te puedo mandar el móvil si no sé dónde estás", "¿Dónde estás?", "Ya sale, tranquilo"]) {
     assert.equal(M.anuncioDeDespacho(t), false, t);
   }
+});
+
+/* ======================= revisión de noviembre de 2026 ======================= */
+
+test("'estoy apretando' en el mismo turno en que se reconoce el paro no da la RCP por empezada", async () => {
+  nueva({ perfil: "lego" });
+  await turno("sangra mucho de la pierna, estamos en San Martín 2850", "Ya te mando la ambulancia. Apretá fuerte sobre la herida. [[CASO:hemorragia]] [[DATOS:ubicacion,motivo]]");
+  assert.equal(S.despachado, true);
+  await turno("estoy apretando pero ahora no responde y no respira", "Es un paro: acostalo boca arriba. [[CASO:paro]]");
+  assert.equal(S.paro, true);
+  assert.ok(!S.datos.rcp, "apretar una herida no es comprimir el pecho");
+  assert.equal(S.tRcp, null);
+  // Con una palabra inequívoca, en el mismo turno, sí.
+  nueva({ perfil: "lego" });
+  await turno("no responde y no respira, ya le estoy haciendo rcp", "Muy bien, seguí. [[CASO:paro]]");
+  assert.equal(S.paro, true);
+  assert.equal(S.datos.rcp, true);
+});
+
+test("'no responde pero respira bien' no deja que una marca de paro equivocada prenda el paro", async () => {
+  nueva({ perfil: "lego" });
+  await turno("mi abuelo se desmayó, no responde pero respira bien", "Ponelo de costado. [[CASO:inconsciente,paro]]");
+  assert.equal(S.paro, false);
+  assert.equal(S.caso, "inconsciente");
+  assert.equal(M.mandaListaRcp(), false, "tampoco le manda la lista de RCP a quien respira");
+});
+
+test("la víctima en un paro: adulto y chico nombrados a la vez los decide la marca; en un parto, nunca el texto", async () => {
+  nueva({ perfil: "lego" });
+  await turno("mi marido no responde y no respira, estoy sola con mi hijo de 5 años", "Acostalo boca arriba. [[CASO:paro,paro,adulto]]");
+  assert.equal(S.victima, "adulto");
+  assert.equal(M.listaRcp(), P.RCP_COMPRESIONES, "al adulto, sólo compresiones");
+  nueva({ perfil: "lego" });
+  await turno("mi marido no responde y no respira, estoy sola con mi hijo de 5 años", "Acostalo boca arriba. [[CASO:paro]]");
+  assert.equal(S.victima, null, "sin marca, nadie sabe quién es");
+  assert.ok(M.lineasDeRcp().some(x => /adulto, un chico o un bebé/.test(x)), "le hace preguntar quién es");
+  // Parto: la mamá entra en paro y la marca no dice quién.
+  nueva({ perfil: "lego" });
+  await turno("mi mujer está por tener el bebé, rompió bolsa", "¿Cada cuánto son las contracciones? [[CASO:parto,adulto]]");
+  await turno("ya nació el bebé, llora", "Secalo y abrigalo. [[CASO:parto]]");
+  await turno("la mamá se desmayó, no responde y no respira", "Acostala boca arriba. [[CASO:parto,paro]]");
+  assert.equal(S.caso, "parto");
+  assert.equal(S.paro, true);
+  assert.equal(S.victima, null, "ni el texto (nombra al bebé) ni la marca de antes del paro");
+  assert.ok(M.lineasDeRcp().some(x => /la mamá o el bebé/.test(x)));
+  await turno("es ella, la mamá", "Empujá en el medio del pecho. [[CASO:parto,paro,adulto]]");
+  assert.equal(S.victima, "adulto");
+  assert.equal(M.listaRcp(), P.RCP_COMPRESIONES);
+});
+
+test("un grado 5 (paro respiratorio con pulso) sí puede empeorar", () => {
+  nueva({ perfil: "guardavidas", grado: 5, paro: true });
+  assert.equal(M.sinEmpeoramiento(), false);
+  S.grado = 6;
+  assert.equal(M.sinEmpeoramiento(), true);
+});
+
+test("en el turno del abandono, un dato nuevo no deja la llamada abierta después de la despedida", async () => {
+  nueva({ perfil: "guardavidas" });
+  for (let i = 0; i < P.TOPE_SIN_AVANCE; i++) await turno("no sé, vengan", "¿Dónde estás exactamente?");
+  assert.equal(M.abandona(), true);
+  const t = await turno("es un hombre de 40 años", "Sin la dirección no puedo mandarte el móvil. Averiguala y volvé a llamar al 107. [[DATOS:victimas]] [[CERRAR]]");
+  assert.match(t, /volvé a llamar al 107/);
+  assert.deepEqual(M.CORTES, ["operador"], "la llamada termina con la despedida");
+  assert.equal(S.despachado, false);
+});
+
+test("lego sin paro despachado sin marcas: igual recibe las indicaciones del caso", async () => {
+  nueva({ perfil: "lego" });
+  await turno("mi hijo de 5 años se quemó el brazo con agua caliente, calle Mitre 500, responde y respira bien", "Ya te mando la ambulancia.");
+  assert.equal(S.caso, "quemadura");
+  assert.equal(S.despachado, true);
+  const e = M.estadoLlamadaLego();
+  assert.ok(!/TODAVÍA TE FALTA LO ESENCIAL/.test(e), "no queda trabado pidiendo lo que ya le dijeron");
+  assert.match(e, /NO ES UN PARO/);
+  assert.ok(e.includes(M.indicacionesDe().map(M.textoIndicacion)[0]), "la lista de indicaciones viaja");
+});
+
+test("con el caso sin clasificar y el motivo ya declarado, no le manda a averiguar el motivo", () => {
+  nueva({ perfil: "guardavidas" });
+  assert.match(M.bloqueDelCaso().join("\n"), /averiguá el motivo/);
+  S.datos.motivo = true;
+  const b = M.bloqueDelCaso().join("\n");
+  assert.ok(!/averiguá el motivo/.test(b));
+  assert.match(b, /No vuelvas a preguntar qué pasó/);
+});
+
+test("una marca cortada a la mitad no llega a la pantalla; un id con tilde vale", async () => {
+  nueva({ perfil: "guardavidas" });
+  const t = await turno("un chico se cayó a la pileta", "¿Está respirando? [[CASO:ahogamiento,paro,ni");
+  assert.equal(t, "¿Está respirando?");
+  const t2 = await turno("sí", "¿Respira bien? [GRADO:3");
+  assert.equal(t2, "¿Respira bien?");
+  assert.equal(M.leerMarcaCaso("[[CASO:convulsión]]").id, "convulsion");
+  assert.equal(M.leerMarcaCaso("[[CASO:Intoxicación, Niño]]").victima, "nino");
+});
+
+test("el tablero de la clase se entera del caso en cuanto se clasifica", async () => {
+  nueva({ perfil: "lego" });
+  await turno("sangra mucho de la pierna", "¿Dónde estás? [[CASO:hemorragia]]");
+  assert.deepEqual(M.AVISOS, ["en llamada:hemorragia"], "un solo aviso, en cuanto cambió el caso");
+  await turno("en la plaza", "¿La herida sigue sangrando?");
+  assert.deepEqual(M.AVISOS, ["en llamada:hemorragia"], "sin cambio de caso no hay aviso nuevo");
 });
