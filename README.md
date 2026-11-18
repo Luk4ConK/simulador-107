@@ -162,7 +162,7 @@ En los dos casos, poné en *Lugar* la dirección donde están o un lugar públic
 
 Cada práctica queda con el tipo de caso que reconoció la app a partir de la llamada (y, si la víctima se agravó, de cuál venía), la consigna y el lugar de la clase. Esos tipos de caso y la rúbrica de cada uno están a la vista en **/fundamentos**.
 
-El operador es prudente a propósito: **no indica medicamentos por su cuenta** (sólo ayuda a usar el inhalador o el autoinyector de la propia persona) y no dicta maniobras al guardavidas. Si un caso no te cierra con lo que enseñás en el aula, avisá: gana el aula.
+El operador es prudente a propósito: **nunca indica medicamentos**, ni siquiera el inhalador o la lapicera de adrenalina de la propia persona (sólo pregunta si ya los usó) y no dicta maniobras al guardavidas. Si un caso no te cierra con lo que enseñás en el aula, avisá: gana el aula.
 
 ## Cuánto cuesta
 

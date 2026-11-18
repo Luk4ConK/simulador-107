@@ -243,7 +243,7 @@ const CONTEXTO = [
   "Lo primero en cualquier llamada es lo mismo: dónde es, qué pasó, cuántos son, y si responde y respira. Si no responde y no respira normalmente, es un paro y pasa adelante de todo lo demás, haya empezado como haya empezado.",
   "Si lo que te cuentan puede poner en peligro a quien ayuda (corriente eléctrica, gas o humo, tránsito, agua, una persona violenta), preguntá si la escena es segura: es de lo poco que te cambia el despacho, porque suma bomberos o policía.",
   "El guardavidas no administra oxígeno: en Argentina no está en su alcance. No se lo preguntes ni se lo indiques, sea el cuadro que sea.",
-  "No indicás medicación por tu cuenta: nada de aspirina ni de remedios de otra persona. Lo único que preguntás es si la víctima ya usó la suya, la que tiene indicada (su inhalador, su autoinyector de adrenalina, azúcar si es diabético y traga).",
+  "Nunca indicás ni sugerís medicación, de ningún tipo: ni aspirina, ni remedios de otra persona, ni siquiera los propios de la víctima (su inhalador, su autoinyector, sus pastillas). Sí podés preguntar si ya usó algo y a qué hora, y lo registrás. Si te preguntan si darle algo, decí que por teléfono no indicás medicación y que lo evalúa el equipo de la ambulancia (corrección del instructor, noviembre de 2026).",
   "Un dato que no sirve para despachar no es un dato: 'en la playa', 'acá en el club', 'a la vuelta' se repreguntan hasta tener algo que un chofer pueda buscar solo."
 ];
 
@@ -272,7 +272,7 @@ const CONTEXTO_LEGO = [
   "Cualquier llamada puede terminar en un paro. Si en algún momento te dice que dejó de responder y no respira normalmente, dejás lo que estabas indicando y pasás a la RCP en ese mismo momento.",
   "Preguntás por lo que ve, no por un diagnóstico, y no le sugerís síntomas que no nombró: '¿qué le ves?', '¿qué está haciendo ahora?'. Tampoco le das vos un diagnóstico: no le digas 'es un infarto' ni 'es un ACV'.",
   "Primero, que quien ayuda no se lastime: que no se meta al agua si no sabe, que no toque a alguien que sigue en contacto con la corriente hasta cortar la luz, que salga al aire libre si hay gas o humo, que se corra del tránsito.",
-  "No indicás remedios por tu cuenta: nada de aspirina ni de medicación de otra persona. Sólo ayudás a usar lo que la persona ya tiene indicado: su inhalador, su autoinyector de adrenalina, o azúcar si es diabética, está bien despierta y traga.",
+  "Nunca indicás ni sugerís medicación, de ningún tipo: ni aspirina, ni remedios de otra persona, ni siquiera los propios de la persona (su inhalador, su lapicera de adrenalina, sus pastillas). Podés preguntar si ya usó algo y a qué hora. Si te pregunta si darle algo, decile que por teléfono no podés indicar remedios y que lo ve el equipo de la ambulancia. El azúcar para un diabético que está despierto y traga no es un remedio: eso sí se indica.",
   "Nada de comer ni de tomar para alguien que está dormido, confundido, que se desmayó, que tiene dolor de pecho, la boca torcida o un golpe fuerte.",
   "Un torniquete sólo si en el lugar hay uno comprado, de los de botiquín, y apretando fuerte la herida no para. Nunca le indiques improvisar uno con un cinto o una soga: lo que indicás es apretar más fuerte.",
   "PROHIBIDO decir 'fijate si tiene pulso', 'tomale el pulso' o 'buscale el pulso': una persona sin formación no lo encuentra y pierde tiempo. Lo que vale es si responde y si respira normalmente.",
@@ -881,8 +881,8 @@ CASOS.hemorragia = {
 /* Anafilaxia. Lo clínico sale de ERC 2025 Primeros Auxilios (Djärv, Resuscitation 2025,
    10.1016/j.resuscitation.2025.110752), AHA/Cruz Roja Primeros Auxilios 2024 (Hewett
    Brumberg, Circulation 2024) y circunstancias especiales de ERC y AHA 2025, reescrito.
-   Prudencia: el operador sólo ayuda a usar el autoinyector PROPIO de la persona; la
-   segunda dosis a los 5 minutos es de ERC (AHA dice de 5 a 15): a validar con el instructor. */
+   Corrección del instructor (noviembre de 2026): el operador nunca indica medicación, ni
+   siquiera el autoinyector propio. Sólo pregunta si lo tiene y si ya se usó, y a qué hora. */
 CASOS.alergia = {
   id: "alergia",
   nombre: "Reacción alérgica grave",
@@ -893,7 +893,7 @@ CASOS.alergia = {
   fuentes: ["ERC 2025 First Aid", "AHA/ARC First Aid 2024", "ERC 2025 Special Circumstances", "AHA 2025 Special Circumstances"],
   guardavidas: {
     pide: { acciones: "si ya le aplicaron adrenalina con autoinyector y a qué hora, y en qué posición lo tienen",
-            material: "si hay autoinyector de adrenalina (y una segunda dosis) y un DEA ubicado" },
+            material: "si la víctima tiene su autoinyector de adrenalina y si ya se usó (cuántas dosis y a qué hora), y si hay un DEA ubicado" },
     esenciales: [ {id:"desencadenante", pide:"qué lo provocó (picadura, comida, remedio) y hace cuánto"} ],
     extras: [],
     clasificar: [
@@ -903,16 +903,15 @@ CASOS.alergia = {
     ],
     saber: [
       "Anafilaxia = reacción alérgica que compromete la vía aérea, la respiración o la circulación. Va con prioridad máxima aunque haya mejorado.",
-      "La adrenalina intramuscular en la cara externa del muslo es lo único que la frena; los antialérgicos no la reemplazan ni justifican esperar.",
-      "Si a los 5 minutos no mejora, se puede repetir con un segundo autoinyector.",
-      "Posición: sentado si le falta el aire; acostado con las piernas en alto si está mareado o pálido. Nunca de pie ni caminando: levantarlo de golpe puede precipitar el paro.",
-      "Puede volver a empeorar horas después aunque la adrenalina lo haya mejorado: siempre va al hospital.",
-      "No indicás medicación: sólo preguntás si se aplicó la adrenalina propia de la víctima. Oxígeno no se le pregunta ni se le indica."
+      "No se frena sola ni se espera a ver si se le pasa: va con prioridad máxima. Si te preguntan si le ponen su lapicera o le dan un antialérgico, no lo indicás ni lo desaconsejás: decís que eso lo evalúa el equipo de la ambulancia y preguntás si ya se aplicó algo y a qué hora.",
+      "Posición: sentado si le falta el aire; acostado boca arriba si está mareado, pálido o se desvanece, sin levantarle las piernas. Nunca de pie ni caminando: levantarlo de golpe puede precipitar el paro.",
+      "Puede volver a empeorar horas después aunque haya mejorado: siempre va al hospital.",
+      "No indicás ni sugerís medicación, tampoco el autoinyector propio: sólo preguntás si lo tiene, si ya se lo aplicaron y a qué hora. Oxígeno no se le pregunta ni se le indica."
     ],
     escala: [],
     cambia: {
       material: { label: "Qué material tienen: autoinyector y DEA",
-        logrado: "Dijo si la víctima tiene autoinyector de adrenalina (y si hay segunda dosis), si ya se usó, y si hay un DEA ubicado por si empeora. Si no hay autoinyector, también lo dijo.",
+        logrado: "Dijo si la víctima tiene su autoinyector de adrenalina y si ya se usó (cuántas dosis y a qué hora), y si hay un DEA ubicado por si empeora. Si no hay autoinyector, también lo dijo.",
         parcial: "Habló del autoinyector sólo cuando se lo preguntaron, o no aclaró si ya se había usado." }
     },
     checks: [
@@ -929,33 +928,29 @@ CASOS.alergia = {
   },
   lego: {
     enLinea: true,
-    esenciales: [ {id:"autoinyector", pide:"si la persona tiene su autoinyector de adrenalina (la lapicera)"} ],
+    esenciales: [ {id:"autoinyector", pide:"si la persona tiene su lapicera de adrenalina y si ya se la puso"} ],
     indicaciones: [
-      { si: "tiene su propio autoinyector de adrenalina", di: "Buscá su lapicera de adrenalina y sacale la tapa de seguridad." },
-      { si: "tiene su propio autoinyector de adrenalina", di: "Apoyala firme en la parte de afuera del muslo, aunque sea sobre la ropa, hasta que haga clic. Sostenela apretada unos segundos y fijate la hora." },
       { si: "le falta el aire", di: "Dejalo sentado, que no se acueste." },
-      { si: "está mareado, pálido o se desvanece", di: "Acostalo boca arriba con las piernas en alto." },
+      { si: "está mareado, pálido o se desvanece", di: "Acostalo boca arriba y que no se levante." },
       "No lo dejes pararse ni caminar, aunque diga que está mejor.",
-      { si: "pasaron 5 minutos de la primera, no mejora y tiene otra lapicera propia", di: "Usá la segunda lapicera igual que la primera, en el muslo." }
+      "Quedate con él y avisame enseguida si le cuesta más respirar o se desvanece."
     ],
     noHacer: [
-      "Darle sólo un antialérgico y esperar a ver si se le pasa.",
+      "Esperar a ver si se le pasa en vez de esperar a la ambulancia.",
       "Pararlo o hacerlo caminar.",
-      "Dudar en usar su autoinyector por miedo a equivocarse.",
-      "Usar la lapicera o los remedios de otra persona.",
+      "Darle remedios por su cuenta, sean de otra persona o de ella.",
       "Darle de comer o de beber."
     ],
     alarma: "si le cuesta cada vez más respirar, si se desvanece o si deja de responder",
     saber: [
-      "La lapicera de adrenalina es lo que frena la reacción: si la tiene, se usa enseguida, sin dudar.",
-      "Sólo ayudás a usar la lapicera PROPIA de la persona; no indicás ningún otro remedio.",
+      "No indicás ni sugerís ningún remedio, tampoco su lapicera de adrenalina: sólo preguntás si la tiene, si ya se la puso y a qué hora.",
       "La ambulancia va siempre, aunque mejore: la reacción puede volver.",
       "Si deja de responder y no respira normalmente, es un paro."
     ],
     checks: [
-      {id:"autoinyector", label:"Usó el autoinyector cuando se lo indicaron", peso:10, critico:false,
-       logrado:"Dijo si la persona tenía su autoinyector; si lo tenía, lo buscó, lo usó cuando se lo indicaron y avisó que estaba hecho. Si no tenía, lo dijo.",
-       parcial:"Dudó mucho o tardó en usarlo, o no aclaró si tenía uno."},
+      {id:"autoinyector", label:"Dijo si tiene su autoinyector y si ya se usó", peso:10, critico:false,
+       logrado:"Dijo si la persona tiene su lapicera de adrenalina y, si la tiene, si ya se la pusieron y a qué hora. Si no tiene, lo dijo.",
+       parcial:"Lo dijo recién cuando se lo preguntaron varias veces, o no aclaró si ya se había usado."},
       {id:"antecedente_alergia", label:"Dijo qué la provocó o que es alérgico", peso:6, critico:false,
        logrado:"Contó qué pasó antes (una picadura, algo que comió, un remedio) o que la persona es alérgica.",
        parcial:"Lo dijo recién cuando se lo preguntaron varias veces."}
@@ -1203,7 +1198,7 @@ CASOS.pecho = {
 
 /* Dificultad respiratoria (asma, EPOC). ERC 2025 Primeros Auxilios (asma), AHA 2025
    Circunstancias Especiales y la síntesis de despacho de relevo/profesional.md, reescrito.
-   Medicación: sólo el inhalador PROPIO. Oxígeno: no (corrección del instructor). */
+   Medicación: ninguna, tampoco el inhalador propio; sólo se pregunta si lo usó. Oxígeno: no (correcciones del instructor). */
 CASOS.respiratorio = {
   id: "respiratorio",
   nombre: "Dificultad para respirar",
@@ -1227,7 +1222,7 @@ CASOS.respiratorio = {
       "Sentado, erguido y un poco inclinado hacia adelante es como mejor respira; acostarlo lo empeora.",
       "En una crisis de asma, un pecho que deja de silbar en alguien agotado no es mejoría: puede ser que ya casi no mueva aire.",
       "La ansiedad puede dar falta de aire, pero no se asume: primero se descarta lo grave con los mismos datos.",
-      "No indicás medicación: sólo preguntás si usó su inhalador propio y cuántas veces. Oxígeno no se le pregunta ni se le indica: no está en el alcance del guardavidas."
+      "No indicás ni sugerís medicación, tampoco su inhalador: sólo preguntás si lo usó y cuántas veces. Oxígeno no se le pregunta ni se le indica: no está en el alcance del guardavidas."
     ],
     escala: [],
     cambia: {
@@ -1252,19 +1247,18 @@ CASOS.respiratorio = {
     esenciales: [ {id:"habla", pide:"si puede decir frases enteras o sólo palabras sueltas"} ],
     indicaciones: [
       "Sentalo derecho, un poco inclinado para adelante. No lo acuestes.",
-      { si: "tiene su propio inhalador (el puf)", di: "Ayudalo a usar su inhalador, con la aerocámara si la tiene, como se lo indicó su médico." },
       "Aflojale la ropa del cuello y del pecho.",
       "Hablale tranquilo para que respire despacio, y quedate con él."
     ],
     noHacer: [
       "Acostarlo.",
-      "Darle el inhalador o los remedios de otra persona.",
+      "Darle remedios por su cuenta, sean de otra persona o de ella.",
       "Hacerlo respirar en una bolsa."
     ],
-    alarma: "si no puede hablar, se pone azul o morado, se adormece o el inhalador no lo alivia",
+    alarma: "si no puede hablar, se pone azul o morado, se adormece o le cuesta cada vez más respirar",
     saber: [
       "Si puede decir una frase entera es la mejor medida de cuánto le cuesta: preguntalo y volvé a preguntarlo.",
-      "Sólo ayudás a usar el inhalador PROPIO de la persona; no indicás ningún otro remedio.",
+      "No indicás ni sugerís ningún remedio, tampoco su inhalador: sólo preguntás si lo tiene y si ya lo usó.",
       "Si empezó de golpe comiendo o jugando, o con hinchazón de la cara, es otra cosa: preguntá qué pasó justo antes."
     ],
     checks: [
@@ -1450,7 +1444,7 @@ CASOS.intoxicacion = {
   nombre: "Intoxicación",
   fam: "Tóxico / ambiental",
   provisorio: false,
-  reconocer: "tomó pastillas, alcohol o drogas de más, un producto de limpieza o veneno; humo, gas, brasero o calefón; mordedura de víbora o picadura de alacrán",
+  reconocer: "tomó pastillas, alcohol o drogas de más, un producto de limpieza o veneno; humo, gas, brasero o calefón; mordedura de víbora o picadura de alacrán, araña, abeja o avispa (sin reacción alérgica)",
   rcp: null,
   fuentes: ["ERC 2025 First Aid", "AHA/ARC First Aid 2024", "AHA 2025 Special Circumstances"],
   guardavidas: {
@@ -1469,7 +1463,7 @@ CASOS.intoxicacion = {
       "Químico en la piel o los ojos: sacar la ropa contaminada y lavar con mucha agua corriente; los ojos, por lo menos 15 minutos.",
       "El monóxido no huele. Varios con dolor de cabeza, mareo o vómitos en un lugar cerrado con brasero, calefón o estufa es monóxido hasta que se demuestre lo contrario.",
       "Respiración muy lenta, pupilas chiquitas y que no se despierta hace pensar en opioides: lo que manda es si respira normal.",
-      "Mordedura de víbora: quieto y acostado, el miembro sin mover, sin torniquete, cortes, succión ni hielo; se sacan anillos. Una foto del animal sólo si se puede sin arriesgarse.",
+      "Mordedura o picadura (víbora, alacrán, araña): lo más simple. Quieto y en reposo hasta que llegue el SEM; lo que vale es lo que NO se hace: ni torniquete, ni cortes, ni succión, ni hielo, ni calor, ni alcohol, ni remedios, y nadie sale a buscar al animal (corrección del instructor).",
       "Picadura de alacrán: en un chico es más grave; sudor, vómitos o agitación son signos de alarma."
     ],
     escala: [],
@@ -1494,14 +1488,15 @@ CASOS.intoxicacion = {
       { si: "es gas, humo, un brasero o un calefón", di: "Salgan todos afuera, al aire libre, y no vuelvan a entrar." },
       "Guardá el envase o la etiqueta de lo que tomó, para dárselo a la ambulancia.",
       { si: "le cayó en la piel o en los ojos", di: "Lavale con mucha agua de la canilla, sin parar, unos quince minutos." },
-      { si: "lo mordió una víbora", di: "Que se quede quieto y acostado, con el brazo o la pierna sin mover. Sacale anillos y pulseras." }
+      { si: "lo mordió una víbora o lo picó un alacrán, una araña u otro bicho", di: "Que se quede quieto y tranquilo, sin mover el brazo o la pierna, hasta que llegue la ambulancia." },
+      { si: "lo mordió una víbora o lo picó un alacrán, una araña u otro bicho", di: "No le hagas nada en la herida: ni torniquete, ni cortes, ni chupar, ni hielo. Tampoco le des alcohol ni remedios, y no vayan a buscar al bicho." }
     ],
     noHacer: [
       "Hacerlo vomitar.",
       "Darle leche, aceite, agua o cualquier cosa 'para cortarlo'.",
       "Echarle otro producto para neutralizar.",
       "Entrar a buscar a alguien a un lugar con gas o humo.",
-      "En una mordedura de víbora: torniquete, cortar, chupar o poner hielo."
+      "En una mordedura o picadura: torniquete, cortar, chupar, poner hielo o calor, darle alcohol o remedios, o ir a buscar al animal."
     ],
     alarma: "si se duerme, no se despierta, convulsiona o le cuesta respirar",
     saber: [
@@ -1872,7 +1867,7 @@ CASOS.desmayo = {
       "Un desmayo breve que se recupera solo, en un joven, estando parado o con calor, suele ser benigno; igual se despacha.",
       "Son señales de causa cardíaca: que haya sido durante un esfuerzo o nadando, sin aviso previo, con dolor de pecho o palpitaciones antes, o en alguien mayor o con problemas del corazón.",
       "Si se golpeó la cabeza al caer, importa si vomitó, si está confundido y si toma anticoagulantes.",
-      "Acostado mientras se recupera, y que no se levante de golpe: puede volver a caerse.",
+      "Acostado boca arriba (decúbito dorsal) mientras se recupera, y que no se levante de golpe: puede volver a caerse. No se le indica levantar las piernas (corrección del instructor).",
       "Si vuelve a perder el conocimiento, se reevalúa: si no responde y no respira normal, es paro."
     ],
     escala: [],
@@ -1895,7 +1890,6 @@ CASOS.desmayo = {
     esenciales: [],
     indicaciones: [
       "Que se quede acostado boca arriba, tranquilo, y que no se levante todavía.",
-      { si: "está bien despierto y no se golpeó", di: "Levantale las piernas y apoyáselas en una silla o una mochila." },
       "No le des nada de tomar hasta que esté bien despierto.",
       "Quedate con él y mirá que siga despierto y respirando normal."
     ],
@@ -2311,7 +2305,7 @@ const DETECTOR = (function(){
 
   // intoxicacion: "tomó una pastilla" (su remedio) no clasifica. "Borracho" es débil:
   // con un golpe, el caso es el golpe.
-  const INTOXICACION = / (?:intoxic[a-z]*|sobredosis|envenen[a-z]*|veneno|raticida|lavandina|soda caustica|(?:se )?(?:tomo|trago|tomaron)(?: [a-z]+){0,3} (?:pastillas|remedios|medicamentos|comprimidos)|pastillas de mas|(?:todas|muchas|demasiadas|un monton de|un blister de|la caja de|el frasco de) (?:las )?pastillas|(?:tomo|trago|tomaron|se tomo|se trago) (?:una|la|toda la|media|un|el|todo el) (?:caja|blister|tira|frasco) de|drogad[oa]|se drogo|cocaina|monoxido|brasero|calefon|olor a gas|(?:escape|perdida|fuga) de gas|vibora|yarara|serpiente|culebra|alacran|escorpion|(?:pico|mordio|picadura de|mordedura de) (?:una |un )?arana|coma alcoholico)(?= )/g;
+  const INTOXICACION = / (?:intoxic[a-z]*|sobredosis|envenen[a-z]*|veneno|raticida|lavandina|soda caustica|(?:se )?(?:tomo|trago|tomaron)(?: [a-z]+){0,3} (?:pastillas|remedios|medicamentos|comprimidos)|pastillas de mas|(?:todas|muchas|demasiadas|un monton de|un blister de|la caja de|el frasco de) (?:las )?pastillas|(?:tomo|trago|tomaron|se tomo|se trago) (?:una|la|toda la|media|un|el|todo el) (?:caja|blister|tira|frasco) de|drogad[oa]|se drogo|cocaina|monoxido|brasero|calefon|olor a gas|(?:escape|perdida|fuga) de gas|vibora|yarara|serpiente|culebra|alacran|escorpion|(?:pico|mordio|picadura de|mordedura de) (?:una |un )?(?:arana|abeja|avispa)|coma alcoholico)(?= )/g;
   const ALCOHOL = / (?:borrach[oa]|alcoholizad[oa]|tomo (?:mucho|demasiado) alcohol|tomo de mas|ebri[oa])(?= )/g;
 
   // temperatura: "golpe" solo es trauma; "fiebre" sola no es nada de esto.

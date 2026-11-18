@@ -645,9 +645,14 @@ Llamada:
   despacho nuevo, un cuadro que ahora pide quedarse en línea: `reabre` en `ask()`). Que
   `S.sinAvance` vuelva a 0 porque la respuesta trajo un dato nuevo NO alcanza: en el turno
   del abandono el operador se despedía y la llamada seguía.
-- **Prudencia en lo que no validó el instructor.** El operador no indica medicación por su
-  cuenta (nada de aspirina): sólo ayuda a usar la propia y ya indicada (inhalador,
-  autoinyector, azúcar si es diabético y traga). Torniquete sólo si hay uno comercial y la
+- **Prudencia en lo que no validó el instructor.** **El operador nunca indica ni sugiere
+  medicación** (corrección del instructor, 17/11/2026): ni aspirina, ni la propia de la
+  víctima (inhalador, autoinyector). Sólo pregunta si ya la usó y a qué hora. El azúcar a
+  un diabético que está despierto y traga no es un remedio y sí se indica. **Desmayo:**
+  boca arriba (decúbito dorsal), sin levantar las piernas. **Mordeduras y picaduras:** lo
+  más simple, quieto hasta que llegue el SEM y la lista de lo que NO se hace (ni
+  torniquete, ni cortes, ni succión, ni hielo, ni calor, ni alcohol, ni remedios, ni ir a
+  buscar al animal). Parto: queda como está. Torniquete sólo si hay uno comercial y la
   presión no alcanza. Parto: recibir sin tirar, secar, abrigar, no cortar el cordón; eso es
   prudencia del proyecto, sin fuente obstétrica (lo dice `/fundamentos`).
 - **La ubicación (`dijoUbicacion()`), ni más blanda ni más dura que antes.** Vale con un
@@ -839,8 +844,8 @@ se "corrija" de vuelta desde el manual:
    clase: lo heredado de las guías de antes ya estaba validado; lo nuevo, no. La lista de
    afirmaciones a confirmar está en el informe de cierre de ese trabajo; las más delicadas:
    atragantamiento del lactante (talón de una mano o dos pulgares, ya no dos dedos), pecho
-   sin aspirina (ERC 2025 la sugiere; acá se omitió por prudencia), anafilaxia (segunda
-   dosis a los 5 minutos, cómo se aplica), azúcar en la hipoglucemia, torniquete, golpe de
+   sin aspirina y el resto de la medicación (resuelto el 17/11/2026: el operador no indica
+   ninguna), azúcar en la hipoglucemia, torniquete, golpe de
    calor (inmersión en agua fría) y todo el parto, que no tiene fuente obstétrica. Si el
    aula dice otra cosa, se corrige en `protocolos.js` y se anota en "Correcciones del
    instructor".

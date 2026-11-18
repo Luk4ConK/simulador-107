@@ -96,7 +96,7 @@ const CASOS_FRASES = {
     ["le falta el aire después de que le picó una abeja y se le hinchó la cara", "alergia"],
     // ✘ alergia estacional, o la picadura y las ronchas sin nada más.
     ["es alérgico al polen y estornuda", null],
-    ["le picó una abeja", null],
+    ["le picó una abeja", "intoxicacion"],
     ["tiene ronchas", null],
   ],
   parto: [
@@ -503,4 +503,33 @@ test("casoDe: sin caso, o con uno que no existe, vale otro", () => {
   assert.equal(P.casoDe("inventado"), P.CASOS.otro);
   assert.equal(P.casoDe("toString"), P.CASOS.otro, "no confunde un nombre heredado con un caso");
   assert.equal(P.casoDe("paro"), P.CASOS.paro);
+});
+
+/* ---------------- correcciones del instructor (17/11/2026) ---------------- */
+test("picaduras y mordeduras: una abeja sin reacción es intoxicación; con hinchazón y falta de aire, alergia", () => {
+  tabla(P.detectarCaso, [
+    ["me picó una abeja en el brazo", "intoxicacion"],
+    ["lo mordió una vibora en la pierna", "intoxicacion"],
+    ["la picó un alacrán en el pie", "intoxicacion"],
+    ["lo picó una abeja y se le hinchó la cara y le falta el aire", "alergia"],
+  ], "picaduras");
+});
+
+test("el operador nunca indica medicación ni levantar las piernas, en ningún caso", () => {
+  const REMEDIO = /lapicera|autoinyector|adrenalina|inhalador|aspirina|remedio|pastilla|glucag|naloxon|antial[eé]rgic/i;
+  for (const id of P.ORDEN_CASOS) {
+    const c = P.CASOS[id];
+    for (const ind of (c.lego.indicaciones || [])) {
+      const txt = typeof ind === "string" ? ind : ind.di;
+      // Prohibir un remedio ("ni agua ni pastillas") o juntarlos para la ambulancia está
+      // bien; indicar que se lo den, se lo pongan o lo use, nunca.
+      const DAR = /(dale|darle|usá|usalo|usala|ayudalo a usar|poné|ponele|ponela|aplicá|aplicale|que (use|tome|se ponga|se aplique))/i;
+      if (!/^(no |nada|tampoco)/i.test(txt) && DAR.test(txt)) assert.ok(!REMEDIO.test(txt), id + ": la indicación da un remedio: " + txt);
+      assert.ok(!/piernas en alto|levantale las piernas|levantarle las piernas/i.test(txt), id + ": " + txt);
+    }
+    for (const t of [...(c.guardavidas.saber || []), ...(c.lego.saber || [])]) {
+      assert.ok(!/piernas en alto/i.test(t), id + ": " + t);
+    }
+  }
+  for (const regla of [P.CONTEXTO, P.CONTEXTO_LEGO]) assert.ok(regla.some(t => /Nunca indicás ni sugerís medicación/.test(t)));
 });
