@@ -928,6 +928,17 @@ try {
       assert.match(await page.locator("[data-titular=nombre]").first().textContent(), /falta cargar TITULAR_NOMBRE/);
       assert.match(await page.locator("body").innerText(), /domicilio/);
     }
+    // La página de la app de Android: el botón baja el APK, que se publica, y el sitio
+    // publica el vínculo con la app (assetlinks) con el paquete de android/.
+    await page.goto(base + "/app");
+    assert.equal(await page.locator("#bajar").getAttribute("href"), "descargas/simulador-107.apk");
+    const apk = await page.request.get(base + "/descargas/simulador-107.apk");
+    assert.equal(apk.status(), 200, "el APK se publica");
+    assert.ok((await apk.body()).length > 1_000_000, "el APK no está vacío");
+    const vinculo = await (await page.request.get(base + "/.well-known/assetlinks.json")).json();
+    assert.equal(vinculo[0].target.package_name, "store.kalulab.simulador");
+    assert.equal(vinculo[0].target.sha256_cert_fingerprints[0].length, 95, "huella SHA-256 completa");
+
     // El pie de las páginas públicas lleva a la página de la empresa.
     assert.equal(await page.locator(".pie .legal a").first().getAttribute("href"), "https://www.kalulab.store/");
 

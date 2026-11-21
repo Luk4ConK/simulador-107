@@ -133,6 +133,7 @@ protocolos.js         TODO el contenido: los 18 casos, rúbricas, grillas, conte
 panel.html            panel del instructor y del administrador (carga protocolos.js)
 instructores.html     presentación para instructores, formulario de contacto, PLANES
 fundamentos.html      decisiones con su evidencia; carga protocolos.js para la tabla de la rúbrica y la de los casos
+app.html              /app: la página para bajar la app de Android y los pasos para instalarla
 activar.html          para el dueño: qué falta activar en Vercel (base, CODIGO_ADMIN, clave) y los pasos
 terminos.html         términos de uso (datos del titular desde /api/datos?info=1)
 privacidad.html       política de privacidad, Ley 25.326
@@ -145,6 +146,9 @@ vercel.json           maxDuration de las funciones, direcciones cortas, cabecera
 icons/                íconos de la app
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
 herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
+android/              la app de Android (TWA) y su LEEME.md; no se publica. La llave de firma NO está en el repo
+descargas/            simulador-107.apk, el APK que baja /app
+.well-known/          assetlinks.json: vincula la app de Android con el sitio (huella de la llave)
 kalulab/              la página de Kalu Lab (www.kalulab.store), el selector de proyectos: otro proyecto de Vercel, con esta carpeta de raíz
 README.md             guía de despliegue, escrita para el usuario
 ```
@@ -734,11 +738,23 @@ voz (Firefox). Arreglo, todo en `index.html`:
   nunca dentro de la app instalada. La app instalada usa el motor de Chrome.
 - Los avisos de micrófono de la llamada suman `consejoDeNavegador()`.
 - En la copia de Claude, `AVISAR_NAVEGADOR` pasa a `false` (ahí la llamada se escribe).
-- **APK para Android (no hecho):** una Trusted Web Activity forzada a Chrome serviría a quien
-  tenga otro navegador por defecto, pero armarla exige aceptar la licencia del Android SDK y
-  guardar una llave de firma fuera del repo (más `/.well-known/assetlinks.json`). Queda a
-  decisión del titular. Una app con WebView propio NO sirve: el WebView de Android no
-  reconoce voz.
+- **App para Android (APK, pedido del titular, 21/11/2026):** carpeta `android/` (no se
+  publica: `.vercelignore`), explicada en `android/LEEME.md`. Es una Trusted Web Activity
+  (`androidbrowserhelper`) que abre `/?app=android` **siempre con Chrome** si está
+  instalado (`Lanzador.java` pisa `createTwaLauncher()`), aunque el navegador preferido sea
+  otro, y con la app instalada se queda con los links `https://simulador.kalulab.store`
+  (los de la clase por WhatsApp). Paquete `store.kalulab.simulador`, Android 7 o más.
+  Se publica `descargas/simulador-107.apk` (sin caché del service worker) y la página
+  `/app` (`app.html`) con los pasos de instalación (orígenes desconocidos, Play Protect).
+  `/.well-known/assetlinks.json` lleva la huella SHA-256 de la llave. **La llave de firma
+  no está en el repo** (`android/.gitignore`): la guarda el titular; sin ella no se puede
+  publicar un APK que se instale encima del anterior. Los cambios de la web llegan solos a
+  la app; un APK nuevo sólo hace falta si cambia `android/` (subir `versionCode`).
+  En la entrada, `.app-box` muestra **Bajar la app** (a `/app`) en cualquier Android y
+  **Instalar** con `beforeinstallprompt`; nunca adentro de la app (`dentroDeLaApp()`:
+  `?app=android`, el referrer `android-app://…` o `display-mode: standalone`). El aviso de
+  navegador de Android también ofrece **Bajar la app**. Una app con WebView propio NO
+  sirve: el WebView de Android no reconoce voz.
 
 ## Variables de entorno (en Vercel, no en el repo)
 

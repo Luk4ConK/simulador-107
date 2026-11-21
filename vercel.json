@@ -15,12 +15,25 @@
     { "source": "/fundamentos", "destination": "/fundamentos.html" },
     { "source": "/terminos", "destination": "/terminos.html" },
     { "source": "/privacidad", "destination": "/privacidad.html" },
-    { "source": "/activar", "destination": "/activar.html" }
+    { "source": "/activar", "destination": "/activar.html" },
+    { "source": "/app", "destination": "/app.html" }
   ],
   "headers": [
     {
       "source": "/sw.js",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    },
+    {
+      "source": "/descargas/(.*)",
+      "headers": [
+        { "key": "Content-Type", "value": "application/vnd.android.package-archive" },
+        { "key": "Content-Disposition", "value": "attachment; filename=\"simulador-107.apk\"" },
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [{ "key": "Content-Type", "value": "application/json" }]
     },
     {
       "source": "/(.*)",

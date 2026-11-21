@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>App para Android · Simulador 107</title>
+<meta name="description" content="Bajá la app de Android del Simulador 107: se abre siempre con Chrome, con micrófono y voz.">
+<meta name="theme-color" content="#08191C">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="publico.css">
+<style>
+  .bajar-app{margin-top:24px; display:flex; gap:10px; flex-wrap:wrap}
+  .bajar-app .btn{flex:1 1 240px}
+  .peso{font-family:var(--mono); font-size:12.5px; color:var(--ink-3); margin-top:8px}
+</style>
+</head>
+<body>
+<div class="angosto">
+  <div class="barra-sup">
+    <a class="marca" href="instructores.html"><span class="sigil">107</span>Simulador 107<span class="empresa">de Kalu Lab</span></a>
+    <nav><a href="./">Simulador</a><a href="privacidad.html">Privacidad</a></nav>
+  </div>
+</div>
+
+<!-- La app es una Trusted Web Activity (carpeta android/ del repositorio): abre este mismo
+     sitio con Chrome a pantalla completa. Si cambia el APK, cambiar acá la versión y el peso. -->
+<main class="angosto doc">
+  <span class="lbl">App para Android</span>
+  <h1 style="margin-top:10px">El simulador como app</h1>
+  <p class="resumen">Es el mismo simulador, en una app que se abre siempre con Chrome. Sirve cuando el celular abre los links con otro navegador (el de adentro de WhatsApp o Instagram, Samsung Internet, Firefox) y el micrófono o la voz del operador no andan.</p>
+
+  <div class="aviso" id="es-iphone" hidden>Estás en un iPhone: esta app es sólo para Android. En iPhone, abrí el simulador con <b>Safari</b>.</div>
+
+  <div class="bajar-app">
+    <a class="btn pri" id="bajar" href="descargas/simulador-107.apk" download="simulador-107.apk">Descargar la app</a>
+    <a class="btn sec" href="./">Seguir en la web</a>
+  </div>
+  <p class="peso">Versión 1.0 · 3,8 MB · Android 7 o más nuevo</p>
+
+  <h2>Cómo se instala</h2>
+  <ol>
+    <li>Tocá <b>Descargar la app</b> y esperá a que termine (aparece en las notificaciones).</li>
+    <li>Tocá el archivo descargado, <i>simulador-107.apk</i>. Si no lo ves, está en la app <b>Archivos</b>, carpeta <b>Descargas</b>.</li>
+    <li>Si el celular dice que por seguridad no puede instalar apps de ese origen, tocá <b>Configuración</b>, activá <b>Permitir desde esta fuente</b> y volvé atrás.</li>
+    <li>Tocá <b>Instalar</b>. Si aparece Play Protect diciendo que no conoce la app, tocá <b>Más detalles</b> y después <b>Instalar de todas formas</b>. Es lo esperable: la app no está en Play Store.</li>
+    <li>Abrila desde el ícono <b>Simulador 107</b>. La primera vez que llames, Chrome te pide el micrófono: tocá <b>Permitir</b>.</li>
+  </ol>
+  <p>Con la app instalada, el link de la clase que te mandan por WhatsApp se abre directamente en la app.</p>
+
+  <h2>Qué necesita</h2>
+  <ul>
+    <li>Un celular con Android 7 o más nuevo.</li>
+    <li><b>Chrome</b> instalado (no hace falta que sea el navegador preferido). Si no está, el celular ofrece bajarlo de Play Store.</li>
+    <li>Internet, igual que la web: el operador siempre necesita conexión.</li>
+  </ul>
+
+  <h2>Qué permisos pide</h2>
+  <p>Sólo internet. El micrófono lo pide Chrome cuando empieza la llamada, igual que en la web. No se guarda audio: lo que dijiste queda escrito en la práctica, como en la web (ver <a href="privacidad.html">privacidad</a>).</p>
+
+  <h2>Sin descargar nada</h2>
+  <p>Si ya usás Chrome, podés instalar el simulador desde la web: en la entrada aparece el botón <b>Instalar</b>, o en el menú de los tres puntos, <b>Instalar app</b> (o <b>Agregar a pantalla principal</b>). Queda igual que la app, sin pasar por los avisos de seguridad.</p>
+</main>
+
+<footer class="pie">
+  <div class="ancho">
+    <nav><a href="./">Simulador</a><a href="instructores.html">Para instructores</a><a href="fundamentos.html">Fundamentos</a><a href="privacidad.html">Privacidad</a></nav>
+    <p class="legal">Simulador 107 es un producto de <a href="https://www.kalulab.store/">Kalu Lab</a>. Titular del servicio: <span data-titular="nombre"></span>. © <span data-anio></span>.</p>
+  </div>
+</footer>
+<script>
+  // En un iPhone no hay APK: se avisa y se apaga el botón.
+  if(/iPhone|iPad|iPod/.test(navigator.userAgent)){
+    document.getElementById("es-iphone").hidden = false;
+    document.getElementById("bajar").hidden = true;
+  }
+</script>
+<script src="publico.js"></script>
+</body>
+</html>

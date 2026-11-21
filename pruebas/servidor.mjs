@@ -31,7 +31,7 @@ const chat = (await import("../api/chat.js")).default;
 const datos = (await import("../api/datos.js")).default;
 const rutasApi = { "/api/chat": chat, "/api/datos": datos };
 // Las mismas reescrituras que vercel.json.
-const bonitas = { "/panel": "/panel.html", "/instructores": "/instructores.html", "/fundamentos": "/fundamentos.html", "/terminos": "/terminos.html", "/privacidad": "/privacidad.html", "/activar": "/activar.html" };
+const bonitas = { "/panel": "/panel.html", "/instructores": "/instructores.html", "/fundamentos": "/fundamentos.html", "/terminos": "/terminos.html", "/privacidad": "/privacidad.html", "/activar": "/activar.html", "/app": "/app.html" };
 const tipos = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".json": "application/json", ".webmanifest": "application/manifest+json", ".png": "image/png", ".svg": "image/svg+xml", ".css": "text/css" };
 
 // ARRIBOS y CADENCIA viven en protocolos.js desde que no hay escenarios (antes, en index.html).

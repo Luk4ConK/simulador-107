@@ -34,6 +34,7 @@ self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return;          // el operador siempre va a la red
+  if (url.pathname.startsWith("/descargas/")) return;    // el APK no se guarda en la caché
   if (url.origin !== self.location.origin) return;        // fuentes y demás, que resuelva el navegador
 
   const red = fetch(e.request).then(r => {

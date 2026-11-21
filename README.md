@@ -118,6 +118,8 @@ Abrí **https://simulador-107.vercel.app** desde el celular, en Chrome. La prime
 
 Para instalarla como app: en Chrome de Android, la entrada y la pantalla de ajustes muestran un botón **Instalar** cuando el celular lo permite (si no aparece: menú de los tres puntos → *Instalar app* o *Agregar a pantalla principal*). Queda un ícono como el de cualquier app, se abre a pantalla completa y usa el micrófono y la voz de Chrome. En iPhone, Safari → *Compartir* → *Agregar a inicio*.
 
+**App para Android.** En **/app** (por ejemplo simulador.kalulab.store/app) está la app para bajar, con los pasos para instalarla. Es el mismo simulador, pero se abre siempre con Chrome aunque el celular use otro navegador, y con la app instalada el link de la clase que llega por WhatsApp se abre directo en la app. Como no está en Play Store, al instalarla el celular pide permitir "esta fuente" y Play Protect puede avisar que no la conoce: se toca *Instalar de todas formas*. Los cambios de la web llegan solos a la app. **La llave de firma de la app la guardás vos** (archivo `simulador-107-firma.jks` y su clave): sin ella no se puede sacar una versión nueva que se instale encima de la que ya tienen los alumnos. Detalles técnicos en `android/LEEME.md`.
+
 **Si el micrófono o la voz no andan.** Casi siempre es el navegador: el que se abre adentro de WhatsApp, Instagram, Facebook o TikTok cuando se toca un link no deja usar el micrófono ni el parlante, y Firefox no reconoce la voz. La web lo detecta sola y muestra arriba un recuadro **Abrilo en Chrome** (en iPhone, **Abrilo en Safari**) con un botón que lo abre ahí, con el código del alumno incluido si ya lo había puesto. Lo que anda seguro: Chrome en Android y Safari en iPhone.
 
 ---

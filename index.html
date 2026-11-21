@@ -186,6 +186,8 @@
   .portal .nav-aviso{margin-top:0}
   .nav-aviso h2{font-size:17px}
   .nav-aviso .btns-nav{display:flex; gap:8px; flex-wrap:wrap}
+  .nav-aviso .btns-nav a{flex:1 1 150px; min-height:44px; border-radius:11px; padding:10px 12px; font-weight:600; font-size:14.5px;
+                          display:grid; place-items:center; text-decoration:none; text-align:center}
   .nav-aviso .btns-nav button{flex:1 1 150px; min-height:44px; border-radius:11px; padding:10px 12px; font-weight:600; font-size:14.5px}
   .nav-aviso .btns-nav .uno{background:var(--accent); color:#fff; border:0}
   .nav-aviso .btns-nav .dos{background:transparent; border:1px solid var(--line); color:var(--ink)}
@@ -195,8 +197,9 @@
   .portal .app-box{margin-top:0}
   .app-box > div{flex:1 1 0; min-width:0}
   .app-box b{display:block; color:var(--ink); font-size:14.5px}
-  .app-box button{flex:none; min-height:44px; border-radius:11px; padding:10px 14px; font-weight:600;
-                  background:var(--ink); color:var(--ground); border:0}
+  .app-btns{flex:none; display:grid; gap:6px}
+  .app-box button,.app-box .bajar{min-height:44px; border-radius:11px; padding:10px 14px; font-weight:600; font-size:14.5px;
+                  background:var(--ink); color:var(--ground); border:0; text-decoration:none; display:grid; place-items:center}
 
   /* La puerta de administración: discreta, al final, para que no compita con la de alumnos. */
   .puerta.admin{background:transparent; border-style:dashed; padding:14px 16px; gap:10px}
@@ -347,7 +350,7 @@
         </div>
         <div class="err" id="admin-err" role="alert"></div>
       </section>
-      <div class="app-box" hidden><div><b>Instalalo como app</b>Queda un ícono en el celular y se abre a pantalla completa, con el micrófono de Chrome.</div><button type="button" class="instalar">Instalar</button></div>
+      <div class="app-box" hidden><div><b class="app-tit">Instalalo como app</b>Se abre siempre con Chrome, con el micrófono y la voz, aunque el link llegue por WhatsApp.</div><div class="app-btns"><button type="button" class="instalar" hidden>Instalar</button><a class="bajar" href="app" hidden>Bajar la app</a></div></div>
       <p class="pie">¿Querés usarlo con tus alumnos? <a href="instructores">Conocé el simulador</a><br>
         <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a><br>
         Simulador 107 es un producto de Kalu Lab.</p>
@@ -444,7 +447,7 @@
     <button class="go" id="btn-call">Agarrar el teléfono</button>
     <p class="note" id="setup-note"></p>
     <p class="note">Vas a tener que marcar el número vos. Cuando la llamada empiece, el navegador te va a pedir el micrófono: decí tu frase y cuando hacés silencio se envía sola.</p>
-    <div class="app-box" hidden><div><b>Instalalo como app</b>Queda un ícono en el celular y se abre a pantalla completa, con el micrófono de Chrome.</div><button type="button" class="instalar">Instalar</button></div>
+    <div class="app-box" hidden><div><b class="app-tit">Instalalo como app</b>Se abre siempre con Chrome, con el micrófono y la voz, aunque el link llegue por WhatsApp.</div><div class="app-btns"><button type="button" class="instalar" hidden>Instalar</button><a class="bajar" href="app" hidden>Bajar la app</a></div></div>
     <p class="pie">
       Simulación educativa: no se llama a ningún número real. Ante una emergencia de verdad, llamá al 107.<br>
       <a href="fundamentos.html">Fundamentos y fuentes</a> · <a href="terminos.html">Términos</a> · <a href="privacidad.html">Privacidad</a> · <button class="backlink" id="cambiar-codigo" hidden>Cambiar de código</button>
@@ -2912,6 +2915,11 @@
         b.addEventListener("click", ()=>abrirEnOtroNavegador(diag));
         fila.appendChild(b);
       }
+      if(diag.android){
+        const a = document.createElement("a"); a.className = "dos"; a.href = "app";
+        a.textContent = "Bajar la app";
+        fila.appendChild(a);
+      }
       const c = document.createElement("button"); c.type = "button"; c.className = "dos";
       c.textContent = "Copiar la dirección";
       c.addEventListener("click", ()=>copiarDireccion(c));
@@ -2924,17 +2932,38 @@
     const d = S.navegador;
     if(d && d.ios) return " Si sigue sin andar, abrí el simulador en Safari.";
     if(d && d.tipo === "interno") return " Si sigue sin andar, abrí el simulador en Chrome (está explicado en la entrada).";
-    return " Si sigue sin andar, abrí el simulador en Chrome o instalalo como app desde la entrada.";
+    if(/Android/i.test(navigator.userAgent)) return " Si sigue sin andar, abrí el simulador en Chrome o bajá la app de Android (está en la entrada).";
+    return " Si sigue sin andar, abrí el simulador en Chrome.";
   }
 
-  /* Instalar como app. Chrome (y Edge) en Android ofrecen instalar la página: queda un ícono
-     como el de cualquier app, se abre a pantalla completa y usa el micrófono y la voz de
-     Chrome aunque el navegador preferido del celular sea otro. El botón aparece sólo cuando
-     el navegador dice que se puede (beforeinstallprompt) y nunca dentro de la app ya instalada. */
+  /* La app. Dos caminos, en el mismo recuadro:
+     - Instalar: Chrome (y Edge) en Android ofrecen instalar la página (beforeinstallprompt).
+       Queda un ícono, se abre a pantalla completa con el micrófono y la voz de Chrome.
+     - Bajar la app: en cualquier Android, lleva a /app, la página del APK (carpeta android/:
+       una TWA que abre este sitio SIEMPRE con Chrome, aunque el navegador preferido del
+       celular sea otro, y que se queda con los links del simulador que llegan por WhatsApp).
+     Nunca se muestra adentro de la app: ni instalada desde Chrome (display-mode standalone)
+     ni en la TWA, que abre con ?app=android (y, desde un link, con un referrer
+     android-app://store.kalulab.simulador). */
   let pedidoInstalar = null;
+  function dentroDeLaApp(){
+    try{
+      const q = new URLSearchParams(location.search);
+      if(q.get("app") === "android" || document.referrer.startsWith("android-app://store.kalulab.simulador")) sessionStorage.setItem("sim107_app", "1");
+      if(q.has("app")){ q.delete("app"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "")); }
+      if(sessionStorage.getItem("sim107_app")) return true;
+    }catch(e){}
+    return Boolean(window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  }
   function pintarInstalar(){
-    const instalada = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
-    document.querySelectorAll(".app-box").forEach(caja=>{ caja.hidden = !pedidoInstalar || instalada; });
+    const android = /Android/i.test(navigator.userAgent);
+    const adentro = dentroDeLaApp();
+    document.querySelectorAll(".app-box").forEach(caja=>{
+      caja.hidden = adentro || !(pedidoInstalar || android);
+      caja.querySelector(".instalar").hidden = !pedidoInstalar;
+      caja.querySelector(".bajar").hidden = !android;
+      caja.querySelector(".app-tit").textContent = android ? "App para Android" : "Instalalo como app";
+    });
   }
   window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); pedidoInstalar = e; pintarInstalar(); });
   window.addEventListener("appinstalled", ()=>{ pedidoInstalar = null; pintarInstalar(); });
@@ -2946,6 +2975,7 @@
     pintarInstalar();
   }));
   pintarAvisoNavegador();
+  pintarInstalar();
 
   if("serviceWorker" in navigator){
     window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
