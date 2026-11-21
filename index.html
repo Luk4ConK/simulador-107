@@ -179,6 +179,25 @@
                  font-size:13px; line-height:1.45; color:var(--ink); margin:0}
   .aviso-activar a{color:var(--ink)}
 
+  /* El aviso del navegador: el de adentro de WhatsApp, Instagram o Facebook, y los que no
+     reconocen voz, no dejan usar el micrófono ni el parlante. Se muestra arriba de todo. */
+  .nav-aviso{background:var(--accent-soft); border:1px solid var(--accent); border-radius:var(--r); padding:14px 16px;
+             display:grid; gap:10px; font-size:14.5px; line-height:1.45; margin-top:14px}
+  .portal .nav-aviso{margin-top:0}
+  .nav-aviso h2{font-size:17px}
+  .nav-aviso .btns-nav{display:flex; gap:8px; flex-wrap:wrap}
+  .nav-aviso .btns-nav button{flex:1 1 150px; min-height:44px; border-radius:11px; padding:10px 12px; font-weight:600; font-size:14.5px}
+  .nav-aviso .btns-nav .uno{background:var(--accent); color:#fff; border:0}
+  .nav-aviso .btns-nav .dos{background:transparent; border:1px solid var(--line); color:var(--ink)}
+  /* Instalar como app: un ícono en el celular que abre a pantalla completa con Chrome. */
+  .app-box{display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:var(--r);
+           padding:12px 14px; margin-top:14px; font-size:13.5px; line-height:1.4; color:var(--ink-2)}
+  .portal .app-box{margin-top:0}
+  .app-box > div{flex:1 1 0; min-width:0}
+  .app-box b{display:block; color:var(--ink); font-size:14.5px}
+  .app-box button{flex:none; min-height:44px; border-radius:11px; padding:10px 14px; font-weight:600;
+                  background:var(--ink); color:var(--ground); border:0}
+
   /* La puerta de administración: discreta, al final, para que no compita con la de alumnos. */
   .puerta.admin{background:transparent; border-style:dashed; padding:14px 16px; gap:10px}
   .puerta.admin h2{font-size:15px}
@@ -299,6 +318,7 @@
           <p class="sub">Practicá la llamada al sistema de emergencias con un operador simulado y recibí la devolución al cortar.</p>
         </div>
       </header>
+      <div class="nav-aviso" hidden role="alert"></div>
       <div class="puertas">
         <section class="puerta" aria-labelledby="t-alumnos">
           <h2 id="t-alumnos">Alumnos</h2>
@@ -327,6 +347,7 @@
         </div>
         <div class="err" id="admin-err" role="alert"></div>
       </section>
+      <div class="app-box" hidden><div><b>Instalalo como app</b>Queda un ícono en el celular y se abre a pantalla completa, con el micrófono de Chrome.</div><button type="button" class="instalar">Instalar</button></div>
       <p class="pie">¿Querés usarlo con tus alumnos? <a href="instructores">Conocé el simulador</a><br>
         <a href="fundamentos">Fundamentos y fuentes</a> · <a href="terminos">Términos</a> · <a href="privacidad">Privacidad</a><br>
         Simulador 107 es un producto de Kalu Lab.</p>
@@ -341,6 +362,7 @@
     </div>
     <p class="sub">Practicá la llamada al sistema de emergencias hablando en voz alta con un operador simulado. Al cortar recibís la devolución sobre qué datos pasaste y cuáles faltaron.</p>
     <p class="note cuenta" id="cuenta-info" hidden></p>
+    <div class="nav-aviso" hidden role="alert"></div>
 
     <!-- La consigna que dejó el instructor al abrir la clase, si dejó una. La ve el alumno
          (y el evaluador); el operador no, nunca. -->
@@ -422,6 +444,7 @@
     <button class="go" id="btn-call">Agarrar el teléfono</button>
     <p class="note" id="setup-note"></p>
     <p class="note">Vas a tener que marcar el número vos. Cuando la llamada empiece, el navegador te va a pedir el micrófono: decí tu frase y cuando hacés silencio se envía sola.</p>
+    <div class="app-box" hidden><div><b>Instalalo como app</b>Queda un ícono en el celular y se abre a pantalla completa, con el micrófono de Chrome.</div><button type="button" class="instalar">Instalar</button></div>
     <p class="pie">
       Simulación educativa: no se llama a ningún número real. Ante una emergencia de verdad, llamá al 107.<br>
       <a href="fundamentos.html">Fundamentos y fuentes</a> · <a href="terminos.html">Términos</a> · <a href="privacidad.html">Privacidad</a> · <button class="backlink" id="cambiar-codigo" hidden>Cambiar de código</button>
@@ -2240,7 +2263,7 @@
 
   function errorRec(code){
     if(code==="not-allowed" || code==="service-not-allowed" || code==="audio-capture"){
-      setTextMode(true, "El navegador bloqueó el micrófono ("+code+(S.micDiag?" / "+S.micDiag:"")+"). Revisá el permiso del sitio o seguí escribiendo.");
+      setTextMode(true, "El navegador bloqueó el micrófono ("+code+(S.micDiag?" / "+S.micDiag:"")+"). Revisá el permiso del sitio o seguí escribiendo."+consejoDeNavegador());
     } else if(code==="network"){
       setTextMode(true, "El reconocimiento de voz no pudo conectarse. Seguí escribiendo por ahora.");
     }
@@ -2461,7 +2484,7 @@
     }catch(e){
       S.micDiag = (e && (e.name||e.message)) || "desconocido";
       const w = $("#mic-warn"); w.hidden=false;
-      w.textContent = "El permiso de micrófono no salió ("+S.micDiag+"). Probá igual con Hablar; si no anda, revisá el candado de la barra de direcciones.";
+      w.textContent = "El permiso de micrófono no salió ("+S.micDiag+"). Probá igual con Hablar; si no anda, revisá el candado de la barra de direcciones."+consejoDeNavegador();
     }
 
     S.busy = true; updateControls();
@@ -2794,6 +2817,135 @@
   // a la configuración.
   $("#again").addEventListener("click", abrirTeclado);
   $("#other").addEventListener("click", ()=>show("setup"));
+
+  /* ---------------- el navegador ----------------
+     Hay navegadores que nunca dan el micrófono ni el parlante: sobre todo el que se abre
+     adentro de WhatsApp, Instagram, Facebook o TikTok cuando el alumno toca el link de la
+     clase, y los que no reconocen voz (Firefox, por ejemplo). En vez de dejar que el alumno
+     lo descubra con la llamada empezada, la entrada y la configuración lo avisan y le dan
+     un botón que abre el simulador en Chrome (Android) o le dicen cómo pasar a Safari
+     (iPhone). Se decide con lo que el navegador de verdad tiene (voz, habla, micrófono) y,
+     para los de adentro de una aplicación, con su firma: esos suelen tener las funciones
+     pero las bloquean. En la copia de Claude no se avisa (ahí la llamada se escribe). */
+  const AVISAR_NAVEGADOR = true;
+  const NAVEGADORES_INTERNOS = [
+    [/WhatsApp/i, "WhatsApp"], [/Instagram/i, "Instagram"], [/FBAN|FBAV|FB_IAB|FBIOS/, "Facebook"],
+    [/Messenger|MESSENGER/, "Messenger"], [/musical_ly|TikTok|BytedanceWebview|trill/i, "TikTok"],
+    [/Telegram/i, "Telegram"], [/LinkedInApp/i, "LinkedIn"], [/Snapchat/i, "Snapchat"],
+    [/Twitter|TwitterAndroid/i, "X"], [/ Line\//, "LINE"], [/GSA\//, "la app de Google"]
+  ];
+  function diagnosticarNavegador(ua, cap){
+    ua = String(ua || "");
+    const android = /Android/i.test(ua);
+    const ios = /iPhone|iPad|iPod/.test(ua);
+    let app = "";
+    for(const par of NAVEGADORES_INTERNOS){ if(par[0].test(ua)){ app = par[1]; break; } }
+    // Un WebView de Android sin firma conocida: alguna otra aplicación que abre links adentro.
+    if(!app && android && /; wv\)/.test(ua)) app = "otra aplicación";
+    if(app) return { tipo:"interno", app, android, ios, boton: android || ios };
+    // Si ya está en el navegador que se recomienda (Safari en un iPhone viejo, por ejemplo),
+    // no se le ofrece abrirlo ahí mismo.
+    const yaEsSafari = ios && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+    if(!cap.voz || !cap.habla || !cap.mic) return { tipo:"sin-voz", android, ios, boton: !yaEsSafari && (android || ios) };
+    return null;
+  }
+  function capacidadesDelNavegador(){
+    return {
+      voz: Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
+      habla: "speechSynthesis" in window,
+      mic: Boolean(navigator.mediaDevices) && window.isSecureContext !== false
+    };
+  }
+  // La dirección para abrir en otro navegador: la misma página, con el código del alumno si
+  // ya lo puso (en el otro navegador no hay nada guardado).
+  function direccionParaOtroNavegador(){
+    const q = S.codigo ? "?c=" + encodeURIComponent(S.codigo) : "";
+    return location.host + location.pathname + q;
+  }
+  // En Android, un link intent:// abre Chrome directamente; si no está instalado, Android
+  // ofrece instalarlo. En iPhone, x-safari-https:// abre Safari (iOS 17 o más nuevo).
+  function abrirEnOtroNavegador(diag){
+    const dir = direccionParaOtroNavegador();
+    if(diag.android) location.href = "intent://" + dir + "#Intent;scheme=https;package=com.android.chrome;end";
+    else if(diag.ios) location.href = "x-safari-https://" + dir;
+  }
+  async function copiarDireccion(boton){
+    const dir = "https://" + direccionParaOtroNavegador();
+    let ok = false;
+    try{ await navigator.clipboard.writeText(dir); ok = true; }catch(e){}
+    if(!ok) window.prompt("Copiá esta dirección y pegala en Chrome o Safari:", dir);
+    else { const t = boton.textContent; boton.textContent = "Copiado. Pegalo en el navegador"; setTimeout(()=>{ boton.textContent = t; }, 4000); }
+  }
+  function textoDelAviso(diag){
+    const otro = diag.ios ? "Safari" : "Chrome";
+    if(diag.tipo === "interno"){
+      const pasos = diag.ios
+        ? "Tocá el botón de abajo o, si no anda, los tres puntos (o el ícono de compartir) y elegí «Abrir en Safari»."
+        : diag.android
+          ? "Tocá el botón de abajo y se abre en Chrome. Si no anda, tocá los tres puntos y elegí «Abrir en Chrome» o «Abrir en el navegador»."
+          : "Copiá la dirección y abrila en Chrome o Edge.";
+      return { titulo:"Abrilo en " + otro,
+               texto:"Lo abriste desde " + diag.app + ", y el navegador de adentro de " + diag.app + " no deja usar el micrófono ni el parlante. " + pasos };
+    }
+    return { titulo:"Este navegador no sirve para la llamada",
+             texto: diag.ios && !diag.boton
+               ? "Este Safari no reconoce la voz: hace falta un iPhone actualizado (iOS 14.5 o más nuevo). Mientras tanto, la llamada sólo se puede escribir."
+               : diag.ios
+               ? "No reconoce la voz o no deja usar el micrófono. Abrí el simulador en Safari; mientras tanto, la llamada sólo se puede escribir."
+               : "No reconoce la voz o no deja usar el micrófono. Abrí el simulador en Chrome" + (diag.android ? "" : " o Edge") + "; mientras tanto, la llamada sólo se puede escribir." };
+  }
+  function pintarAvisoNavegador(){
+    if(!AVISAR_NAVEGADOR) return;
+    const diag = diagnosticarNavegador(navigator.userAgent, capacidadesDelNavegador());
+    S.navegador = diag;
+    document.querySelectorAll(".nav-aviso").forEach(caja=>{
+      caja.hidden = !diag;
+      if(!diag) return;
+      const t = textoDelAviso(diag);
+      caja.innerHTML = "";
+      const h = document.createElement("h2"); h.textContent = t.titulo;
+      const p = document.createElement("p"); p.textContent = t.texto;
+      const fila = document.createElement("div"); fila.className = "btns-nav";
+      if(diag.boton){
+        const b = document.createElement("button"); b.type = "button"; b.className = "uno";
+        b.textContent = "Abrir en " + (diag.ios ? "Safari" : "Chrome");
+        b.addEventListener("click", ()=>abrirEnOtroNavegador(diag));
+        fila.appendChild(b);
+      }
+      const c = document.createElement("button"); c.type = "button"; c.className = "dos";
+      c.textContent = "Copiar la dirección";
+      c.addEventListener("click", ()=>copiarDireccion(c));
+      fila.appendChild(c);
+      caja.append(h, p, fila);
+    });
+  }
+  // Lo que se le agrega al aviso del micrófono durante la llamada.
+  function consejoDeNavegador(){
+    const d = S.navegador;
+    if(d && d.ios) return " Si sigue sin andar, abrí el simulador en Safari.";
+    if(d && d.tipo === "interno") return " Si sigue sin andar, abrí el simulador en Chrome (está explicado en la entrada).";
+    return " Si sigue sin andar, abrí el simulador en Chrome o instalalo como app desde la entrada.";
+  }
+
+  /* Instalar como app. Chrome (y Edge) en Android ofrecen instalar la página: queda un ícono
+     como el de cualquier app, se abre a pantalla completa y usa el micrófono y la voz de
+     Chrome aunque el navegador preferido del celular sea otro. El botón aparece sólo cuando
+     el navegador dice que se puede (beforeinstallprompt) y nunca dentro de la app ya instalada. */
+  let pedidoInstalar = null;
+  function pintarInstalar(){
+    const instalada = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches;
+    document.querySelectorAll(".app-box").forEach(caja=>{ caja.hidden = !pedidoInstalar || instalada; });
+  }
+  window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); pedidoInstalar = e; pintarInstalar(); });
+  window.addEventListener("appinstalled", ()=>{ pedidoInstalar = null; pintarInstalar(); });
+  document.querySelectorAll(".app-box .instalar").forEach(b=>b.addEventListener("click", async ()=>{
+    if(!pedidoInstalar) return;
+    const pedido = pedidoInstalar;
+    pedidoInstalar = null;
+    try{ pedido.prompt(); await pedido.userChoice; }catch(e){}
+    pintarInstalar();
+  }));
+  pintarAvisoNavegador();
 
   if("serviceWorker" in navigator){
     window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });

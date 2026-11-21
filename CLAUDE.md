@@ -715,6 +715,31 @@ Entrada, clase y servidor:
   selectores (perfil, caso y, en lego, con o sin paro), y la tabla de los tipos de caso con
   sus fuentes. Sección "El operador se adapta al caso".
 
+### Navegadores que no dan el micrófono (noviembre de 2026)
+
+Pedido del titular: "desde algunos navegadores nunca me da el acceso al parlante y
+micrófono". La causa casi siempre es el navegador de adentro de una aplicación (WhatsApp,
+Instagram, Facebook, TikTok…: el link de la clase se abre ahí) o uno sin reconocimiento de
+voz (Firefox). Arreglo, todo en `index.html`:
+- `diagnosticarNavegador(ua, cap)` (pura, probada en `pruebas/navegador.test.mjs`):
+  `"interno"` por la firma del navegador de la aplicación (`NAVEGADORES_INTERNOS`, o
+  `; wv)` en Android), aunque tenga las funciones, porque las bloquea; `"sin-voz"` si falta
+  el reconocimiento, la voz o el micrófono. Chrome y Safari no reciben aviso.
+- `.nav-aviso` arriba de la entrada y de la configuración: en Android, botón **Abrir en
+  Chrome** (link `intent://…;package=com.android.chrome`); en iPhone, **Abrir en Safari**
+  (`x-safari-https://`, iOS 17+) y los pasos a mano; siempre **Copiar la dirección**. El link
+  lleva `?c=` con el código del alumno si ya lo puso (en el otro navegador no hay nada
+  guardado).
+- `.app-box` **Instalar**: aparece sólo con `beforeinstallprompt` (Chrome/Edge de Android) y
+  nunca dentro de la app instalada. La app instalada usa el motor de Chrome.
+- Los avisos de micrófono de la llamada suman `consejoDeNavegador()`.
+- En la copia de Claude, `AVISAR_NAVEGADOR` pasa a `false` (ahí la llamada se escribe).
+- **APK para Android (no hecho):** una Trusted Web Activity forzada a Chrome serviría a quien
+  tenga otro navegador por defecto, pero armarla exige aceptar la licencia del Android SDK y
+  guardar una llave de firma fuera del repo (más `/.well-known/assetlinks.json`). Queda a
+  decisión del titular. Una app con WebView propio NO sirve: el WebView de Android no
+  reconoce voz.
+
 ## Variables de entorno (en Vercel, no en el repo)
 
 | Variable | Para qué |
@@ -742,7 +767,7 @@ Hay pruebas automáticas en `pruebas/`, sin dependencias del proyecto (Node 20+;
 navegador usa el Playwright global y el Chromium del entorno):
 
 ```
-node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs   # sin red
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs pruebas/navegador.test.mjs   # sin red
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs            # punta a punta en Chromium
 NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs  # la copia de Claude, con un Claude falso
 RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107

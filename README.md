@@ -116,7 +116,9 @@ Sobre los modelos: la app prueba varios en orden y se queda con el primero que t
 
 Abrí **https://simulador-107.vercel.app** desde el celular, en Chrome. La primera vez que toques *Llamar al 107* el navegador pide el micrófono: aceptá.
 
-Para instalarla como app: en Chrome, menú de los tres puntos → *Agregar a pantalla principal*. En iPhone, Safari → *Compartir* → *Agregar a inicio*.
+Para instalarla como app: en Chrome de Android, la entrada y la pantalla de ajustes muestran un botón **Instalar** cuando el celular lo permite (si no aparece: menú de los tres puntos → *Instalar app* o *Agregar a pantalla principal*). Queda un ícono como el de cualquier app, se abre a pantalla completa y usa el micrófono y la voz de Chrome. En iPhone, Safari → *Compartir* → *Agregar a inicio*.
+
+**Si el micrófono o la voz no andan.** Casi siempre es el navegador: el que se abre adentro de WhatsApp, Instagram, Facebook o TikTok cuando se toca un link no deja usar el micrófono ni el parlante, y Firefox no reconoce la voz. La web lo detecta sola y muestra arriba un recuadro **Abrilo en Chrome** (en iPhone, **Abrilo en Safari**) con un botón que lo abre ahí, con el código del alumno incluido si ya lo había puesto. Lo que anda seguro: Chrome en Android y Safari en iPhone.
 
 ---
 
@@ -143,7 +145,7 @@ Si pierde su código, o lo tiene alguien que no debería, abrí su ficha y tocá
 
 ## Qué le pasás a los alumnos
 
-Para una clase: la dirección de la web y el código de la clase en vivo, que ponen en *Alumnos*; o directamente el link que copia el panel, que ya trae el código. Para practicar por su cuenta: el código de alumnos de tu cuenta, en la misma puerta. Nada más. No necesitan cuenta ni instalar nada.
+Para una clase: la dirección de la web y el código de la clase en vivo, que ponen en *Alumnos*; o directamente el link que copia el panel, que ya trae el código. Para practicar por su cuenta: el código de alumnos de tu cuenta, en la misma puerta. Nada más. No necesitan cuenta ni instalar nada. Si alguno abre el link desde WhatsApp o Instagram y la página le dice *Abrilo en Chrome*, que toque ese botón: desde el navegador de adentro de esas apps el micrófono no anda.
 
 Antes de practicar conviene leerles el aviso: es una simulación, usen el nombre del grupo y datos inventados, y la conversación queda guardada para que la revises (se borra sola a los 13 meses).
 
@@ -211,7 +213,7 @@ pruebas/                 pruebas automáticas (no se publican)
 No hace falta instalar nada del proyecto; sólo Node 20 o más:
 
 ```
-node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs pruebas/navegador.test.mjs
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs      # necesita Playwright
 CON_BASE=1 node pruebas/servidor.mjs                    # la app entera en http://localhost:8107, con IA y base de mentira
 ```
