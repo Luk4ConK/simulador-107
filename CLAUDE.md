@@ -750,6 +750,10 @@ voz (Firefox). Arreglo, todo en `index.html`:
   no está en el repo** (`android/.gitignore`): la guarda el titular; sin ella no se puede
   publicar un APK que se instale encima del anterior. Los cambios de la web llegan solos a
   la app; un APK nuevo sólo hace falta si cambia `android/` (subir `versionCode`).
+  **La 1.0 se cerraba sola al abrir en celulares reales**: faltaba declarar
+  `ManageDataLauncherActivity` (la biblioteca la activa con `setComponentEnabledSetting`).
+  Arreglado en la 1.1 (`versionCode` 2); `android/app/src/test/…/LanzadorTest.java`
+  (Robolectric, `./gradlew testReleaseUnitTest`) controla que estén todas las pantallas.
   En la entrada, `.app-box` muestra **Bajar la app** (a `/app`) en cualquier Android y
   **Instalar** con `beforeinstallprompt`; nunca adentro de la app (`dentroDeLaApp()`:
   `?app=android`, el referrer `android-app://…` o `display-mode: standalone`). El aviso de

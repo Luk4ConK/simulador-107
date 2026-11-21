@@ -45,6 +45,19 @@ cp app/build/outputs/apk/release/app-release.apk ../descargas/simulador-107.apk
 La huella para `assetlinks.json` se ve con
 `keytool -list -v -keystore simulador-107-firma.jks -alias simulador107`.
 
+Antes de publicar un APK, correr las pruebas (Robolectric, en `app/src/test`):
+
+```
+ANDROID_HOME=/ruta/al/sdk ./gradlew testReleaseUnitTest
+```
+
+**Lección de la versión 1.0:** se cerraba sola en cada celular real con Chrome ("la app
+sigue fallando"), porque faltaba declarar `ManageDataLauncherActivity` en el manifiesto: la
+biblioteca la activa al abrir, y Android tira una excepción si no está declarada. Ni la
+compilación ni Robolectric lo notan; por eso `LanzadorTest` controla que estén declaradas
+todas las pantallas que usa la biblioteca. Si se actualiza `androidbrowserhelper`, comparar
+el manifiesto con el de la plantilla de Bubblewrap (GoogleChromeLabs/bubblewrap).
+
 Detalles: `minSdk` 24 (Android 7.0, lo que pide `androidbrowserhelper` 2.7.4) y
 `compileSdk` 36 (lo pide `androidx.browser` 1.10). La app abre `/?app=android`, y la web
 usa esa marca para no ofrecer bajar la app adentro de la app.
