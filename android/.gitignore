@@ -1,0 +1,9 @@
+# La llave de firma y su clave NUNCA van al repositorio.
+firma.properties
+*.jks
+*.keystore
+# Lo que arma Gradle.
+.gradle/
+build/
+app/build/
+local.properties

@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "store.kalulab.simulador",
+    "sha256_cert_fingerprints": ["F2:C4:61:28:89:58:3D:86:D6:BB:74:50:97:C6:46:4C:87:EF:3B:1D:4D:18:C4:07:4C:5D:40:4F:35:F9:E8:CA"]
+  }
+}]

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nombre">Simulador 107</string>
+    <!-- ?app=android: así la web sabe que está adentro de la app y no ofrece bajarla. -->
+    <string name="direccion">https://simulador.kalulab.store/?app=android</string>
+    <string name="proveedor">store.kalulab.simulador.fileprovider</string>
+    <string name="assetStatements" translatable="false">
+        [{ \"relation\": [\"delegate_permission/common.handle_all_urls\"],
+           \"target\": { \"namespace\": \"web\", \"site\": \"https://simulador.kalulab.store\" } }]
+    </string>
+</resources>

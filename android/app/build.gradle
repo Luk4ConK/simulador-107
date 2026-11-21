@@ -1,0 +1,47 @@
+plugins { id "com.android.application" }
+
+// La firma. La llave NO está en el repositorio: la guarda el titular (ver android/LEEME.md).
+// Se lee de android/firma.properties (ignorado por git) o de variables de entorno.
+def firma = new Properties()
+def archivoFirma = rootProject.file("firma.properties")
+if (archivoFirma.exists()) archivoFirma.withInputStream { firma.load(it) }
+def dato = { String clave, String entorno -> firma.getProperty(clave) ?: System.getenv(entorno) }
+
+android {
+    namespace "store.kalulab.simulador"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "store.kalulab.simulador"
+        minSdk 24   // Android 7.0: lo mínimo que acepta la biblioteca de la TWA
+        targetSdk 35
+        // Subir los dos con cada APK nuevo: Android no instala encima uno con el mismo número.
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            if (dato("archivo", "FIRMA_ARCHIVO")) {
+                storeFile rootProject.file(dato("archivo", "FIRMA_ARCHIVO"))
+                storePassword dato("clave", "FIRMA_CLAVE")
+                keyAlias dato("alias", "FIRMA_ALIAS")
+                keyPassword dato("clave", "FIRMA_CLAVE")
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (dato("archivo", "FIRMA_ARCHIVO")) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.7.4"
+}

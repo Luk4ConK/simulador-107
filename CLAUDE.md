@@ -133,6 +133,7 @@ protocolos.js         TODO el contenido: los 18 casos, rúbricas, grillas, conte
 panel.html            panel del instructor y del administrador (carga protocolos.js)
 instructores.html     presentación para instructores, formulario de contacto, PLANES
 fundamentos.html      decisiones con su evidencia; carga protocolos.js para la tabla de la rúbrica y la de los casos
+app.html              /app: la página para bajar la app de Android y los pasos para instalarla
 activar.html          para el dueño: qué falta activar en Vercel (base, CODIGO_ADMIN, clave) y los pasos
 terminos.html         términos de uso (datos del titular desde /api/datos?info=1)
 privacidad.html       política de privacidad, Ley 25.326
@@ -145,6 +146,9 @@ vercel.json           maxDuration de las funciones, direcciones cortas, cabecera
 icons/                íconos de la app
 pruebas/              pruebas automáticas y servidor local (no se publican: .vercelignore)
 herramientas/         copia-claude.mjs: arma la copia que corre dentro de Claude (no se publica)
+android/              la app de Android (TWA) y su LEEME.md; no se publica. La llave de firma NO está en el repo
+descargas/            simulador-107.apk, el APK que baja /app
+.well-known/          assetlinks.json: vincula la app de Android con el sitio (huella de la llave)
 kalulab/              la página de Kalu Lab (www.kalulab.store), el selector de proyectos: otro proyecto de Vercel, con esta carpeta de raíz
 README.md             guía de despliegue, escrita para el usuario
 ```
@@ -715,6 +719,43 @@ Entrada, clase y servidor:
   selectores (perfil, caso y, en lego, con o sin paro), y la tabla de los tipos de caso con
   sus fuentes. Sección "El operador se adapta al caso".
 
+### Navegadores que no dan el micrófono (noviembre de 2026)
+
+Pedido del titular: "desde algunos navegadores nunca me da el acceso al parlante y
+micrófono". La causa casi siempre es el navegador de adentro de una aplicación (WhatsApp,
+Instagram, Facebook, TikTok…: el link de la clase se abre ahí) o uno sin reconocimiento de
+voz (Firefox). Arreglo, todo en `index.html`:
+- `diagnosticarNavegador(ua, cap)` (pura, probada en `pruebas/navegador.test.mjs`):
+  `"interno"` por la firma del navegador de la aplicación (`NAVEGADORES_INTERNOS`, o
+  `; wv)` en Android), aunque tenga las funciones, porque las bloquea; `"sin-voz"` si falta
+  el reconocimiento, la voz o el micrófono. Chrome y Safari no reciben aviso.
+- `.nav-aviso` arriba de la entrada y de la configuración: en Android, botón **Abrir en
+  Chrome** (link `intent://…;package=com.android.chrome`); en iPhone, **Abrir en Safari**
+  (`x-safari-https://`, iOS 17+) y los pasos a mano; siempre **Copiar la dirección**. El link
+  lleva `?c=` con el código del alumno si ya lo puso (en el otro navegador no hay nada
+  guardado).
+- `.app-box` **Instalar**: aparece sólo con `beforeinstallprompt` (Chrome/Edge de Android) y
+  nunca dentro de la app instalada. La app instalada usa el motor de Chrome.
+- Los avisos de micrófono de la llamada suman `consejoDeNavegador()`.
+- En la copia de Claude, `AVISAR_NAVEGADOR` pasa a `false` (ahí la llamada se escribe).
+- **App para Android (APK, pedido del titular, 21/11/2026):** carpeta `android/` (no se
+  publica: `.vercelignore`), explicada en `android/LEEME.md`. Es una Trusted Web Activity
+  (`androidbrowserhelper`) que abre `/?app=android` **siempre con Chrome** si está
+  instalado (`Lanzador.java` pisa `createTwaLauncher()`), aunque el navegador preferido sea
+  otro, y con la app instalada se queda con los links `https://simulador.kalulab.store`
+  (los de la clase por WhatsApp). Paquete `store.kalulab.simulador`, Android 7 o más.
+  Se publica `descargas/simulador-107.apk` (sin caché del service worker) y la página
+  `/app` (`app.html`) con los pasos de instalación (orígenes desconocidos, Play Protect).
+  `/.well-known/assetlinks.json` lleva la huella SHA-256 de la llave. **La llave de firma
+  no está en el repo** (`android/.gitignore`): la guarda el titular; sin ella no se puede
+  publicar un APK que se instale encima del anterior. Los cambios de la web llegan solos a
+  la app; un APK nuevo sólo hace falta si cambia `android/` (subir `versionCode`).
+  En la entrada, `.app-box` muestra **Bajar la app** (a `/app`) en cualquier Android y
+  **Instalar** con `beforeinstallprompt`; nunca adentro de la app (`dentroDeLaApp()`:
+  `?app=android`, el referrer `android-app://…` o `display-mode: standalone`). El aviso de
+  navegador de Android también ofrece **Bajar la app**. Una app con WebView propio NO
+  sirve: el WebView de Android no reconoce voz.
+
 ## Variables de entorno (en Vercel, no en el repo)
 
 | Variable | Para qué |
@@ -742,7 +783,7 @@ Hay pruebas automáticas en `pruebas/`, sin dependencias del proyecto (Node 20+;
 navegador usa el Playwright global y el Chromium del entorno):
 
 ```
-node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs   # sin red
+node --test pruebas/api.test.mjs pruebas/rubrica.test.mjs pruebas/llamada.test.mjs pruebas/casos.test.mjs pruebas/navegador.test.mjs   # sin red
 NODE_PATH=$(npm root -g) node pruebas/ui.test.mjs            # punta a punta en Chromium
 NODE_PATH=$(npm root -g) node pruebas/copia-claude.test.mjs  # la copia de Claude, con un Claude falso
 RAPIDO=1 CON_BASE=1 node pruebas/servidor.mjs                # la app en localhost:8107

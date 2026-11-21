@@ -253,7 +253,7 @@ cambiar(
     }catch(e){
       S.micDiag = (e && (e.name||e.message)) || "desconocido";
       const w = $("#mic-warn"); w.hidden=false;
-      w.textContent = "El permiso de micrófono no salió ("+S.micDiag+"). Probá igual con Hablar; si no anda, revisá el candado de la barra de direcciones.";
+      w.textContent = "El permiso de micrófono no salió ("+S.micDiag+"). Probá igual con Hablar; si no anda, revisá el candado de la barra de direcciones."+consejoDeNavegador();
     }
 
 `,
@@ -296,6 +296,8 @@ cambiar(
 `    const nombre = nombreDelInforme();
     claudeUse("downloads").then(dl=>{ if(dl) return dl.save({ filename:nombre, data:txt }); }).catch(()=>{});`
 );
+// El aviso de "este navegador no deja usar el micrófono": en la copia la llamada se escribe.
+cambiar(`  const AVISAR_NAVEGADOR = true;`, `  const AVISAR_NAVEGADOR = false;`);
 cambiar(
 `  if("serviceWorker" in navigator){
     window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });

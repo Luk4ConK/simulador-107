@@ -1,0 +1,13 @@
+// La app de Android del Simulador 107: una Trusted Web Activity (TWA).
+// No es otra versión del simulador: abre https://simulador.kalulab.store con Chrome a
+// pantalla completa, así el micrófono y la voz son los de Chrome aunque el navegador
+// preferido del celular sea otro. Ver android/LEEME.md.
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = "simulador-107"
+include ":app"
